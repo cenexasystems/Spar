@@ -96,14 +96,14 @@
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
 }
 
-.r-buzz { animation: roam-full-1 50s linear infinite; top: 10%; left: -50px; }
-.r-alien-1 { animation: roam-full-2 45s linear infinite; top: 60%; right: -50px; font-size: 2.5rem; }
-.r-alien-2 { animation: roam-full-3 55s linear infinite; bottom: 20%; left: -50px; font-size: 2rem; }
-.r-ufo { animation: orbit-full 60s linear infinite; top: 40%; right: -80px; font-size: 2.8rem; }
-.r-star-1 { animation: twinkle 4s infinite ease-in-out; top: 15%; right: 25%; color: #FFD700; }
-.r-star-2 { animation: twinkle 5s infinite ease-in-out; bottom: 35%; left: 15%; color: #BF00FF; }
-.r-star-3 { animation: twinkle 6s infinite ease-in-out; top: 75%; left: 45%; color: #00D1FF; }
-.r-rocket { animation: roam-diagonal 40s linear infinite; bottom: -50px; left: 10%; font-size: 3rem; }
+.r-buzz { animation: roam-full-1 50s linear infinite; animation-delay: -10s; top: 10%; left: -50px; }
+.r-alien-1 { animation: roam-full-2 45s linear infinite; animation-delay: -25s; top: 60%; right: -50px; font-size: 2.5rem; }
+.r-alien-2 { animation: roam-full-3 55s linear infinite; animation-delay: -40s; bottom: 20%; left: -50px; font-size: 2rem; }
+.r-ufo { animation: orbit-full 60s linear infinite; animation-delay: -30s; top: 40%; right: -80px; font-size: 2.8rem; }
+.r-star-1 { animation: twinkle 4s infinite ease-in-out; animation-delay: -2s; top: 15%; right: 25%; color: #FFD700; }
+.r-star-2 { animation: twinkle 5s infinite ease-in-out; animation-delay: -3s; bottom: 35%; left: 15%; color: #BF00FF; }
+.r-star-3 { animation: twinkle 6s infinite ease-in-out; animation-delay: -1s; top: 75%; left: 45%; color: #00D1FF; }
+.r-rocket { animation: roam-diagonal 40s linear infinite; animation-delay: -20s; bottom: -50px; left: 10%; font-size: 3rem; }
 
 @keyframes roam-full-1 {
   0% { transform: translate(0, 0) rotate(0deg); }

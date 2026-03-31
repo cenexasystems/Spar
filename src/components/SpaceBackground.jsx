@@ -26,18 +26,16 @@ const SpaceBackground = () => {
         {/* Roaming mini characters */}
         <div className="mini-roamer r-buzz">🧑‍🚀</div>
         <div className="mini-roamer r-alien-1">👽</div>
-        <div className="mini-roamer r-alien-2">👾</div>
         <div className="mini-roamer r-ufo">🛸</div>
         <div className="mini-roamer r-star-1">⭐</div>
         <div className="mini-roamer r-star-2">🌟</div>
-        <div className="mini-roamer r-star-3">✨</div>
         <div className="mini-roamer r-rocket">🚀</div>
       </div>
 
       {/* Shooting stars and extra stars */}
       <div className="page-shooting-star shooting-star-1"></div>
       <div className="page-shooting-star shooting-star-2"></div>
-      {[...Array(30)].map((_, i) => (
+      {[...Array(26)].map((_, i) => (
         <div key={`bg-s-${i}`} className={`bg-page-star star-${i}`}></div>
       ))}
     </div>
