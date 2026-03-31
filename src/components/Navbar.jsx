@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 const Navbar = ({ onOpenSupport, onOpenProfile, onOpenGame, isAdmin }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, interceptAuth } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 

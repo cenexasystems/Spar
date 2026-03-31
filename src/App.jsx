@@ -7,7 +7,7 @@ import CustomCursor from './components/CustomCursor';
 import FlappyBuzz from './components/FlappyBuzz';
 import ClaimTicketModal from './components/ClaimTicketModal';
 import PageLoader from './components/PageLoader';
-import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import AuthModal from './components/AuthModal';
 import SupportModal from './components/SupportModal';
 import ProfileModal from './components/ProfileModal';
@@ -19,6 +19,7 @@ import AdminDashboard from './components/AdminDashboard';
 import './index.css';
 
 function App() {
+  const { shouldOpenProfile, setShouldOpenProfile } = useAuth();
   const [isRewardModalOpen, setIsRewardModalOpen] = React.useState(false);
   const [isPageLoaded, setIsPageLoaded] = React.useState(false);
   const [isSupportOpen, setIsSupportOpen] = React.useState(false);
@@ -32,9 +33,15 @@ function App() {
     setSelectedPark(park);
     setIsBookingOpen(true);
   };
+  
+  React.useEffect(() => {
+    if (shouldOpenProfile) {
+      setIsProfileOpen(true);
+      setShouldOpenProfile(false); // Reset flag
+    }
+  }, [shouldOpenProfile, setShouldOpenProfile]);
 
   return (
-    <AuthProvider>
       <div className="app-container">
         <SpaceBackground />
 
@@ -132,7 +139,6 @@ function App() {
         
         <ChatBot />
       </div>
-    </AuthProvider>
   );
 }
 

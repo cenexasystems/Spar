@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [shouldOpenProfile, setShouldOpenProfile] = useState(false);
 
   useEffect(() => {
     // Check local storage for active session on boot
@@ -206,7 +207,9 @@ export const AuthProvider = ({ children }) => {
       interceptAuth, 
       closeAuthModal,
       addBooking,
-      addCoins
+      addCoins,
+      shouldOpenProfile,
+      setShouldOpenProfile
     }}>
       {children}
     </AuthContext.Provider>

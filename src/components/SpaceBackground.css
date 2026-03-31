@@ -88,67 +88,56 @@
 /* Roaming mini characters */
 .mini-roamer {
   position: absolute;
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   pointer-events: none;
-  opacity: 1;
+  opacity: 0.7;
   z-index: 10;
   transition: opacity 0.3s;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6));
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
 }
 
-.mini-buzz-roamer {
-  animation: buzz-roam 45s linear infinite;
-  filter: drop-shadow(0 0 5px rgba(199, 255, 0, 0.3));
+.r-buzz { animation: roam-full-1 50s linear infinite; top: 10%; left: -50px; }
+.r-alien-1 { animation: roam-full-2 45s linear infinite; top: 60%; right: -50px; font-size: 2.5rem; }
+.r-alien-2 { animation: roam-full-3 55s linear infinite; bottom: 20%; left: -50px; font-size: 2rem; }
+.r-ufo { animation: orbit-full 60s linear infinite; top: 40%; right: -80px; font-size: 2.8rem; }
+.r-star-1 { animation: twinkle 4s infinite ease-in-out; top: 15%; right: 25%; color: #FFD700; }
+.r-star-2 { animation: twinkle 5s infinite ease-in-out; bottom: 35%; left: 15%; color: #BF00FF; }
+.r-star-3 { animation: twinkle 6s infinite ease-in-out; top: 75%; left: 45%; color: #00D1FF; }
+.r-rocket { animation: roam-diagonal 40s linear infinite; bottom: -50px; left: 10%; font-size: 3rem; }
+
+@keyframes roam-full-1 {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(105vw, 40vh) rotate(180deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
 }
 
-.mini-alien-roamer-1 {
-  animation: alien-roam-1 35s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 5px rgba(255, 0, 85, 0.3));
+@keyframes roam-full-2 {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-105vw, -30vh) rotate(-180deg); }
+  100% { transform: translate(0, 0) rotate(-360deg); }
 }
 
-.mini-alien-roamer-2 {
-  animation: alien-roam-2 40s ease-in-out infinite alternate;
-  animation-delay: -15s;
-  filter: drop-shadow(0 0 5px rgba(0, 209, 255, 0.3));
+@keyframes roam-full-3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(110vw, -60vh) scale(1.2); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
-.mini-star-roamer-1 {
-  animation: star-roam-1 25s linear infinite;
-  color: #C7FF00;
-  opacity: 0.8;
+@keyframes orbit-full {
+  from { transform: rotate(0deg) translateX(-110vw) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(-110vw) rotate(-360deg); }
 }
 
-.mini-star-roamer-2 {
-  animation: star-roam-2 30s linear infinite;
-  animation-delay: -10s;
-  color: #fff;
-  opacity: 0.8;
+@keyframes roam-diagonal {
+  0% { transform: translate(0, 0) rotate(-45deg); opacity: 0; }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.7; }
+  100% { transform: translate(100vw, -100vh) rotate(-45deg); opacity: 0; }
 }
 
-@keyframes buzz-roam {
-  0% { transform: translate(-110vw, 20vh) rotate(20deg); }
-  100% { transform: translate(110vw, 80vh) rotate(380deg); }
-}
-
-@keyframes alien-roam-1 {
-  0% { transform: translate(10vw, -110vh) rotate(0deg); }
-  50% { transform: translate(50vw, 50vh) rotate(180deg); }
-  100% { transform: translate(90vw, 110vh) rotate(360deg); }
-}
-
-@keyframes alien-roam-2 {
-  0% { transform: translate(110vw, 10vh) rotate(0deg); }
-  100% { transform: translate(-110vw, 90vh) rotate(-360deg); }
-}
-
-@keyframes star-roam-1 {
-  0% { transform: translate(50vw, 110vh) scale(0.5); }
-  100% { transform: translate(50vw, -110vh) scale(1.5); }
-}
-
-@keyframes star-roam-2 {
-  0% { transform: translate(-10vw, 50vh) rotate(0deg); }
-  100% { transform: translate(110vw, 50vh) rotate(720deg); }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 0.8; transform: scale(1.2); }
 }
 
 .bg-grid-overlay {

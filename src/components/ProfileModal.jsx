@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, MapPin, Hash, User as UserIcon, Mail, Phone, Coins, Orbit } from 'lucide-react';
+import { X, Calendar, MapPin, Hash, User as UserIcon, Mail, Phone, Coins, Orbit, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './ProfileModal.css';
 

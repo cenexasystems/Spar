@@ -24,11 +24,14 @@ const SpaceBackground = () => {
         </div>
 
         {/* Roaming mini characters */}
-        <div className="mini-roamer mini-buzz-roamer">🧑‍🚀</div>
-        <div className="mini-roamer mini-alien-roamer-1">👾</div>
-        <div className="mini-roamer mini-alien-roamer-2">👾</div>
-        <div className="mini-roamer mini-star-roamer-1">⭐</div>
-        <div className="mini-roamer mini-star-roamer-2">⭐</div>
+        <div className="mini-roamer r-buzz">🧑‍🚀</div>
+        <div className="mini-roamer r-alien-1">👽</div>
+        <div className="mini-roamer r-alien-2">👾</div>
+        <div className="mini-roamer r-ufo">🛸</div>
+        <div className="mini-roamer r-star-1">⭐</div>
+        <div className="mini-roamer r-star-2">🌟</div>
+        <div className="mini-roamer r-star-3">✨</div>
+        <div className="mini-roamer r-rocket">🚀</div>
       </div>
 
       {/* Shooting stars and extra stars */}

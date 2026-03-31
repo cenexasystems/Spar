@@ -122,7 +122,7 @@
 }
 
 .detail-text-col {
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
@@ -153,7 +153,12 @@
   color: #FFD700 !important;
   font-family: 'Luckiest Guy', cursive !important;
   letter-spacing: 1px;
-  font-size: 1.1rem !important;
+  font-size: 1.4rem !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  display: block;
+  margin-top: 4px;
+  line-height: 1.2;
 }
 
 .profile-claim-banner {
@@ -362,4 +367,49 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
+}
+
+/* FLOATING ELEMENTS ANIMATIONS */
+
+.profile-floating-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+.floating-item {
+  position: absolute;
+  user-select: none;
+}
+
+.f-star-1 { top: 15%; left: 10%; animation: roam-random 20s infinite linear; }
+.f-star-2 { top: 60%; right: 15%; animation: roam-random 25s infinite linear reverse; }
+.f-star-3 { bottom: 20%; left: 20%; animation: roam-random 18s infinite linear; }
+.f-alien-1 { top: 30%; right: 10%; font-size: 1.5rem; animation: orbit-slow 30s infinite linear; }
+.f-alien-2 { bottom: 40%; left: 5%; font-size: 1.2rem; animation: roam-random 22s infinite linear; opacity: 0.8; }
+.f-buzz { top: 45%; right: 20%; font-size: 1.8rem; animation: roam-path 40s infinite ease-in-out; }
+
+@keyframes roam-random {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(30px, 50px) rotate(90deg); }
+  50% { transform: translate(-20px, 100px) rotate(180deg); }
+  75% { transform: translate(-50px, 40px) rotate(270deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
+}
+
+@keyframes orbit-slow {
+  from { transform: rotate(0deg) translateX(40px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
+}
+
+@keyframes roam-path {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-100px, 50px) scale(1.1) rotate(10deg); }
+  66% { transform: translate(50px, -80px) scale(0.9) rotate(-10deg); }
+  100% { transform: translate(0, 0) scale(1); }
 }

@@ -10,7 +10,7 @@ const GLASSES = ['none', 'glasses', 'sunglasses'];
 const BEARDS = ['none', 'variant01', 'variant02', 'variant03', 'variant08'];
 
 const AuthModal = () => {
-  const { isAuthModalOpen, closeAuthModal, loginUser, registerUser, loginGoogleMock } = useAuth();
+  const { isAuthModalOpen, closeAuthModal, loginUser, registerUser, loginGoogleMock, setShouldOpenProfile } = useAuth();
   
   const [tab, setTab] = useState('signup'); // Default to 'signup' as requested
   const [authStep, setAuthStep] = useState('form'); // 'form', 'avatar', 'success'
@@ -68,6 +68,7 @@ const AuthModal = () => {
         await new Promise(r => setTimeout(r, 800));
         loginUser(email, password);
         setAuthStep('success');
+        setShouldOpenProfile(true); 
         setTimeout(() => resetState(), 1500);
       } catch (err) {
         setErrorMsg(err.message);
@@ -95,6 +96,7 @@ const AuthModal = () => {
       await new Promise(r => setTimeout(r, 1200));
       registerUser(firstName, email, phone, password, getAvatarUrl());
       setAuthStep('success');
+      setShouldOpenProfile(true); 
       setTimeout(() => resetState(), 1500);
     } catch (err) {
       setErrorMsg(err.message);
@@ -109,6 +111,7 @@ const AuthModal = () => {
     setTimeout(() => {
       setIsLoading(false);
       setAuthStep('success');
+      setShouldOpenProfile(true);
       setTimeout(() => {
         loginGoogleMock();
         resetState();
@@ -141,6 +144,14 @@ const AuthModal = () => {
   return (
     <div className="auth-modal-overlay">
       <div className="auth-modal glass-morphism pop-in flex flex-col">
+        <div className="auth-roamers">
+          <div className="a-roamer a-star-1">⭐</div>
+          <div className="a-roamer a-star-2">🌟</div>
+          <div className="a-roamer a-alien-1">👽</div>
+          <div className="a-roamer a-alien-2">👾</div>
+          <div className="a-roamer a-rocket">🚀</div>
+          <div className="a-roamer a-ufo">🛸</div>
+        </div>
         <button className="auth-close-btn" onClick={() => { closeAuthModal(); resetState(); }}>
           <X size={24} color="#fff" />
         </button>

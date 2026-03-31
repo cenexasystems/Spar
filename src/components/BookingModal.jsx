@@ -132,16 +132,6 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   return (
     <div className="modal-overlay booking-overlay">
       <div className="modal-container booking-modal-flow glass-morphism solid-dark-bg">
-        {/* --- Space Background Inside Modal --- */}
-        <div className="modal-space-backdrop">
-           <div className="modal-mini-roamer mini-buzz-roamer">🧑‍🚀</div>
-           <div className="modal-mini-roamer mini-alien-roamer-1">👾</div>
-           <div className="modal-mini-roamer mini-alien-roamer-2">👾</div>
-           <div className="modal-mini-roamer mini-star-roamer-1">⭐</div>
-           <div className="modal-mini-roamer mini-star-roamer-2">🌟</div>
-           <div className="modal-mini-roamer mini-rocket-roamer">🚀</div>
-        </div>
-
         <button className="close-btn" onClick={handleClose} aria-label="Close">
           <X size={24} />
         </button>
@@ -267,6 +257,14 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
         {/* --- Step 3: Celebration / Success --- */}
         {step === 3 && (
           <div className="booking-step-content success-step animate-bounce-in" ref={successRef}>
+            <div className="success-roamers">
+              <div className="s-roamer s-star-1">⭐</div>
+              <div className="s-roamer s-star-2">🌟</div>
+              <div className="s-roamer s-alien-1">👽</div>
+              <div className="s-roamer s-alien-2">👾</div>
+              <div className="s-roamer s-rocket">🚀</div>
+              <div className="s-roamer s-ufo">🛸</div>
+            </div>
             <div className="success-icon-container">
               <div className="success-ring"></div>
               <div className="success-ring ring-2"></div>
