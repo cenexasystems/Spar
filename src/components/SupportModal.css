@@ -1,0 +1,166 @@
+.support-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4); /* Transparent to see stars */
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.support-modal {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 450px;
+  padding: 40px 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+.support-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #BF00FF, #00D1FF, #C7FF00);
+}
+
+.support-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  padding: 5px;
+}
+
+.support-close-btn:hover {
+  opacity: 1;
+}
+
+.support-header h2 {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 2.5rem;
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+}
+
+.support-input-group {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.support-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.area-icon {
+  top: 20px;
+  transform: none;
+}
+
+.modern-input.support-input {
+  padding-left: 45px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 100%;
+}
+
+.modern-input.support-input.textarea {
+  resize: vertical;
+  min-height: 100px;
+  padding-top: 15px;
+  line-height: 1.5;
+}
+
+.modern-input.support-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #00D1FF;
+}
+
+.support-submit {
+  border-radius: 0px !important;
+  background: linear-gradient(135deg, #C7FF00 0%, #00D1FF 100%) !important;
+  color: black !important;
+  padding: 10px 30px !important;
+  font-size: 1.2rem;
+  font-family: 'Luckiest Guy', cursive;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border: 2px solid #000 !important;
+  box-shadow: 4px 4px 0px #000 !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: fit-content !important;
+  margin: 24px auto 0 auto !important;
+  filter: drop-shadow(0 0 10px rgba(199, 255, 0, 0.3));
+}
+
+.support-submit:hover {
+  transform: translate(-3px, -3px) scale(1.05);
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.8) !important;
+  background: white !important;
+  filter: brightness(1.1) drop-shadow(0 0 20px rgba(0, 209, 255, 0.6));
+}
+
+.support-submit:active {
+  transform: translate(2px, 2px) scale(0.95) !important;
+  box-shadow: 0px 0px 0px #000 !important;
+  background: linear-gradient(135deg, #FF0055 0%, #BF00FF 100%) !important;
+  filter: brightness(1.2) drop-shadow(0 0 20px #FF0055);
+}
+
+.support-submit:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0px rgba(0, 0, 0, 0.9) !important;
+  background: white !important;
+}
+
+.support-submit:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.9) !important;
+}
+
+.success-icon-wrapper {
+  animation: float-pulse 2s infinite ease-in-out;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0,0,0,0.3);
+  border-top-color: black;
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+}
+
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+.scale-in { animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes float-pulse {
+  0% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 20px rgba(199,255,0,0.4)); }
+  50% { transform: translateY(-10px) scale(1.05); filter: drop-shadow(0 0 40px rgba(199,255,0,0.8)); }
+  100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 20px rgba(199,255,0,0.4)); }
+}
+@keyframes spinner {
+  100% { transform: rotate(360deg); }
+}

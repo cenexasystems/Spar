@@ -1,0 +1,116 @@
+.page-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+  overflow: hidden;
+}
+
+.page-loader-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+
+.loader-wheel-container {
+  width: 250px;
+  height: 250px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 20px rgba(0, 209, 255, 0.4));
+}
+
+.giant-ferris-wheel {
+  width: 100%;
+  height: 100%;
+}
+
+.wheel-spin-infinite {
+  transform-origin: 50% 50%;
+  animation: rotate-infinitely 4s linear infinite;
+}
+
+@keyframes rotate-infinitely {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loader-title {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 3rem;
+  letter-spacing: 2px;
+  margin: 0;
+  padding: 0 20px;
+}
+
+.loader-subtitle {
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.pulse-text {
+  animation: pulse-opac 2s infinite ease-in-out;
+}
+
+@keyframes pulse-opac {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+  100% { opacity: 0.5; }
+}
+
+.loader-progress-bar {
+  width: 300px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin-top: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loader-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #BF00FF, #00D1FF, #C7FF00);
+  animation: progress-load 2s cubic-bezier(0.1, 0.7, 0.1, 1) forwards;
+}
+
+@keyframes progress-load {
+  0% { width: 0%; }
+  40% { width: 30%; }
+  60% { width: 70%; }
+  100% { width: 100%; }
+}
+
+@media (max-width: 600px) {
+  .loader-wheel-container {
+    width: 180px;
+    height: 180px;
+  }
+  .loader-title {
+    font-size: 2.2rem;
+  }
+  .loader-progress-bar {
+    width: 80%;
+  }
+}

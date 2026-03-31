@@ -1,0 +1,174 @@
+.parks-section {
+  padding: var(--section-padding) 40px;
+  background-color: var(--bg-dark);
+}
+
+.parks-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+.park-card {
+  border-radius: 24px;
+  overflow: hidden;
+  background-color: #0d0d0d;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+}
+
+.park-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(199, 255, 0, 0.3);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), 
+              0 0 40px rgba(199, 255, 0, 0.08);
+}
+
+.park-image-wrapper {
+  position: relative;
+  height: 280px;
+  overflow: hidden;
+}
+
+.park-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.park-card:hover .park-image {
+  transform: scale(1.1);
+}
+
+.park-rating {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.park-info {
+  padding: 20px;
+  flex-grow: 1;
+}
+
+.park-location {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary-light-green);
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.park-name {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  font-weight: 800;
+  line-height: 1.2;
+  font-family: 'Outfit', sans-serif;
+}
+
+.park-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.park-footer {
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.price-amount {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.park-btn {
+  background: linear-gradient(135deg, var(--primary-purple), var(--primary-light-green));
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.park-btn:hover {
+  background: #fff;
+  transform: translateX(6px) scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .parks-section {
+    padding: 80px 24px;
+  }
+  .section-title {
+    font-size: 2.5rem;
+  }
+  .parks-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mission-cap-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(199, 255, 0, 0.05);
+  border: 1px solid rgba(199, 255, 0, 0.1);
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #C7FF00;
+  margin: 15px 0;
+}
+
+.mission-cap-alert span {
+  font-size: 1rem;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(199, 255, 0, 0.5);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #C7FF00;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #C7FF00;
+  animation: pulse-mission 1.5s infinite alternate;
+}
+
+@keyframes pulse-mission {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 1; }
+}

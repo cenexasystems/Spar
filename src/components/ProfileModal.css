@@ -1,0 +1,365 @@
+.profile-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.profile-modal {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  padding: 40px 30px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #BF00FF, #00D1FF, #C7FF00);
+}
+
+.profile-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  padding: 5px;
+}
+
+.profile-close:hover {
+  opacity: 1;
+}
+
+/* NEW PURE CSS REPLACING TAILWIND */
+
+.profile-header {
+  margin-bottom: 24px;
+}
+
+.profile-avatar-container {
+  display: inline-block;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.profile-avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 4px solid #00D1FF;
+  background: rgba(255,255,255,0.05);
+  object-fit: cover;
+}
+
+.profile-name-text {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 2.2rem;
+  letter-spacing: 2px;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.profile-role-text {
+  color: #94A3B8;
+  font-family: 'Outfit', sans-serif;
+  margin-top: 5px;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  background: #C7FF00;
+  border-radius: 50%;
+  border: 2px solid #111827;
+  box-shadow: 0 0 10px rgba(199, 255, 0, 0.5);
+}
+
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.detail-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.detail-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.detail-text-col {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.detail-value {
+  color: #fff;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Outfit', sans-serif;
+}
+
+.coin-meter-card {
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(0, 0, 0, 0.2) 100%) !important;
+}
+
+.coin-count-text {
+  color: #FFD700 !important;
+  font-family: 'Luckiest Guy', cursive !important;
+  letter-spacing: 1px;
+  font-size: 1.1rem !important;
+}
+
+.profile-claim-banner {
+  background: rgba(199, 255, 0, 0.05);
+  border: 2px solid rgba(199, 255, 0, 0.2);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 0 20px rgba(199, 255, 0, 0.1);
+}
+
+.claim-redeem-btn {
+  background: linear-gradient(135deg, #C7FF00 0%, #00D1FF 100%);
+  color: #000;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 4px 4px 0px #000;
+  white-space: nowrap;
+}
+
+.claim-redeem-btn:hover {
+  transform: translate(-2px, -2px) scale(1.05);
+  box-shadow: 6px 6px 0px #000;
+  filter: brightness(1.1);
+}
+
+.claim-redeem-btn:active {
+  transform: translate(2px, 2px) scale(0.95);
+  box-shadow: 0px 0px 0px #000;
+}
+
+.profile-ledger {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.profile-ledger-title {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.passes-count-badge {
+  background: #BF00FF;
+  color: white;
+  font-size: 0.85rem;
+  font-family: 'Outfit', sans-serif;
+  padding: 2px 10px;
+  border-radius: 50px;
+}
+
+.empty-ledger {
+  text-align: center;
+  padding: 40px 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.empty-ledger p {
+  color: #94A3B8;
+  font-style: italic;
+  margin: 0;
+}
+
+.profile-logout-btn {
+  margin-top: 24px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  border-radius: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.profile-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* TICKET STYLES */
+
+.tickets-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.digital-wallet-ticket {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  border-left: 4px solid #00D1FF;
+  border-radius: 12px;
+  padding: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.wallet-ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px dashed rgba(255,255,255,0.1);
+  padding-bottom: 10px;
+}
+
+.park-badge {
+  font-family: 'Luckiest Guy', cursive;
+  color: #fff;
+  letter-spacing: 1px;
+  font-size: 1.1rem;
+}
+
+.price-badge {
+  background: rgba(0, 209, 255, 0.2);
+  color: #00D1FF;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.price-badge.free {
+  background: rgba(199, 255, 0, 0.2);
+  color: #C7FF00;
+}
+
+.wallet-ticket-body {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 10px;
+}
+
+.ticket-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94A3B8;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.wallet-ticket-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.barcode-sim {
+  height: 20px;
+  width: 100px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.3) 2px,
+    rgba(255,255,255,0.3) 4px,
+    transparent 4px,
+    transparent 5px,
+    rgba(255,255,255,0.5) 5px,
+    rgba(255,255,255,0.5) 8px
+  );
+}
+
+.ticket-id-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  font-family: monospace;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
