@@ -55,7 +55,7 @@
   height: 100%;
   object-fit: cover;
   transition: opacity 1s ease;
-  opacity: 0.7; /* Allow background stars to peek through */
+  opacity: 0.9;
 }
 
 .hero-overlay {
