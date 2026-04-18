@@ -61,7 +61,7 @@ const CustomerReviews = () => {
     setTimeout(() => {
       const reviewObj = {
         id: Date.now(),
-        name: user ? user.name : "Guest Cadet",
+        name: user ? user.name : "Guest",
         avatar: user ? user.avatar : `https://api.dicebear.com/7.x/adventurer/svg?seed=${Date.now()}`,
         rating: newRating,
         text: newComment,
@@ -80,14 +80,14 @@ const CustomerReviews = () => {
     <section className="reviews-section" id="reviews">
       <div className="max-width-wrapper">
         <div className="section-header">
-          <p className="section-indicator">RANGER LOGS</p>
-          <h2 className="text-white-shimmer-rtl">CADET REVIEWS</h2>
-          <p className="section-subtitle">See what other space rangers are saying about their missions.</p>
+          <p className="section-indicator">REVIEWS</p>
+          <h2 className="text-white-shimmer-rtl">WHAT VISITORS SAY</h2>
+          <p className="section-subtitle">See what others are saying about their experience.</p>
         </div>
 
         <div className="reviews-container">
           <div className="review-composer glass-morphism">
-            <h3 className="composer-title text-white-shimmer-rtl">FILE YOUR MISSION REPORT</h3>
+            <h3 className="composer-title text-white-shimmer-rtl">SHARE YOUR EXPERIENCE</h3>
             <p className="composer-subtitle">Tell us about your latest amusement park adventure!</p>
 
             <form onSubmit={handleSubmit} className="review-form">

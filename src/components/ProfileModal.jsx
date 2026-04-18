@@ -21,7 +21,7 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
              <div className="status-indicator"></div>
            </div>
            <h2 className="profile-name-text text-white-shimmer-rtl">{user.name}</h2>
-           <p className="profile-role-text">Spar Elite Ranger</p>
+           <p className="profile-role-text">SPAR ID: <span style={{ color: "var(--primary-light-green)", fontWeight: "bold" }}>{user.sparId || 'PENDING'}</span></p>
         </div>
 
         <div className="profile-details-grid">
@@ -29,7 +29,7 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
              <div className="detail-card-inner">
                <Mail size={18} color="#00D1FF" className="detail-icon" />
                <div className="detail-text-col">
-                 <span className="detail-label">Comm Link</span>
+                 <span className="detail-label">Email Address</span>
                  <span className="detail-value">{user.email}</span>
                </div>
              </div>
@@ -38,7 +38,7 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
              <div className="detail-card-inner">
                <Phone size={18} color="#C7FF00" className="detail-icon" />
                <div className="detail-text-col">
-                 <span className="detail-label">Signal Freq</span>
+                 <span className="detail-label">Phone Number</span>
                  <span className="detail-value">{user.phone || 'N/A'}</span>
                </div>
              </div>
@@ -60,7 +60,7 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
               <Orbit className="animate-pulse text-[#C7FF00]" />
               <div>
                 <h4 className="m-0 text-[#C7FF00] font-bold">MILESTONE ACHIEVED!</h4>
-                <p className="m-0 text-xs opacity-80">100,000 Coins collected. Claim your free mission.</p>
+                <p className="m-0 text-xs opacity-80">100,000 Coins collected. Claim your free ticket.</p>
               </div>
             </div>
             <button className="claim-redeem-btn" onClick={() => { onClose(); onOpenClaim(); }}>
@@ -77,7 +77,7 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
 
           {!user.bookings || user.bookings.length === 0 ? (
             <div className="empty-ledger glass-morphism">
-               <p>No missions booked yet. Grab a ticket and join the action!</p>
+               <p>No bookings yet. Grab a ticket and join the action!</p>
             </div>
           ) : (
             <div className="tickets-grid">
@@ -99,7 +99,7 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
                      </div>
                      <div className="ticket-meta-row">
                        <MapPin size={14} color="#00D1FF" />
-                       {ticket.timeSlot || ticket.tickets + ' Cadets'}
+                       {ticket.timeSlot || ticket.tickets + ' Visitors'}
                      </div>
                   </div>
 
@@ -122,7 +122,7 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
             logout();
           }}
         >
-          DISCONNECT (LOG OUT)
+          LOG OUT
         </button>
       </div>
     </div>

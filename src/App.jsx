@@ -3,7 +3,6 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ParkGrid from './components/ParkGrid';
 import ChatBot from './components/ChatBot';
-import CustomCursor from './components/CustomCursor';
 import FlappyBuzz from './components/FlappyBuzz';
 import ClaimTicketModal from './components/ClaimTicketModal';
 import PageLoader from './components/PageLoader';
@@ -55,7 +54,6 @@ function App() {
         />
         <SpinWheel isOpen={isSpinWheelOpen} onClose={() => setIsSpinWheelOpen(false)} />
         {!isPageLoaded && <PageLoader onComplete={() => setIsPageLoaded(true)} />}
-        <CustomCursor />
         <Navbar 
           onOpenSupport={() => setIsSupportOpen(true)} 
           onOpenProfile={() => setIsProfileOpen(true)} 
@@ -100,7 +98,7 @@ function App() {
                     <ul>
                       <li><a href="#home">Home</a></li>
                       <li><a href="#parks">Our Parks</a></li>
-                      <li><a href="#" onClick={(e) => { e.preventDefault(); setView('admin'); }} className="admin-link text-lime-400 font-bold">🚀 MISSION CONTROL (ADMIN)</a></li>
+                      <li><a href="#" onClick={(e) => { e.preventDefault(); setView('admin'); }} className="admin-link text-lime-400 font-bold">ADMIN PANEL</a></li>
                     </ul>
                   </div>
 

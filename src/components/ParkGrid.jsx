@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Star, ArrowRight } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import axios from 'axios';
 import './ParkGrid.css';
 
 const fallbackParks = [
@@ -11,6 +11,8 @@ const fallbackParks = [
     location: "Chennai, Tamil Nadu",
     rating: 4.8,
     price: "1200",
+    adultPrice: 1200,
+    kidsPrice: 900,
     image: "/vgp-image.jpg",
     desc: "India's first and largest amusement park with over 45 thrilling rides and a private beach."
   },
@@ -20,6 +22,8 @@ const fallbackParks = [
     location: "Chennai, Tamil Nadu",
     rating: 4.6,
     price: "1000",
+    adultPrice: 1000,
+    kidsPrice: 750,
     image: "/mgm-image.jpg",
     desc: "The Pioneer of entertainment, offering world-class rides and a unique forest-themed water park."
   },
@@ -29,6 +33,8 @@ const fallbackParks = [
     location: "Poonamallee, Chennai",
     rating: 4.5,
     price: "850",
+    adultPrice: 850,
+    kidsPrice: 600,
     image: "/queensland_final.png",
     desc: "An expansive theme park featuring 51 rides, including an enormous cable car and wave pool."
   },
@@ -38,6 +44,8 @@ const fallbackParks = [
     location: "Mettupalayam, Coimbatore",
     rating: 4.7,
     price: "950",
+    adultPrice: 950,
+    kidsPrice: 700,
     image: "/black_thunder_final.jpg",
     desc: "Asia's No.1 water theme park with the majestic Nilgiris as a backdrop and extreme water slides."
   },
@@ -47,52 +55,49 @@ const fallbackParks = [
     location: "Bengaluru, Karnataka",
     rating: 4.9,
     price: "1500",
+    adultPrice: 1500,
+    kidsPrice: 1100,
     image: "/wonderla_final.jpg",
     desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks."
   }
 ];
 
 const ParkGrid = ({ onBook }) => {
-  const [parks, setParks] = useState(fallbackParks);
+  const [parks, setParks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchParks = async () => {
       try {
-        const { data, error } = await supabase.from('parks').select('*');
-        if (error) throw error;
+        const { data } = await axios.get('http://localhost:5000/api/parks');
         if (data && data.length > 0) {
           setParks(data);
+        } else {
+          setParks(fallbackParks);
         }
       } catch (err) {
-        console.warn("Supabase Parks fetch failed, using mission presets:", err.message);
+        console.error("Failed to fetch parks:", err);
+        setParks(fallbackParks);
+      } finally {
+        setLoading(false);
       }
     };
-
     fetchParks();
-
-    // --- REAL-TIME SUBSCRIPTION ---
-    const channel = supabase
-      .channel('parks-realtime')
-      .on('postgres_changes', { event: '*', table: 'parks', schema: 'public' }, (payload) => {
-        // Update local state when a change happens
-        if (payload.eventType === 'UPDATE') {
-          setParks(prev => prev.map(p => p.id === payload.new.id ? payload.new : p));
-        } else {
-          fetchParks(); // Refetch for other changes
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   return (
     <section className="parks-section" id="parks">
       <div className="max-width-wrapper">
         <div className="section-header">
-          <p className="section-indicator">EXPLORE MISSIONS</p>
+          <p className="section-indicator">EXPLORE PARKS</p>
           <h2 className="section-title text-white-shimmer-rtl">CHOOSE YOUR ADVENTURE</h2>
           <p className="section-subtitle">Pick a park, grab your tickets, and get ready for takeoff!</p>
         </div>
@@ -125,7 +130,7 @@ const ParkGrid = ({ onBook }) => {
                 {park.tickets_available && (
                   <div className="mission-cap-alert">
                     <div className="pulse-dot"></div>
-                    Only <span>{park.tickets_available}</span> Missions Remaining!
+                    Only <span>{park.tickets_available}</span> Tickets Remaining!
                   </div>
                 )}
 

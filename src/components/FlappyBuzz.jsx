@@ -61,8 +61,37 @@ const FlappyBuzz = () => {
   const [birdPos, setBirdPos] = useState(250);
   const [tilt, setTilt] = useState(0);
   const [pipes, setPipes] = useState([]);
-  const [ticketClaimed, setTicketClaimed] = useState(false);
   const [isInitialWait, setIsInitialWait] = useState(true);
+  const [ticketClaimed, setTicketClaimed] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [attempStatus, setAttemptStatus] = useState(null); // { attempts: 0, lastPlayed: Date }
+  const [attemptsToday, setAttemptsToday] = useState(0);
+
+  const { user, interceptAuth, addBooking, recordGameScoreRequest, syncUser } = useAuth();
+
+  const getAttemptsToday = useCallback(() => {
+    const userId = user?.email || 'guest';
+    const data = localStorage.getItem(`flappyBuzzAttempts_${userId}`);
+    if (!data) return 0;
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.date === new Date().toDateString()) {
+        return parsed.attempts;
+      }
+    } catch (e) {}
+    return 0;
+  }, [user?.email]);
+
+  const incrementAttempts = useCallback(() => {
+    const userId = user?.email || 'guest';
+    const attempts = getAttemptsToday();
+    const newAttempts = attempts + 1;
+    localStorage.setItem(`flappyBuzzAttempts_${userId}`, JSON.stringify({
+      date: new Date().toDateString(),
+      attempts: newAttempts
+    }));
+    setAttemptsToday(newAttempts);
+  }, [user?.email, getAttemptsToday]);
   
   // Player state
   const [formData, setFormData] = useState({
@@ -71,8 +100,8 @@ const FlappyBuzz = () => {
     timeSlot: 'Morning (10AM - 2PM)'
   });
 
-  const { interceptAuth, addBooking } = useAuth();
   const [finalTicket, setFinalTicket] = useState(null);
+  const [gameReward, setGameReward] = useState(null);
 
   const birdPosRef = useRef(250);
   const velocityRef = useRef(0);
@@ -88,14 +117,28 @@ const FlappyBuzz = () => {
   // Base fixed resolution logic
   const GAME_HEIGHT = 450;
   const GAME_WIDTH = 800;
-  const WINNING_SCORE = 5;
+  const WINNING_SCORE = 100;
+
+  // Difficulty Scaling Logic
+  const getDifficulty = (s) => {
+    if (s >= 99) {
+       return { gap: 0, speed: 10, spawnRate: 100 }; // STRICTLY IMPOSSIBLE
+    }
+    const level = Math.floor(s / 10);
+    return {
+      gap: Math.max(180 - (level * 18), 75), // Extremely narrow gap at high scores
+      speed: 4 + (level * 1.5), // Rapidly increasing speed
+      spawnRate: Math.max(250 - (level * 20), 100) // Pipes spawn very close
+    };
+  };
 
   useEffect(() => {
     // Check if user already won in this session
     if (sessionStorage.getItem('floppyBirdTicket')) {
       setTicketClaimed(true);
     }
-  }, []);
+    setAttemptsToday(getAttemptsToday());
+  }, [getAttemptsToday]);
 
   useEffect(() => {
     if (gameStatus === 'LOADING') {
@@ -130,24 +173,28 @@ const FlappyBuzz = () => {
 
     setBirdPos(birdPosRef.current);
 
+    // Difficulty
+    const diff = getDifficulty(score);
+
     // Pipes Movement & Spawning
-    if (pipesRef.current.length === 0 || pipesRef.current[pipesRef.current.length - 1].x < GAME_WIDTH - 250) {
+    if (pipesRef.current.length === 0 || pipesRef.current[pipesRef.current.length - 1].x < GAME_WIDTH - diff.spawnRate) {
       const newPipe = {
         x: GAME_WIDTH,
-        height: Math.floor(Math.random() * (GAME_HEIGHT - PIPE_GAP - 100)) + 50,
+        height: Math.floor(Math.random() * (GAME_HEIGHT - diff.gap - 100)) + 50,
+        gap: diff.gap,
         passed: false
       };
       pipesRef.current.push(newPipe);
     }
 
     pipesRef.current = pipesRef.current
-      .map(p => ({ ...p, x: p.x - PIPE_SPEED }))
+      .map(p => ({ ...p, x: p.x - diff.speed }))
       .filter(p => p.x > -100);
 
     // Collision Detection
     const hasCollided = pipesRef.current.some(p => 
       p.x < 100 && p.x > 40 && // Ship x area
-      (birdPosRef.current < p.height || birdPosRef.current + 30 > p.height + PIPE_GAP)
+      (birdPosRef.current < p.height || birdPosRef.current + 30 > p.height + p.gap)
     );
 
     if (hasCollided) {
@@ -187,6 +234,15 @@ const FlappyBuzz = () => {
 
   const jump = () => {
     if (gameStatus === 'START') {
+      if (attemptsToday >= 3) {
+        setGameStatus('GAME_OVER');
+        gameStatusRef.current = 'GAME_OVER';
+        setErrorMsg('Daily attempt limit (3/3) reached. Come back tomorrow!');
+        return;
+      }
+      
+      incrementAttempts();
+
       setGameStatus('INTRO');
       gameStatusRef.current = 'INTRO';
       
@@ -237,6 +293,17 @@ const FlappyBuzz = () => {
     } else {
       setGameStatus('GAME_OVER');
       gameStatusRef.current = 'GAME_OVER';
+      
+      // Record Score to track attempts and potentially award the IMPOSSIBLE REWARD
+      interceptAuth(async () => {
+        try {
+          const data = await recordGameScoreRequest(score);
+          if (data.reward === 'FREE_TICKET') setGameReward('FREE_TICKET');
+          syncUser(data.updatedUser);
+        } catch (err) {
+          setErrorMsg(err.message);
+        }
+      });
     }
   };
 
@@ -249,6 +316,8 @@ const FlappyBuzz = () => {
     velocityRef.current = 0;
     pipesRef.current = [];
     setIsInitialWait(true);
+    setErrorMsg('');
+    setAttemptsToday(getAttemptsToday());
     setGameStatus('START');
     gameStatusRef.current = 'START';
   };
@@ -294,8 +363,8 @@ const FlappyBuzz = () => {
             </svg>
           </span>
         </h3>
-        <p className="game-subtitle mt-2" style={{color: 'var(--text-muted)'}}>
-          Reach {WINNING_SCORE} points to unlock a FREE mission reward!
+        <p className="game-subtitle mt-2" style={{color: '#FF6B6B', fontWeight: 'bold'}}>
+          GOAL: REACH 100 POINTS TO UNLOCK A FREE TICKET REWARD! (WARNING: IMPOSSIBLE)
         </p>
         {ticketClaimed && (
            <div className="ticket-claimed-badge" style={{color: 'var(--primary-light-green)', fontSize: '0.8rem', marginTop:'10px', fontWeight: 'bold'}}>
@@ -353,8 +422,8 @@ const FlappyBuzz = () => {
                 className="carnival-pillar bottom" 
                 style={{ 
                   transform: `translateX(${pipe.x}px)`, 
-                  top: pipe.height + PIPE_GAP, 
-                  height: GAME_HEIGHT - pipe.height - PIPE_GAP, 
+                  top: pipe.height + pipe.gap, 
+                  height: GAME_HEIGHT - pipe.height - pipe.gap, 
                   width: 70 
                 }}
               >
@@ -431,9 +500,18 @@ const FlappyBuzz = () => {
                 ))}
               </div>
 
-              <div className="bounce-container relative z-10">
-                <h2 className="text-white-shimmer-navy-ltr" style={{fontSize: '4.5rem'}}>ENGAGE ENGINES!</h2>
-                <div className="start-hint highlight-box">REACH {WINNING_SCORE} POINTS FOR FREE REWARD!</div>
+              <div className="bounce-container relative z-10 flex flex-col items-center justify-center gap-6 w-full mt-8">
+                <h2 className="text-white-shimmer-navy-ltr" style={{fontSize: '2.8rem', textAlign: 'center', lineHeight: '1.1'}}>ENGAGE ENGINES!</h2>
+                {attemptsToday >= 3 ? (
+                  <div className="start-hint highlight-box" style={{backgroundColor: '#e11d48', color: '#fff', border: 'none', fontSize: '0.9rem'}}>DAILY LIMIT REACHED. COME BACK TOMORROW!</div>
+                ) : (
+                  <div className="flex gap-4 items-center justify-center flex-wrap">
+                    <div className="start-hint highlight-box" style={{margin: 0, fontSize: '0.85rem'}}>REACH {WINNING_SCORE} POINTS FOR FREE REWARD!</div>
+                    <div className="text-white font-bold" style={{textShadow: '0 2px 4px rgba(0,0,0,0.5)', fontSize: '0.85rem', background: 'rgba(0,0,0,0.5)', padding: '10px 20px', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.2)', margin: 0}}>
+                       ATTEMPTS LEFT TODAY: <span style={{color: '#C7FF00'}}>{3 - attemptsToday}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -458,6 +536,12 @@ const FlappyBuzz = () => {
           {gameStatus === 'GAME_OVER' && (
             <div className="game-overlay glass-panel failure">
               <h2 className="shake-text glitch-red">CRASHED!</h2>
+              {gameReward === 'FREE_TICKET' && (
+                <div className="victory-popup pop-in bg-[#FFD700] text-black px-4 py-2 rounded-full font-black text-sm mt-4">
+                  🏆 UNBELIEVABLE! YOU WON A FREE TICKET!
+                </div>
+              )}
+              {errorMsg && <p className="text-red-500 text-xs mt-2">{errorMsg}</p>}
               <p style={{color:'#fff', marginTop: '10px'}}>The ride doesn't stop here. Get back up!</p>
               <button onClick={(e) => { e.stopPropagation(); restart(); }} className="btn-primary mt-4">
                 TRY AGAIN
@@ -481,7 +565,7 @@ const FlappyBuzz = () => {
                  
                  {!ticketClaimed ? (
                    <div className="integrated-booking mt-6 px-4">
-                     <p className="integrated-subtitle text-sm mb-4 opacity-70">SELECT YOUR MISSION PASS DETAILS BELOW:</p>
+                     <p className="integrated-subtitle text-sm mb-4 opacity-70">SELECT YOUR TICKET DETAILS BELOW:</p>
                      <form onSubmit={handleFormSubmit} className="reward-form text-left space-y-4">
                         <div className="form-group">
                            <label className="text-xs font-bold mb-1 block"><MapPin size={14} className="inline mr-1"/> Select Park</label>

@@ -13,7 +13,7 @@ const ClaimTicketModal = ({ isOpen, onClose }) => {
           <div className="success-icon-wrapper">
             <Gift size={48} color="var(--primary-light-green)" />
           </div>
-          <h2>MISSION ACCOMPLISHED! 🚀</h2>
+          <h2>BOOKING SUCCESSFUL! 🚀</h2>
           <p>You've scored 10 points! You've won a FREE amusement park ticket.</p>
         </div>
 
@@ -24,7 +24,7 @@ const ClaimTicketModal = ({ isOpen, onClose }) => {
           </div>
           
           <div className="form-group">
-            <label>MISSION DATE</label>
+            <label>VISIT DATE</label>
             <input type="date" required />
           </div>
 

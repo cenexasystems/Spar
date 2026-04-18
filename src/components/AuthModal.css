@@ -22,7 +22,9 @@
   max-width: 450px;
   padding: 40px 30px;
   position: relative;
-  overflow: hidden;
+  max-height: 95vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .auth-modal::before {

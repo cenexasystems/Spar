@@ -26,39 +26,33 @@ const parkRates = {
 };
 
 const ChatBot = () => {
+  const { user, interceptAuth, addBooking } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showShoutout, setShowShoutout] = useState(true);
-  const [step, setStep] = useState('NAME'); // Workflow step: NAME, EMAIL, PHONE, PARK, TICKETS, READY_PAY, PAYMENT, COMPLETE
-  const [rangerData, setRangerData] = useState({ name: '', email: '', phone: '', park: '', tickets: 1, totalPrice: 0, payment: '' });
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Greetings Cadet! 🚀 I'm Buzz Lightyear, your Space Ranger assistant. To start your mission, what is your NAME?", sender: 'bot' }
-  ]);
+  const [step, setStep] = useState('CHAT'); // We only need conversational step now unless rating
+  const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isCelebration, setIsCelebration] = useState(false);
   const [hasRated, setHasRated] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [hasSpokenGreeting, setHasSpokenGreeting] = useState(false);
   const messagesEndRef = useRef(null);
-  const { interceptAuth, addBooking } = useAuth();
 
-  const buzzAvatar = "/buzz1.jfif"; // Custom Buzz avatar from your desktop
+  const buzzAvatar = "/buzz1.jfif";
+
+  // Initialize messages with user's name
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        { id: 1, text: `Hi ${user?.name ? user.name.split(' ')[0] : 'there'}! 👋 I'm Buzz Lightyear, your Park Assistant. I can help with SPAR Coins, Ticket Discounts, the FlappyBuzz Game, or general booking support. How can I help you?`, sender: 'bot' }
+      ]);
+    }
+  }, [user, messages.length]);
 
   const speakText = (text) => {
-    if ('speechSynthesis' in window) {
-      const cleanText = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoices = voices.filter(v => v.lang.includes('en') && (v.name.includes('Google UK English Male') || v.name.includes('Microsoft Mark') || v.name.includes('David') || v.name.includes('Guy')));
-      if (preferredVoices.length > 0) {
-        utterance.voice = preferredVoices[0];
-      }
-      utterance.pitch = 0.85; // Deeper voice fit for a Space Ranger
-      utterance.rate = 1.0;
-      window.speechSynthesis.speak(utterance);
-    }
+    // Voice mode disabled as per request
+    return;
   };
 
   const scrollToBottom = () => {
@@ -79,109 +73,53 @@ const ChatBot = () => {
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
 
-    const userMsg = { id: messages.length + 1, text: inputValue, sender: 'user' };
+    const userMsg = { id: Date.now(), text: inputValue.trim(), sender: 'user' };
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
+    const inputForBot = inputValue;
+    setInputValue('');
 
-    // Process Workflow Steps
     setTimeout(() => {
-      let botResponse = "";
-      let nextStep = step;
+      const lower = inputForBot.toLowerCase();
+      let reply = '';
 
-      switch (step) {
-        case 'NAME':
-          setRangerData(prev => ({ ...prev, name: inputValue }));
-          botResponse = `Roger that, Ranger ${inputValue}! 🎖️ Now, what is your EMAIL for mission updates?`;
-          nextStep = 'EMAIL';
-          break;
-        case 'EMAIL':
-          setRangerData(prev => ({ ...prev, email: inputValue }));
-          botResponse = "Mission frequency locked! 📶 And what is your CONTACT NUMBER for backup?";
-          nextStep = 'PHONE';
-          break;
-        case 'PHONE':
-          setRangerData(prev => ({ ...prev, phone: inputValue }));
-          botResponse = "Communication lines established! 📡 Which THEME PARK would you like to visit? (VGP, MGM, Queens Land, Black Thunder, or Wonderla)";
-          nextStep = 'PARK';
-          break;
-        case 'PARK':
-          const inputPark = inputValue.toLowerCase().replace(/\s/g, '');
-          const parkKey = Object.keys(parkRates).find(k => inputPark.includes(k)) || 'vgp';
-          setRangerData(prev => ({ ...prev, park: parkKey }));
-          botResponse = `Target acquired: ${parkKey.toUpperCase()}! 🛰️ How many CADETS (tickets) are joining this mission?`;
-          nextStep = 'TICKETS';
-          break;
-        case 'TICKETS':
-          const count = parseInt(inputValue) || 1;
-          const total = count * parkRates[rangerData.park || 'vgp'];
-          setRangerData(prev => ({ ...prev, tickets: count, totalPrice: total }));
-          botResponse = `Mission cost calculated! 💰 Total price for ${count} tickets is ₹${total}. Ready to proceed with payment? GPAY or CARD?`;
-          nextStep = 'PAYMENT';
-          break;
-        case 'PAYMENT':
-          const payType = inputValue.toUpperCase().includes('GPAY') ? 'GPAY' : 'CARD';
-          interceptAuth(() => {
-            setRangerData(prev => ({ ...prev, payment: payType }));
-            const ticketCount = parseInt(rangerData.tickets, 10) || 1;
-            
-            // Record Booking into DB
-            addBooking({
-              id: `SPAR-${Math.floor(Math.random() * 90000) + 10000}`,
-              park: 'SPAR Amusements HQ',
-              payment: payType,
-              totalPrice: ticketCount * 1200, // Roughly 1200 INR per ticket assumed
-              tickets: ticketCount,
-              date: new Date().toLocaleDateString()
-            });
-
-            setStep('COMPLETE');
-            setIsCelebration(true);
-            setTimeout(() => setIsCelebration(false), 5000);
-            const paymentMsg = `PAYMENT COMPLETED! 💳 Energy credits received via ${payType}. Your mission is a GO! 🎆`;
-            setMessages(prev => [...prev, { id: Date.now(), text: paymentMsg, sender: 'bot' }]);
-            speakText(paymentMsg);
-            setIsTyping(false);
-            setInputValue('');
-          });
-          return; // Exit normal flow to let interceptAuth handle execution timing
-        default:
-          botResponse = "Mission status: ACTIVE! 🚀 To Infinity and Beyond!";
+      if (lower.includes('coin') || lower.includes('spar coin') || lower.includes('earn')) {
+        reply = "SPAR Coins are our park's loyalty currency! 💰 You can earn them by playing our Spin Wheel on the website. Your coins accumulate directly in your account and you can save them up for huge discounts!";
+      } 
+      else if (lower.includes('claim') || lower.includes('discount') || lower.includes('redeem')) {
+        reply = "You can redeem your SPAR Coins during online booking! Every 10,000 coins gives you a 10% discount (up to 90%). ❗ Important Rule: The discount applies to ONLY ONE ticket in your entire booking. The remaining tickets are charged at full price.";
+      }
+      else if (lower.includes('free ticket') || lower.includes('game') || lower.includes('flappy') || lower.includes('play')) {
+        reply = "There are two ways to get a FREE pass! 🎟️\n\n1. Play 'SPACE RANGER FLIGHT'. Score 100 points to win instantly! (You get 3 attempts per day, and difficulty scales wildly every 10 points!).\n2. Redeem 100,000 SPAR Coins at checkout. ❗ Remember: The free pass applies to exactly 1 ticket, even if you are booking for a large group.";
+      }
+      else if (lower.includes('book') || lower.includes('pay') || lower.includes('ticket') || lower.includes('qr') || lower.includes('upi')) {
+        reply = "Booking a ticket is super fast:\n1. Choose your park & date.\n2. Review your bill & add SPAR Coin discounts.\n3. Scan the secure GPay/UPI QR code & pay.\n4. Enter the 12-digit UTR.\n\nYour confirmed ticket will be sent securely via WhatsApp!";
+      }
+      else if (lower.includes('whatsapp') || lower.includes('human') || lower.includes('agent') || lower.includes('failed') || lower.includes('issue')) {
+         reply = "For account specific issues, failed payments, or speaking to a human agent, please securely message our dedicated WhatsApp Customer Support: +91 9876543210. They can resolve complex issues instantly!";
+      }
+      else {
+        reply = "I'm just a space ranger and that query is a little too complex for me! 😅 For account issues or advanced questions, please contact our human team directly via WhatsApp support.";
       }
 
-      setStep(nextStep);
-      const newBotMessage = { id: messages.length + 2, text: botResponse, sender: 'bot' };
+      const newBotMessage = { id: Date.now() + 1, text: reply, sender: 'bot' };
       setMessages(prev => [...prev, newBotMessage]);
-      speakText(botResponse);
+      speakText(reply);
       setIsTyping(false);
-      setInputValue('');
-    }, 1000);
+    }, 800);
   };
 
   const handleRatingSubmit = (stars) => {
     setRating(stars);
     setHasRated(true);
-    const ratingMsg = `Mission rated ${stars} Stars! Thank you for the feedback, Ranger! 🌟`;
+    const ratingMsg = `Experience rated ${stars} Stars! Thank you for the feedback! 🌟`;
     setMessages(prev => [...prev, { id: Date.now(), text: ratingMsg, sender: 'bot' }]);
     speakText(ratingMsg);
-    setTimeout(() => {
-      setStep('GREETING'); // Reset back to normal chat mode after rating
-    }, 2000);
   };
 
   return (
     <div className={`chatbot-wrapper ${isOpen ? 'open' : ''}`}>
-      {/* Celebration Overlay */}
-      {isCelebration && (
-        <div className="mission-celebration">
-          <div className="celebration-content">
-            <h1 className="mission-title">MISSION SUCCESS!</h1>
-            <p className="mission-sub">Energy Credits Received. To Infinity & Beyond! 🚀</p>
-            <div className="confetti-particles">
-              {[...Array(20)].map((_, i) => <div key={i} className={`particle p${i}`}></div>)}
-            </div>
-          </div>
-        </div>
-      )}
+
       {!isOpen && (
         <div className={`chatbot-toggle-wrapper ${showShoutout && !isOpen ? 'has-shoutout' : ''}`}>
           {showShoutout && !isOpen && (
@@ -201,8 +139,8 @@ const ChatBot = () => {
                 <span className="shoutout-name">Buzz Lightyear</span>
               </div>
               <div className="shoutout-text">
-                📞 Mission Frequency Active!<br />
-                Ready to book your adventure?
+                👋 Need help with SPAR Coins?<br />
+                Ask me about games & discounts!
               </div>
               <div className="shoutout-footer">
                 <span>🟢 Online</span> · Tap to reply
@@ -237,7 +175,7 @@ const ChatBot = () => {
               </div>
               <div>
                 <h3>Buzz Lightyear</h3>
-                <p>Space Ranger Assistant</p>
+                <p>Park Assistant</p>
               </div>
             </div>
             <button className="close-btn" onClick={() => setIsOpen(false)}>
@@ -266,7 +204,7 @@ const ChatBot = () => {
           <div style={{borderTop: '1px solid rgba(255,255,255,0.1)'}}>
             {step === 'COMPLETE' && !hasRated ? (
               <div style={{padding: '16px', textAlign: 'center', background: '#0F111A'}}>
-                <p style={{fontSize: '0.75rem', fontWeight: 'bold', color: '#fff', opacity: 0.8, marginBottom: '12px', letterSpacing: '1px'}}>RATE YOUR MISSION EXPERIENCE ⭐</p>
+                <p style={{fontSize: '0.75rem', fontWeight: 'bold', color: '#fff', opacity: 0.8, marginBottom: '12px', letterSpacing: '1px'}}>RATE YOUR EXPERIENCE ⭐</p>
                 <div style={{display: 'flex', justifyContent: 'center', gap: '8px'}}>
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button 
