@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, Phone, User as UserIcon, ArrowRight, ShieldCheck, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 import './AuthModal.css';
 
-const SKIN_COLORS = ['f2d3b1', 'f3b63a', 'd9915b', 'c29068', '9a583e', '5c3427'];
-const HAIR_BOY = ['short01', 'short05', 'short06', 'bald', 'dreads01'];
-const HAIR_GIRL = ['long01', 'long04', 'pigtails', 'bob', 'bun', 'curly01'];
-const GLASSES = ['none', 'glasses', 'sunglasses'];
-const BEARDS = ['none', 'variant01', 'variant02', 'variant03', 'variant08'];
+const SKIN_COLORS = ['edb98a', 'd08b5b', '614335', 'ffeacb', 'f8d25c', 'fd9841'];
+const HAIR_BOY = ['shortFlat', 'shortRound', 'shortWaved', 'sides', 'theCaesar'];
+const HAIR_GIRL = ['straight01', 'curly', 'miaWallace', 'bob', 'bun'];
+const GLASSES = ['none', 'prescription01', 'prescription02', 'round', 'sunglasses'];
+const BEARDS = ['none', 'beardLight', 'beardMedium', 'beardMajestic', 'moustacheFancy', 'moustacheMagnum'];
+const EYES = ['default', 'happy', 'hearts', 'wink', 'surprised', 'cry'];
+const MOUTHS = ['default', 'smile', 'serious', 'sad', 'grimace'];
 
 const AuthModal = () => {
-  const { isAuthModalOpen, closeAuthModal, loginUser, registerUser, loginGoogleMock, setShouldOpenProfile } = useAuth();
+  const { isAuthModalOpen, closeAuthModal, loginUser, registerUser, loginGoogle, updateAvatar, setShouldOpenProfile } = useAuth();
   
   const [tab, setTab] = useState('signup'); // Default to 'signup' as requested
   const [authStep, setAuthStep] = useState('form'); // 'form', 'avatar', 'success'
+  const [isGoogleSignupFlow, setIsGoogleSignupFlow] = useState(false);
   
   // Form State
   const [firstName, setFirstName] = useState('');
@@ -27,30 +31,51 @@ const AuthModal = () => {
   const [hairIdx, setHairIdx] = useState(0);
   const [glassIdx, setGlassIdx] = useState(0);
   const [beardIdx, setBeardIdx] = useState(0);
+  const [eyeIdx, setEyeIdx] = useState(0);
+  const [mouthIdx, setMouthIdx] = useState(0);
 
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleGoogleSignIn = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      try {
+        const data = await loginGoogle(tokenResponse.access_token);
+        if (data && data.isNewUser) {
+           setIsGoogleSignupFlow(true);
+           setAuthStep('avatar');
+        } else {
+           setAuthStep('success');
+           setShouldOpenProfile(true); 
+           setTimeout(() => resetState(), 1500);
+        }
+      } catch (err) {
+        setErrorMsg(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => setErrorMsg("Google login was cancelled.")
+  });
 
   if (!isAuthModalOpen) return null;
 
   const getAvatarUrl = () => {
     const hairArr = gender === 'boy' ? HAIR_BOY : HAIR_GIRL;
-    let url = `https://api.dicebear.com/7.x/adventurer/svg?seed=${email || 'Cadet'}`;
+    let url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${email || 'Cadet'}`;
     url += `&skinColor=${SKIN_COLORS[skinIdx]}`;
-    url += `&hair=${hairArr[hairIdx]}`;
+    url += `&top=${hairArr[hairIdx]}`;
+    url += `&eyes=${EYES[eyeIdx]}&mouth=${MOUTHS[mouthIdx]}`;
     
-    if (GLASSES[glassIdx] === 'none') {
-      url += `&accessoriesProbability=0`;
-    } else {
+    if (GLASSES[glassIdx] !== 'none') {
       url += `&accessoriesProbability=100&accessories=${GLASSES[glassIdx]}`;
+    } else {
+      url += `&accessoriesProbability=0`;
     }
     
-    if (gender === 'boy') {
-      if (BEARDS[beardIdx] === 'none') {
-        url += `&facialHairProbability=0`;
-      } else {
-        url += `&facialHairProbability=100&facialHair=${BEARDS[beardIdx]}`;
-      }
+    if (gender === 'boy' && BEARDS[beardIdx] !== 'none') {
+      url += `&facialHairProbability=100&facialHair=${BEARDS[beardIdx]}`;
     } else {
       url += `&facialHairProbability=0`;
     }
@@ -65,8 +90,7 @@ const AuthModal = () => {
     if (tab === 'login') {
       setIsLoading(true);
       try {
-        await new Promise(r => setTimeout(r, 800));
-        loginUser(email, password);
+        await loginUser(email, password);
         setAuthStep('success');
         setShouldOpenProfile(true); 
         setTimeout(() => resetState(), 1500);
@@ -76,25 +100,18 @@ const AuthModal = () => {
         setIsLoading(false);
       }
     } else {
-      // Check if email already exists before moving to avatar
-      try {
-        const users = JSON.parse(localStorage.getItem('spar_db_users') || '[]');
-        if (users.find(u => u.email === email)) {
-          setErrorMsg("Account exists! Switch to LOGIN to enter.");
-          return;
-        }
-        setAuthStep('avatar');
-      } catch (err) {
-        setAuthStep('avatar');
-      }
+      setAuthStep('avatar');
     }
   };
 
   const handleFinalizeRegistration = async () => {
     setIsLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 1200));
-      registerUser(firstName, email, phone, password, getAvatarUrl());
+      if (isGoogleSignupFlow) {
+         await updateAvatar(getAvatarUrl(), phone);
+      } else {
+         await registerUser(firstName, email, phone, password, getAvatarUrl());
+      }
       setAuthStep('success');
       setShouldOpenProfile(true); 
       setTimeout(() => resetState(), 1500);
@@ -106,22 +123,10 @@ const AuthModal = () => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setAuthStep('success');
-      setShouldOpenProfile(true);
-      setTimeout(() => {
-        loginGoogleMock();
-        resetState();
-      }, 1500);
-    }, 1200);
-  };
-
   const resetState = () => {
     setTab('login');
     setAuthStep('form');
+    setIsGoogleSignupFlow(false);
     setFirstName('');
     setEmail('');
     setPhone('');
@@ -131,6 +136,8 @@ const AuthModal = () => {
     setHairIdx(0);
     setGlassIdx(0);
     setBeardIdx(0);
+    setEyeIdx(0);
+    setMouthIdx(0);
     setGender('boy');
   };
 
@@ -228,6 +235,24 @@ const AuthModal = () => {
                   </div>
                 </div>
 
+                <div className="builder-row">
+                  <span className="builder-label">EYES</span>
+                  <div className="builder-toggles">
+                    <button onClick={() => cycleArrBack(eyeIdx, setEyeIdx, EYES, EYES.length-1)}><ChevronLeft size={16}/></button>
+                    <span className="builder-val">{EYES[eyeIdx].toUpperCase()}</span>
+                    <button onClick={() => cycleArr(eyeIdx, setEyeIdx, EYES, EYES.length-1)}><ChevronRight size={16}/></button>
+                  </div>
+                </div>
+
+                <div className="builder-row">
+                  <span className="builder-label">MOUTH</span>
+                  <div className="builder-toggles">
+                    <button onClick={() => cycleArrBack(mouthIdx, setMouthIdx, MOUTHS, MOUTHS.length-1)}><ChevronLeft size={16}/></button>
+                    <span className="builder-val">{MOUTHS[mouthIdx].toUpperCase()}</span>
+                    <button onClick={() => cycleArr(mouthIdx, setMouthIdx, MOUTHS, MOUTHS.length-1)}><ChevronRight size={16}/></button>
+                  </div>
+                </div>
+
                 {gender === 'boy' && (
                   <div className="builder-row">
                     <span className="builder-label">BEARD</span>
@@ -238,12 +263,27 @@ const AuthModal = () => {
                     </div>
                   </div>
                 )}
+
+                {isGoogleSignupFlow && (
+                  <div className="builder-row google-extra-fields" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
+                    <span className="builder-label" style={{ textAlign: 'left', opacity: 0.8 }}>Add Phone Number (Required for Bookings)</span>
+                    <input 
+                      type="tel" 
+                      className="modern-input" 
+                      placeholder="Enter Phone Number..."
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px' }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 mt-6 builder-actions">
                 <button className="builder-nav-btn glass-morphism" onClick={() => setAuthStep('form')}>BACK</button>
-                <button className="btn-primary builder-finish-btn" onClick={handleFinalizeRegistration} disabled={isLoading}>
-                  {isLoading ? <div className="spinner"></div> : <><CheckCircle2 size={18}/> FINALIZE REGISTRATION</>}
+                <button className="builder-nav-btn glass-morphism" style={{opacity: 0.7}} onClick={handleFinalizeRegistration} disabled={isLoading}>SKIP</button>
+                <button className="btn-primary builder-finish-btn flex-1 shrink-0" onClick={handleFinalizeRegistration} disabled={isLoading}>
+                  {isLoading ? <div className="spinner"></div> : <><CheckCircle2 size={18}/> FINALIZE</>}
                 </button>
               </div>
            </div>

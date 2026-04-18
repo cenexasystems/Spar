@@ -62,7 +62,7 @@ const Navbar = ({ onOpenSupport, onOpenProfile, onOpenGame, isAdmin }) => {
             </>
           ) : (
             <div className="admin-breadcrumb-text">
-              MISSION CONTROL / <span className="highlight-text-lime">OPERATIONS CENTER</span>
+              ADMIN PANEL / <span className="highlight-text-lime">OPERATIONS CENTER</span>
             </div>
           )}
         </div>
@@ -74,7 +74,7 @@ const Navbar = ({ onOpenSupport, onOpenProfile, onOpenGame, isAdmin }) => {
                 <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Admin" alt="Admin" />
               </div>
               <div className="commander-stats">
-                <span className="rank-label">COMMANDER</span>
+                <span className="rank-label">ADMIN</span>
                 <span className="status-badge"><span className="pulse-indicator"></span> ONLINE</span>
               </div>
             </div>

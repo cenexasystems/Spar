@@ -24,7 +24,6 @@ main, section, .hero-container, .parks-section, .reviews-section, .flappy-game-s
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  cursor: none !important;
 }
 
 html, body {
@@ -33,7 +32,6 @@ html, body {
   color: var(--text-main);
   font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
-  cursor: none !important;
   scroll-behavior: smooth;
 }
 

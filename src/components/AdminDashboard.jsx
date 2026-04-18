@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
 import { 
   Users, 
   BarChart3, 
@@ -11,9 +10,13 @@ import {
   ArrowLeft,
   Search,
   Save,
-  RotateCcw
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
+import axios from 'axios';
 import './AdminDashboard.css';
+
+const API_URL = 'http://localhost:5000/api';
 
 const AdminDashboard = ({ onBack }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -37,10 +40,22 @@ const AdminDashboard = ({ onBack }) => {
 
   const adminPassword = "admin123"; // Simple command code
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (password === adminPassword) {
-      setIsAuthenticated(true);
+      const storedUser = localStorage.getItem('spar_session');
+      if (!storedUser) return alert("PLEASE LOGIN AS A REGULAR USER FIRST!");
+      
+      const token = JSON.parse(storedUser).token;
+      
+      try {
+        await axios.post(`${API_URL}/auth/promote-admin`, { code: password }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsAuthenticated(true);
+      } catch (err) {
+        alert("BACKEND AUTHORIZATION FAILED: " + (err.response?.data?.message || err.message));
+      }
     } else {
       alert("INCORRECT COMMAND CODE! ACCESS DENIED.");
     }
@@ -48,41 +63,49 @@ const AdminDashboard = ({ onBack }) => {
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(() => {
+      fetchData();
+    }, 10000); // Poll every 10 seconds for real-time updates
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     setLoading(true);
+    const storedUser = localStorage.getItem('spar_session');
+    if (!storedUser) return;
+    const token = JSON.parse(storedUser).token;
+
     try {
-      const { data: bData } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
-      const { data: uData } = await supabase.from('users').select('*');
-      const { data: pData } = await supabase.from('parks').select('*');
+      const { data } = await axios.get(`${API_URL}/admin/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      setBookings(bData || []);
-      setUsers(uData || []);
+      setBookings(data.bookings || []);
+      setUsers(data.users || []);
       
-      // If Supabase is empty, show the full list of 5 mission presets from the frontend
-      const fallbackParks = [
+      // Filter for active missions only if needed, otherwise use preset if empty
+      setParks(data.parks && data.parks.length > 0 ? data.parks : [
         { id: 1, name: "VGP UNIVERSAL KINGDOM", location: "Chennai, Tamil Nadu", price: "1200", image: "/vgp-image.jpg", desc: "India's first and largest amusement park with over 45 thrilling rides and a private beach." },
         { id: 2, name: "MGM DIZZEE WORLD", location: "Chennai, Tamil Nadu", price: "1000", image: "/mgm-image.jpg", desc: "The Pioneer of entertainment, offering world-class rides and a unique forest-themed water park." },
         { id: 3, name: "QUEENS LAND", location: "Poonamallee, Chennai", price: "850", image: "/queensland_final.png", desc: "An expansive theme park featuring 51 rides, including an enormous cable car and wave pool." },
         { id: 4, name: "BLACK THUNDER", location: "Mettupalayam, Coimbatore", price: "950", image: "/black_thunder_final.jpg", desc: "Asia's No.1 water theme park with the majestic Nilgiris as a backdrop and extreme water slides." },
         { id: 5, name: "WONDERLA", location: "Bengaluru, Karnataka", price: "1500", image: "/wonderla_final.jpg", desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks." }
-      ];
-
-      setParks(pData && pData.length > 0 ? pData : fallbackParks);
+      ]);
     } catch (err) {
       console.error("Data Fetch Error:", err);
     }
     setLoading(false);
   };
 
-  const totalRevenue = bookings.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
+  const totalRevenue = bookings.reduce((sum, b) => sum + (Number(b.totalAmount) || Number(b.total_amount) || 0), 0);
 
   const handleAddPark = async (e) => {
     e.preventDefault();
+    const token = JSON.parse(localStorage.getItem('spar_session')).token;
     try {
-      const { error } = await supabase.from('parks').insert([newPark]);
-      if (error) throw error;
+      await axios.post(`${API_URL}/admin/parks`, newPark, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       setIsAddingPark(false);
       setNewPark({
@@ -96,7 +119,7 @@ const AdminDashboard = ({ onBack }) => {
       });
       fetchData();
     } catch (err) {
-      alert("Addition Failed: " + err.message);
+      alert("Addition Failed: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -104,24 +127,28 @@ const AdminDashboard = ({ onBack }) => {
     e.preventDefault();
     if (!editingPark) return;
     
+    const token = JSON.parse(localStorage.getItem('spar_session')).token;
     try {
-      const { error } = await supabase
-        .from('parks')
-        .update({
-          price: editingPark.price,
-          location: editingPark.location,
-          name: editingPark.name,
-          desc: editingPark.desc,
-          image: editingPark.image,
-          tickets_available: editingPark.tickets_available
-        })
-        .eq('id', editingPark.id);
-
-      if (error) throw error;
+      await axios.put(`${API_URL}/admin/parks/${editingPark._id || editingPark.id}`, editingPark, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setEditingPark(null);
       fetchData();
     } catch (err) {
-      alert("Update Failed: " + err.message);
+      alert("Update Failed: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDeletePark = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this park?")) return;
+    const token = JSON.parse(localStorage.getItem('spar_session')).token;
+    try {
+      await axios.delete(`${API_URL}/admin/parks/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      alert("Delete Failed: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -136,8 +163,8 @@ const AdminDashboard = ({ onBack }) => {
           <div className="login-icon-wrap">
             <RotateCcw className="spinning-icon" size={40} />
           </div>
-          <h2>SPACE COMMAND LOGIN</h2>
-          <p>Enter your authorization code to access Mission Control.</p>
+          <h2>ADMIN LOGIN</h2>
+          <p>Enter your authorization code to access the admin panel.</p>
           <form onSubmit={handleLogin}>
             <input 
               type="password" 
@@ -160,11 +187,11 @@ const AdminDashboard = ({ onBack }) => {
     <div className="admin-dashboard-container animate-fade-in">
       <div className="admin-header">
         <button className="back-btn-neon" onClick={onBack}>
-          <ArrowLeft size={18} /> BACK TO MISSIONS
+          <ArrowLeft size={18} /> BACK TO HOME
         </button>
         <div className="admin-title-wrap">
-          <h1 className="admin-title">SPACE COMMAND <span className="title-version">v2.0</span></h1>
-          <p className="admin-subtitle">Mission Oversight & Operations Center</p>
+          <h1 className="admin-title">ADMIN DASHBOARD <span className="title-version">v2.0</span></h1>
+          <p className="admin-subtitle">Park Oversight & Operations Center</p>
         </div>
       </div>
 
@@ -173,10 +200,10 @@ const AdminDashboard = ({ onBack }) => {
           <TrendingUp size={16} /> STATISTICS
         </button>
         <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-          <Users size={16} /> CADETS
+          <Users size={16} /> USERS
         </button>
         <button className={`tab-btn ${activeTab === 'bookings' ? 'active' : ''}`} onClick={() => setActiveTab('bookings')}>
-          <Ticket size={16} /> MISSION LOGS
+          <Ticket size={16} /> BOOKING LOGS
         </button>
         <button className={`tab-btn ${activeTab === 'parks' ? 'active' : ''}`} onClick={() => setActiveTab('parks')}>
           <MapPin size={16} /> PARK MANAGEMENT
@@ -196,14 +223,14 @@ const AdminDashboard = ({ onBack }) => {
             <div className="stat-card users-glow">
               <Users className="stat-icon" />
               <div className="stat-info">
-                <p>TOTAL CADETS</p>
+                <p>TOTAL USERS</p>
                 <h3>{users.length}</h3>
               </div>
             </div>
             <div className="stat-card flight-glow">
               <Ticket className="stat-icon" />
               <div className="stat-info">
-                <p>MISSIONS BOOKED</p>
+                <p>BOOKINGS COMPLETED</p>
                 <h3>{bookings.length}</h3>
               </div>
             </div>
@@ -215,7 +242,7 @@ const AdminDashboard = ({ onBack }) => {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>CADET NAME</th>
+                  <th>USER NAME</th>
                   <th>EMAIL</th>
                   <th>PHONE</th>
                   <th>SPAR COINS</th>
@@ -223,14 +250,14 @@ const AdminDashboard = ({ onBack }) => {
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id}>
+                  <tr key={u._id || u.id}>
                     <td className="cadet-name-cell">
                       <img src={u.avatar || 'https://api.dicebear.com/7.x/adventurer/svg?seed=' + u.email} alt="avatar" />
                       {u.name}
                     </td>
                     <td>{u.email}</td>
                     <td>{u.phone || 'N/A'}</td>
-                    <td className="coin-text">{u.spar_coins || 0} SC</td>
+                    <td className="coin-text">{u.sparCoins || u.spar_coins || 0} SC</td>
                   </tr>
                 ))}
               </tbody>
@@ -244,7 +271,7 @@ const AdminDashboard = ({ onBack }) => {
               <thead>
                 <tr>
                   <th>DATE</th>
-                  <th>CADET</th>
+                  <th>USER</th>
                   <th>PARK</th>
                   <th>TICKETS</th>
                   <th>AMOUNT</th>
@@ -253,13 +280,13 @@ const AdminDashboard = ({ onBack }) => {
               </thead>
               <tbody>
                 {bookings.map(b => (
-                  <tr key={b.id}>
-                    <td className="text-xs">{new Date(b.created_at || b.date).toLocaleDateString()}</td>
-                    <td>{b.cadet_name}</td>
-                    <td><span className="park-tag">{b.park_name}</span></td>
+                  <tr key={b._id || b.id}>
+                    <td className="text-xs">{new Date(b.createdAt || b.created_at || b.date).toLocaleDateString()}</td>
+                    <td>{b.userName || (b.user && b.user.name) || b.cadet_name || 'Unknown'}</td>
+                    <td><span className="park-tag">{b.parkName || b.park_name}</span></td>
                     <td>{b.tickets}</td>
-                    <td className="amount-text">₹{b.total_amount}</td>
-                    <td>{b.payment_method}</td>
+                    <td className="amount-text">₹{b.totalAmount || b.total_amount}</td>
+                    <td>{b.paymentMethod || b.payment_method}</td>
                   </tr>
                 ))}
               </tbody>
@@ -271,26 +298,31 @@ const AdminDashboard = ({ onBack }) => {
           <div className="park-mgmt-wrap animate-fade-in">
             <div className="park-mgmt-header mb-8 flex justify-between items-center">
               <div className="mgmt-title-block">
-                <h3 className="text-xl font-bold text-white-shimmer-rtl">MISSION OPERATIONS</h3>
+                <h3 className="text-xl font-bold text-white-shimmer-rtl">PARK OPERATIONS</h3>
                 <p className="text-xs text-slate-400 mt-1">Manage active amusement park offers and pricing.</p>
               </div>
               <button className="btn-add-mission" onClick={() => setIsAddingPark(true)}>
-                <Save size={18} /> ADD NEW MISSION
+                <Save size={18} /> ADD NEW PARK
               </button>
             </div>
 
             <div className="parks-list-grid">
               {parks.map(p => (
-                <div key={p.id} className="park-mgmt-card">
+                <div key={p._id || p.id} className="park-mgmt-card">
                   <img src={p.image} alt={p.name} className="park-thumb" />
                   <div className="park-details">
                     <h4>{p.name}</h4>
                     <p><MapPin size={12} /> {p.location}</p>
                     <p className="price-tag">₹{p.price}</p>
                   </div>
-                  <button className="edit-icon-btn" onClick={() => setEditingPark(p)}>
-                    <Edit3 size={18} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="edit-icon-btn" onClick={() => setEditingPark(p)} style={{ color: '#00D1FF' }}>
+                      <Edit3 size={18} />
+                    </button>
+                    <button className="edit-icon-btn" onClick={() => handleDeletePark(p._id || p.id)} style={{ color: '#FF6B6B' }}>
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -298,7 +330,7 @@ const AdminDashboard = ({ onBack }) => {
             {editingPark && (
               <div className="edit-modal-overlay">
                 <div className="edit-panel glass-morphism">
-                  <h3>EDIT MISSION OFFER</h3>
+                  <h3>EDIT PARK OFFER</h3>
                   <form onSubmit={handleUpdatePark}>
                     <div className="input-group">
                       <label>PARK NAME</label>
@@ -360,7 +392,7 @@ const AdminDashboard = ({ onBack }) => {
             {isAddingPark && (
               <div className="edit-modal-overlay">
                 <div className="edit-panel glass-morphism">
-                  <h3>ADD NEW MISSION</h3>
+                  <h3>ADD NEW PARK</h3>
                   <form onSubmit={handleAddPark}>
                     <div className="input-group">
                       <label>PARK NAME</label>
@@ -405,7 +437,7 @@ const AdminDashboard = ({ onBack }) => {
                       <label>DESCRIPTION</label>
                       <input 
                         type="text" 
-                        placeholder="Short tagline for the mission..."
+                        placeholder="Short tagline for the park..."
                         value={newPark.desc} 
                         onChange={(e) => setNewPark({...newPark, desc: e.target.value})} 
                       />
@@ -421,7 +453,7 @@ const AdminDashboard = ({ onBack }) => {
                     </div>
                     <div className="edit-actions">
                       <button type="button" className="btn-cancel" onClick={() => setIsAddingPark(false)}>CANCEL</button>
-                      <button type="submit" className="btn-save"><Save size={16} /> DEPLOY MISSION</button>
+                      <button type="submit" className="btn-save"><Save size={16} /> PUBLISH PARK</button>
                     </div>
                   </form>
                 </div>

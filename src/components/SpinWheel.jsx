@@ -13,21 +13,22 @@ const parks = [
 ];
 
 const SECTIONS = [
-  { label: '500', color: '#FF00E6', value: 500, type: 'coins' },
-  { label: '1000', color: '#BF00FF', value: 1000, type: 'coins' },
-  { label: '0', color: '#1e293b', value: 0, type: 'miss' },
-  { label: '2000', color: '#00D1FF', value: 2000, type: 'coins' },
-  { label: '500', color: '#FFB600', value: 500, type: 'coins' },
-  { label: 'GOLDEN TICKET', color: '#C7FF00', value: 1, type: 'ticket' },
-  { label: '100', color: '#00FF88', value: 100, type: 'coins' },
-  { label: '0', color: '#1e293b', value: 0, type: 'miss' }
+  { label: 'TRY AGAIN', color: '#1e293b', value: 0, type: 'miss' },
+  { label: '10', color: '#FF00E6', value: 10, type: 'coins' },
+  { label: '20', color: '#00D1FF', value: 20, type: 'coins' },
+  { label: 'TRY AGAIN', color: '#1e293b', value: 0, type: 'miss' },
+  { label: '30', color: '#FFB600', value: 30, type: 'coins' },
+  { label: '40', color: '#00FF88', value: 40, type: 'coins' },
+  { label: 'TRY AGAIN', color: '#1e293b', value: 0, type: 'miss' },
+  { label: '50', color: '#C7FF00', value: 50, type: 'coins' },
 ];
 
 const SpinWheel = ({ isOpen, onClose }) => {
-  const { user, addCoins, addBooking, interceptAuth } = useAuth();
+  const { user, interceptAuth, spinWheelRequest, syncUser } = useAuth();
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [prize, setPrize] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
   const [step, setStep] = useState('spin'); // spin, select-park, select-date, success
   const [selectedPark, setSelectedPark] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
@@ -37,34 +38,47 @@ const SpinWheel = ({ isOpen, onClose }) => {
   const handleSpin = () => {
     if (isSpinning) return;
     
-    interceptAuth(() => {
-      setIsSpinning(true);
-      setPrize(null);
-      
-      const extraDegrees = Math.floor(Math.random() * 360);
-      const totalRotation = rotation + (360 * (5 + Math.floor(Math.random() * 5))) + extraDegrees;
-      
-      setRotation(totalRotation);
-      
-      setTimeout(() => {
+    interceptAuth(async () => {
+      try {
+        setIsSpinning(true);
+        setPrize(null);
+        setErrorMsg('');
+        
+        const { prizeCoins, updatedUser } = await spinWheelRequest();
+        
+        const possibleIndices = SECTIONS.map((s, i) => s.value === prizeCoins ? i : -1).filter(i => i !== -1);
+        const targetIndex = possibleIndices[Math.floor(Math.random() * possibleIndices.length)];
+        
+        const degreesPerSection = 360 / SECTIONS.length;
+        const targetMod = 360 - (targetIndex * degreesPerSection);
+        const offset = (Math.random() * 0.6 - 0.3) * degreesPerSection;
+        
+        const currentMod = rotation % 360;
+        let diff = targetMod - currentMod + offset;
+        if (diff < 0) diff += 360;
+        
+        const extraSpins = 5 + Math.floor(Math.random() * 3);
+        const totalRotation = rotation + (360 * extraSpins) + diff;
+        
+        setRotation(totalRotation);
+        
+        setTimeout(() => {
+          setIsSpinning(false);
+          setPrize(SECTIONS[targetIndex]);
+          syncUser(updatedUser);
+          
+          if (prizeCoins > 0) {
+            confetti({
+              particleCount: 200,
+              spread: 100,
+              colors: ['#C7FF00', '#BF00FF', '#00D1FF', '#FF0055']
+            });
+          }
+        }, 5000);
+      } catch (err) {
         setIsSpinning(false);
-        const actualDegrees = totalRotation % 360;
-        const sectionIndex = Math.floor(((360 - actualDegrees + (360/SECTIONS.length/2)) % 360) / (360 / SECTIONS.length));
-        const result = SECTIONS[sectionIndex];
-        
-        setPrize(result);
-        
-        if (result.type === 'coins') {
-          addCoins(result.value);
-        } else if (result.type === 'ticket') {
-          confetti({
-            particleCount: 200,
-            spread: 100,
-            origin: { y: 0.5 },
-            colors: ['#C7FF00', '#BF00FF', '#00D1FF', '#FF0055']
-          });
-        }
-      }, 5000);
+        setErrorMsg(err.message);
+      }
     });
   };
 
@@ -208,12 +222,14 @@ const SpinWheel = ({ isOpen, onClose }) => {
               {prize !== null && (
                 <div id="win-announcement">
                   <div className="win-text">
-                    {prize.type === 'coins' ? `+${prize.value} COINS!` : 
-                     prize.type === 'ticket' ? 'GOLDEN TICKET!' : 'BETTER LUCK NEXT TIME!'}
+                    {prize.value > 0 ? `+${prize.value} COINS!` : 'BETTER LUCK NEXT TIME!'}
                   </div>
+                  {prize.value > 0 && <div className="win-subtext" style={{color: 'white', fontWeight: 900, textShadow: '0 2px 4px black', fontSize: '1.2rem', marginTop: '10px'}}>COLLECT 10K COINS FOR 10% DISCOUNT!</div>}
                 </div>
               )}
             </div>
+
+            {errorMsg && <p className="text-[#FF0055] font-bold text-center mb-4">{errorMsg}</p>}
 
             <div className="spin-wheel-controls">
               <div className="spar-coins-display">
@@ -222,31 +238,20 @@ const SpinWheel = ({ isOpen, onClose }) => {
                 <span className="coins-label">SPAR COINS</span>
               </div>
 
-              {(prize?.type === 'ticket' || user?.sparCoins >= 100000) ? (
-                <div className="claim-ticket-banner pop-in">
-                  <div className="flex items-center gap-2 justify-center font-bold">
-                    <Ticket size={24} />
-                    <span>{prize?.type === 'ticket' ? 'INSTANT WIN!' : 'MILESTONE REACHED!'}</span>
-                  </div>
-                  <p className="text-sm opacity-90">Prepare for departure! Your free mission ticket is ready.</p>
-                  <button className="btn-claim" onClick={handleClaim}>CLAIM YOUR TICKET NOW</button>
-                </div>
-              ) : (
-                <button 
-                  className="btn-spin-start" 
-                  onClick={prize ? resetWheel : handleSpin}
-                  disabled={isSpinning}
-                >
-                  {isSpinning ? 'SPINNING...' : prize ? 'TAP TO SPIN AGAIN' : 'TAP TO SPIN'}
-                </button>
-              )}
+              <button 
+                className="btn-spin-start" 
+                onClick={handleSpin}
+                disabled={isSpinning || prize !== null}
+              >
+                {isSpinning ? 'SPINNING...' : prize ? 'COME BACK TOMORROW!' : 'TAP TO SPIN'}
+              </button>
             </div>
           </>
         )}
 
         {step === 'select-park' && (
           <div className="selection-step pop-in">
-            <h3>SELECT MISSION SITE</h3>
+            <h3>SELECT PARK SITE</h3>
             <div className="park-select-grid">
               {parks.map(park => (
                 <div 
@@ -272,7 +277,7 @@ const SpinWheel = ({ isOpen, onClose }) => {
 
         {step === 'select-date' && (
           <div className="selection-step pop-in">
-            <h3>PICK YOUR MISSION DATE</h3>
+            <h3>PICK YOUR VISIT DATE</h3>
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3 text-white mb-2">
                 <Calendar size={20} color="#C7FF00" />
@@ -311,7 +316,7 @@ const SpinWheel = ({ isOpen, onClose }) => {
                 <Ticket size={40} color="#C7FF00" className="ticket-badge-icon" />
               </div>
               <div className="card-body">
-                <h2 className="victory-title text-white-shimmer-rtl">MISSION READY!</h2>
+                <h2 className="victory-title text-white-shimmer-rtl">TICKET READY!</h2>
                 <div className="victory-divider"></div>
                 <div className="mission-info">
                    <div className="info-row">
