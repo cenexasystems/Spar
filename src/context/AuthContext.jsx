@@ -34,6 +34,11 @@ export const AuthProvider = ({ children }) => {
             headers: { Authorization: `Bearer ${parsedUser.token}` }
           });
 
+          const bookingsRes = await axios.get(`${API_URL}/bookings`, {
+            headers: { Authorization: `Bearer ${parsedUser.token}` }
+          });
+          data.bookings = bookingsRes.data;
+
           setUser({ ...data, token: parsedUser.token });
           localStorage.setItem('spar_session', JSON.stringify({ ...data, token: parsedUser.token }));
         }
@@ -69,6 +74,7 @@ export const AuthProvider = ({ children }) => {
         password,
         avatar: avatarUrl
       });
+      data.bookings = [];
       _finalizeAuth(data);
       return data;
     } catch (error) {
@@ -79,6 +85,10 @@ export const AuthProvider = ({ children }) => {
   const loginUser = async (email, password) => {
     try {
       const { data } = await axios.post(`${API_URL}/auth/login`, { email, password });
+      const bookingsRes = await axios.get(`${API_URL}/bookings`, {
+        headers: { Authorization: `Bearer ${data.token}` }
+      });
+      data.bookings = bookingsRes.data;
       _finalizeAuth(data);
       return data;
     } catch (error) {
@@ -90,10 +100,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.post(`${API_URL}/auth/google`, { access_token });
       if (data.isNewUser) {
+        data.bookings = [];
         // Temporarily store authenticated state so the next step works, but don't finalize full Auth Modal yet
         setUser(data);
         localStorage.setItem('spar_session', JSON.stringify(data));
       } else {
+        const bookingsRes = await axios.get(`${API_URL}/bookings`, {
+          headers: { Authorization: `Bearer ${data.token}` }
+        });
+        data.bookings = bookingsRes.data;
         _finalizeAuth(data);
       }
       return data;

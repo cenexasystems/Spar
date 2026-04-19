@@ -84,29 +84,29 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
               {[...user.bookings].reverse().map((ticket, idx) => (
                 <div key={idx} className="digital-wallet-ticket glass-morphism">
                   <div className="wallet-ticket-header">
-                     <span className="park-badge">{ticket.park || 'SPAR PARK'}</span>
-                     {ticket.payment === 'FREE' || !ticket.totalPrice ? (
+                     <span className="park-badge">{ticket.parkName || ticket.park || 'SPAR PARK'}</span>
+                     {ticket.paymentMethod === 'FREE' || ticket.payment === 'FREE' || !(ticket.totalAmount || ticket.totalPrice) ? (
                        <span className="price-badge free">FREE TICKET 🎉</span>
                      ) : (
-                       <span className="price-badge">₹{ticket.totalPrice}</span>
+                       <span className="price-badge">₹{ticket.totalAmount || ticket.totalPrice}</span>
                      )}
                   </div>
                   
                   <div className="wallet-ticket-body">
                      <div className="ticket-meta-row">
                        <Calendar size={14} color="#00D1FF" />
-                       {ticket.date || new Date(ticket.timestamp).toLocaleDateString()}
+                       {ticket.date || new Date(ticket.createdAt || ticket.timestamp || Date.now()).toLocaleDateString()}
                      </div>
                      <div className="ticket-meta-row">
                        <MapPin size={14} color="#00D1FF" />
-                       {ticket.timeSlot || ticket.tickets + ' Visitors'}
+                       {ticket.timeSlot || (ticket.tickets || 1) + ' Visitors'}
                      </div>
                   </div>
 
                   <div className="wallet-ticket-footer">
                      <div className="barcode-sim"></div>
                      <span className="ticket-id-tag">
-                       <Hash size={12}/> {ticket.id || ('TNX-' + Math.floor(Math.random() * 100000))}
+                       <Hash size={12}/> {ticket.bookingId || ticket.id || ('TNX-' + Math.floor(Math.random() * 100000))}
                      </span>
                   </div>
                 </div>
