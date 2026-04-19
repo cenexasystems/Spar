@@ -56,7 +56,7 @@ const CustomerReviews = () => {
     if (!newComment.trim()) return alert("Please write a small review!");
 
     setIsSubmitting(true);
-    
+
     // Simulate API delay
     setTimeout(() => {
       const reviewObj = {
@@ -81,7 +81,7 @@ const CustomerReviews = () => {
       <div className="max-width-wrapper">
         <div className="section-header">
           <p className="section-indicator">REVIEWS</p>
-          <h2 className="text-white-shimmer-rtl">WHAT VISITORS SAY</h2>
+          <h2 className="text-white-shimmer-rtl">WHAT  VISITORS  SAY</h2>
           <p className="section-subtitle">See what others are saying about their experience.</p>
         </div>
 
@@ -95,9 +95,9 @@ const CustomerReviews = () => {
                 <span className="rating-label">YOUR RATING:</span>
                 <div className="stars-interactive">
                   {[1, 2, 3, 4, 5].map(star => (
-                    <Star 
-                      key={star} 
-                      size={28} 
+                    <Star
+                      key={star}
+                      size={28}
                       className={`interactive-star ${star <= (hoverRating || newRating) ? 'active' : ''}`}
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(0)}
@@ -107,8 +107,8 @@ const CustomerReviews = () => {
                 </div>
               </div>
 
-              <textarea 
-                className="review-textarea" 
+              <textarea
+                className="review-textarea"
                 placeholder="How was the ride? Did you score a digital pass?"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -116,7 +116,7 @@ const CustomerReviews = () => {
               />
 
               <button type="submit" className="ranger-primary-btn" disabled={isSubmitting}>
-                {isSubmitting ? <div className="spinner"></div> : <><Send size={16}/> SUBMIT</>}
+                {isSubmitting ? <div className="spinner"></div> : <><Send size={16} /> SUBMIT</>}
               </button>
             </form>
           </div>
@@ -125,7 +125,7 @@ const CustomerReviews = () => {
             <div className="reviews-grid">
               <AnimatePresence mode="popLayout">
                 {reviews.slice(startIndex, startIndex + 3).map((review, idx) => (
-                  <motion.div 
+                  <motion.div
                     key={review.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -141,11 +141,11 @@ const CustomerReviews = () => {
                       </div>
                       <div className="review-stars-display">
                         {[1, 2, 3, 4, 5].map(star => (
-                          <Star 
-                            key={star} 
-                            size={14} 
-                            fill={star <= review.rating ? "#C7FF00" : "transparent"} 
-                            color={star <= review.rating ? "#C7FF00" : "#4B5563"} 
+                          <Star
+                            key={star}
+                            size={14}
+                            fill={star <= review.rating ? "#C7FF00" : "transparent"}
+                            color={star <= review.rating ? "#C7FF00" : "#4B5563"}
                           />
                         ))}
                       </div>
@@ -155,7 +155,7 @@ const CustomerReviews = () => {
                 ))}
               </AnimatePresence>
             </div>
-            
+
             {reviews.length > 3 && (
               <div className="reviews-navigation">
                 <button className="nav-arrow up" onClick={prevReviews} disabled={startIndex === 0}>

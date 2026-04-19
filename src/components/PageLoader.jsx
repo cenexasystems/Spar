@@ -10,16 +10,7 @@ const PageLoader = ({ onComplete }) => {
     // Determine loading time. If it's a manual restart, make it slightly longer for effect.
     const loadTime = isRestarting ? 2500 : 2000;
     
-    // Voice Greeting
-    const speakWelcome = () => {
-      const msg = new SpeechSynthesisUtterance("Welcome to Spar Amusements!");
-      msg.rate = 0.9; // Slightly slower for that epic space-ranger feel
-      msg.pitch = 1.1; // A bit more vibrant
-      window.speechSynthesis.cancel(); // Clear any queued speech
-      window.speechSynthesis.speak(msg);
-    };
-
-    speakWelcome();
+    // Voice greeting deactivated as per request
 
     const fadeTimer = setTimeout(() => {
       setIsFading(true);
