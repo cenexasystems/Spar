@@ -19,6 +19,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:5174',
+  'https://spar-sepia.vercel.app',
   process.env.FRONTEND_URL,   // e.g. https://your-app.vercel.app
 ].filter(Boolean);
 
