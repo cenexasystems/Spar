@@ -164,23 +164,3 @@
 @keyframes spinner {
   100% { transform: rotate(360deg); }
 }
-
-/* Chatbot Styles */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 209, 255, 0.3);
-  border-radius: 4px;
-}
-.typing-dot {
-  width: 6px;
-  height: 6px;
-  background-color: #00D1FF;
-  border-radius: 50%;
-  animation: typing 1.4s infinite ease-in-out both;
-}
-@keyframes typing {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
