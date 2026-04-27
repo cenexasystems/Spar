@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }) => {
       }
       return data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Google Auth failed');
+      throw new Error(error.response?.data?.message || error.message || 'Google Auth failed');
     }
   };
 
