@@ -89,7 +89,7 @@ const AdminDashboard = ({ onBack }) => {
         { id: 2, name: "MGM DIZZEE WORLD", location: "Chennai, Tamil Nadu", price: "1000", image: "/mgm-image.jpg", desc: "The Pioneer of entertainment, offering world-class rides and a unique forest-themed water park." },
         { id: 3, name: "QUEENS LAND", location: "Poonamallee, Chennai", price: "850", image: "/queensland_final.png", desc: "An expansive theme park featuring 51 rides, including an enormous cable car and wave pool." },
         { id: 4, name: "BLACK THUNDER", location: "Mettupalayam, Coimbatore", price: "950", image: "/black_thunder_final.jpg", desc: "Asia's No.1 water theme park with the majestic Nilgiris as a backdrop and extreme water slides." },
-        { id: 5, name: "WONDERLA", location: "Bengaluru, Karnataka", price: "1500", image: "/wonderla_final.jpg", desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks." }
+        { id: 5, name: "WONDERLA", location: "Chennai, Tamil Nadu", price: "1500", image: "/wonderla_final.jpg", desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks." }
       ]);
     } catch (err) {
       console.error("Data Fetch Error:", err);
