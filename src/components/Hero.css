@@ -87,7 +87,7 @@
 
 .hero-title {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-size: clamp(1.5rem, 3.5vw, 2.8rem);
   line-height: 1.2;
   font-weight: 400;
   margin-bottom: 24px;
