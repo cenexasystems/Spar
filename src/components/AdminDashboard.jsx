@@ -315,11 +315,11 @@ const AdminDashboard = ({ onBack }) => {
                     <p><MapPin size={12} /> {p.location}</p>
                     <p className="price-tag">₹{p.price}</p>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="edit-icon-btn" onClick={() => setEditingPark(p)} style={{ color: '#00D1FF' }}>
+                  <div style={{ display: 'flex', gap: '8px', position: 'absolute', top: '15px', right: '15px' }}>
+                    <button className="action-icon-btn edit-btn" onClick={() => setEditingPark(p)}>
                       <Edit3 size={18} />
                     </button>
-                    <button className="edit-icon-btn" onClick={() => handleDeletePark(p._id || p.id)} style={{ color: '#FF6B6B' }}>
+                    <button className="action-icon-btn delete-btn" onClick={() => handleDeletePark(p._id || p.id)}>
                       <Trash2 size={18} />
                     </button>
                   </div>

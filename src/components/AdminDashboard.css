@@ -272,13 +272,9 @@
   font-size: 1rem !important;
 }
 
-.edit-icon-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
+.action-icon-btn {
   background: rgba(255, 255, 255, 0.05);
   border: none;
-  color: #C7FF00;
   width: 35px;
   height: 35px;
   border-radius: 10px;
@@ -286,10 +282,24 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.edit-icon-btn:hover {
-  background: #C7FF00;
+.edit-btn {
+  color: #00D1FF;
+}
+
+.edit-btn:hover {
+  background: #00D1FF;
+  color: #000;
+}
+
+.delete-btn {
+  color: #FF6B6B;
+}
+
+.delete-btn:hover {
+  background: #FF6B6B;
   color: #000;
 }
 
