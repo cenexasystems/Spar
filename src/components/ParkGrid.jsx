@@ -6,6 +6,17 @@ import './ParkGrid.css';
 
 const fallbackParks = [
   {
+    id: 5,
+    name: "WONDERLA",
+    location: "Bengaluru, Karnataka",
+    rating: 4.9,
+    price: "1500",
+    adultPrice: 1500,
+    kidsPrice: 1100,
+    image: "/wonderla_final.jpg",
+    desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks."
+  },
+  {
     id: 1,
     name: "VGP UNIVERSAL KINGDOM",
     location: "Chennai, Tamil Nadu",
@@ -48,17 +59,6 @@ const fallbackParks = [
     kidsPrice: 700,
     image: "/black_thunder_final.jpg",
     desc: "Asia's No.1 water theme park with the majestic Nilgiris as a backdrop and extreme water slides."
-  },
-  {
-    id: 5,
-    name: "WONDERLA",
-    location: "Bengaluru, Karnataka",
-    rating: 4.9,
-    price: "1500",
-    adultPrice: 1500,
-    kidsPrice: 1100,
-    image: "/wonderla_final.jpg",
-    desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks."
   }
 ];
 
@@ -71,7 +71,12 @@ const ParkGrid = ({ onBook }) => {
       try {
         const { data } = await axios.get('http://localhost:5000/api/parks');
         if (data && data.length > 0) {
-          setParks(data);
+          const sorted = data.sort((a, b) => {
+            if (a.name.toLowerCase().includes('wonderla')) return -1;
+            if (b.name.toLowerCase().includes('wonderla')) return 1;
+            return 0;
+          });
+          setParks(sorted);
         } else {
           setParks(fallbackParks);
         }

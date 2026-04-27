@@ -37,8 +37,8 @@ const Hero = () => {
       <div className="hero-content max-width-wrapper">
         <div className="hero-text-block">
           <h1 className="hero-title text-white-shimmer-rtl">
-            PLAY HARD,<br />
-            DREAM BIG!
+            Spar Amusements:<br />
+            Let the Fun Begin!
           </h1>
           <p className="hero-description">
             The ultimate playground for kids and families! Catch your tickets 

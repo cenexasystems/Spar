@@ -83,7 +83,10 @@ const ChatBot = () => {
       const lower = inputForBot.toLowerCase();
       let reply = '';
 
-      if (lower.includes('coin') || lower.includes('spar coin') || lower.includes('earn')) {
+      if (/^(hi|hello|hey)$/.test(lower) || lower.includes('how are you')) {
+        reply = "Hello there! 👋 I'm Buzz Lightyear, your Park Assistant. I can help you with SPAR Coins, Ticket Discounts, the FlappyBuzz Game, or general booking support. What would you like to know?";
+      }
+      else if (lower.includes('coin') || lower.includes('spar coin') || lower.includes('earn')) {
         reply = "SPAR Coins are our park's loyalty currency! 💰 You can earn them by playing our Spin Wheel on the website. Your coins accumulate directly in your account and you can save them up for huge discounts!";
       } 
       else if (lower.includes('claim') || lower.includes('discount') || lower.includes('redeem')) {

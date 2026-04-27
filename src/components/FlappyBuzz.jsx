@@ -364,7 +364,7 @@ const FlappyBuzz = () => {
           </span>
         </h3>
         <p className="game-subtitle mt-2" style={{color: '#FF6B6B', fontWeight: 'bold'}}>
-          GOAL: REACH 100 POINTS TO UNLOCK A FREE TICKET REWARD! (WARNING: IMPOSSIBLE)
+          GOAL: REACH 100 POINTS TO UNLOCK A FREE TICKET REWARD!
         </p>
         {ticketClaimed && (
            <div className="ticket-claimed-badge" style={{color: 'var(--primary-light-green)', fontSize: '0.8rem', marginTop:'10px', fontWeight: 'bold'}}>
