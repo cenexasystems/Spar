@@ -9,7 +9,7 @@ const chatbotKnowledge = {
     vgp: 'VGP Universal Kingdom is open from 11:00 AM to 7:30 PM. Tickets are ₹1200 for adults.',
     mgm: 'MGM Dizzee World is famous for its "Dizzee" rides. Opens at 10:30 AM. Tickets are ₹1000.',
     queensland: 'Queens Land has 51 rides! It\'s open from 10:00 AM to 6:30 PM. Tickets are ₹850.',
-    wonderla: 'Wonderla Bangalore is a top-rated park. Opens at 11:00 AM. Tickets start at ₹1500.',
+    wonderla: 'Wonderla Chennai is a top-rated park. Opens at 11:00 AM. Tickets start at ₹1500.',
     blackthunder: 'Black Thunder is the premier water park in Mettupalayam. Opens at 10:00 AM. Tickets are ₹950.'
   },
   pricing: 'Ticket prices range from ₹850 to ₹1500 depending on the park. We offer group discounts for 15+ members.',

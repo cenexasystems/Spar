@@ -8,7 +8,7 @@ const fallbackParks = [
   {
     id: 5,
     name: "WONDERLA",
-    location: "Bengaluru, Karnataka",
+    location: "Chennai, Tamil Nadu",
     rating: 4.9,
     price: "1500",
     adultPrice: 1500,
