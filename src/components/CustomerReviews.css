@@ -67,9 +67,9 @@
 
 .reviewer-name {
   color: white;
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 1.2rem;
-  letter-spacing: 1px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
   margin: 0;
 }
 
@@ -86,11 +86,11 @@
 }
 
 .review-text {
-  color: #E2E8F0;
+  color: #ddd;
   font-family: 'Outfit', sans-serif;
   line-height: 1.6;
-  font-size: 1rem;
-  font-style: italic;
+  font-size: 14px;
+  font-style: normal;
   margin: 0;
 }
 

@@ -13,7 +13,7 @@ main, section, .hero-container, .parks-section, .reviews-section, .flappy-game-s
   --bg-dark: #0F111A;
   --bg-card: #0F111A;
   --text-main: #ffffff;
-  --text-muted: #94A3B8;
+  --text-muted: #ccc;
   --glass: rgba(255, 255, 255, 0.02);
   --glass-border: rgba(255, 255, 255, 0.08);
   --radius-rounded: 50px;
@@ -83,6 +83,15 @@ button {
   color: var(--primary-light-green);
   padding: 12px 30px;
   border-radius: var(--radius-rounded);
+}
+
+.navbar-container.scrolled {
+  padding: 16px 0;
+  background: rgba(10, 5, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
 .btn-outline:hover {
@@ -160,11 +169,12 @@ button {
 }
 
 .section-indicator {
-  color: var(--primary-purple);
+  color: #00e5ff;
   font-weight: 800;
-  letter-spacing: 0.2em;
-  font-size: 0.85rem;
-  margin-bottom: 5px; /* Reduced from 20px */
+  letter-spacing: 0.15em;
+  font-size: 12px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
 }
 
 .section-title {

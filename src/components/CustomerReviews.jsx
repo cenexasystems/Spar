@@ -102,6 +102,8 @@ const CustomerReviews = () => {
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(0)}
                       onClick={() => setNewRating(star)}
+                      fill={star <= (hoverRating || newRating) ? "#FFD700" : "transparent"}
+                      color={star <= (hoverRating || newRating) ? "#FFD700" : "#4B5563"}
                     />
                   ))}
                 </div>
@@ -141,12 +143,14 @@ const CustomerReviews = () => {
                       </div>
                       <div className="review-stars-display">
                         {[1, 2, 3, 4, 5].map(star => (
-                          <Star
-                            key={star}
-                            size={14}
-                            fill={star <= review.rating ? "#C7FF00" : "transparent"}
-                            color={star <= review.rating ? "#C7FF00" : "#4B5563"}
-                          />
+                          star <= review.rating && (
+                            <Star
+                              key={star}
+                              size={14}
+                              fill="#FFD700"
+                              color="#FFD700"
+                            />
+                          )
                         ))}
                       </div>
                     </div>

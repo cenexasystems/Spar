@@ -131,7 +131,7 @@ const ParkGrid = ({ onBook }) => {
               <div className="park-image-wrapper" onClick={() => onBook(park)} style={{ cursor: 'pointer' }}>
                 <img src={park.image} alt={park.name} className="park-image" />
                 <div className="park-rating glass-morphism">
-                  <Star size={16} fill="var(--primary-light-green)" color="var(--primary-light-green)" />
+                  <Star size={16} fill="#FFD700" color="#FFD700" />
                   <span>{park.rating}</span>
                 </div>
               </div>
