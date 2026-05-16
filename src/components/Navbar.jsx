@@ -68,17 +68,7 @@ const Navbar = ({ onOpenSupport, onOpenProfile, onOpenGame, isAdmin }) => {
         </div>
 
         <div className="nav-actions desktop-only">
-          {isAdmin ? (
-            <div className="commander-profile glass-morphism">
-              <div className="commander-avatar-wrap">
-                <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Admin" alt="Admin" />
-              </div>
-              <div className="commander-stats">
-                <span className="rank-label">ADMIN</span>
-                <span className="status-badge"><span className="pulse-indicator"></span> ONLINE</span>
-              </div>
-            </div>
-          ) : (
+          {isAdmin ? null : (
             <>
               <button className="btn-refresh" onClick={onOpenGame}>
                 <svg viewBox="0 0 100 100" className="mini-ferris-wheel">
