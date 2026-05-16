@@ -15,6 +15,7 @@ import BookingModal from './components/BookingModal';
 import SpinWheel from './components/SpinWheel';
 import SpaceBackground from './components/SpaceBackground';
 import AdminDashboard from './components/AdminDashboard';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './index.css';
 
 function App() {
@@ -26,7 +27,10 @@ function App() {
   const [isBookingOpen, setIsBookingOpen] = React.useState(false);
   const [isSpinWheelOpen, setIsSpinWheelOpen] = React.useState(false);
   const [selectedPark, setSelectedPark] = React.useState(null);
-  const [view, setView] = React.useState('home'); // 'home' or 'admin'
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   const handleOpenBooking = (park) => {
     setSelectedPark(park);
@@ -58,14 +62,14 @@ function App() {
           onOpenSupport={() => setIsSupportOpen(true)} 
           onOpenProfile={() => setIsProfileOpen(true)} 
           onOpenGame={() => setIsSpinWheelOpen(true)}
-          isAdmin={view === 'admin'}
+          isAdmin={isAdminRoute}
         />
         
-        {view === 'admin' ? (
-          <AdminDashboard onBack={() => setView('home')} />
-        ) : (
-          <main>
-            <Hero />
+        <Routes>
+          <Route path="/admin/*" element={<AdminDashboard onBack={() => navigate('/')} />} />
+          <Route path="/*" element={
+            <main>
+              <Hero />
             <ParkGrid onBook={handleOpenBooking} />
             <FlappyBuzz onWin={() => setIsRewardModalOpen(true)} />
             <CustomerReviews />
@@ -98,7 +102,6 @@ function App() {
                     <ul>
                       <li><a href="#home">Home</a></li>
                       <li><a href="#parks">Our Parks</a></li>
-                      <li><a href="#" onClick={(e) => { e.preventDefault(); setView('admin'); }} className="admin-link text-lime-400 font-bold">ADMIN PANEL</a></li>
                     </ul>
                   </div>
 
@@ -133,7 +136,8 @@ function App() {
               </div>
             </footer>
           </main>
-        )}
+          } />
+        </Routes>
         
         <ChatBot />
       </div>
