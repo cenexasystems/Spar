@@ -14,7 +14,8 @@ const fallbackParks = [
     adultPrice: 1500,
     kidsPrice: 1100,
     image: "/wonderla_final.jpg",
-    desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks."
+    desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks.",
+    features: ["Rewind Ride", "Equinox", "Rain Disco", "Wave Pool", "Turbo Tunnel", "4D Theatre", "Go-Karting", "Lazy River", "Flash Tower"]
   },
   {
     id: 1,
@@ -25,7 +26,8 @@ const fallbackParks = [
     adultPrice: 1200,
     kidsPrice: 900,
     image: "/vgp-image.jpg",
-    desc: "India's first and largest amusement park with over 45 thrilling rides and a private beach."
+    desc: "India's first and largest amusement park with over 45 thrilling rides and a private beach.",
+    features: ["Giant Wheel", "Roller Coaster", "Pirate Ship", "Snow Park", "Private Beach", "Wave Pool", "Haunted House", "Live Shows", "Bumper Cars"]
   },
   {
     id: 2,
@@ -36,7 +38,8 @@ const fallbackParks = [
     adultPrice: 1000,
     kidsPrice: 750,
     image: "/mgm-image.jpg",
-    desc: "The Pioneer of entertainment, offering world-class rides and a unique forest-themed water park."
+    desc: "The Pioneer of entertainment, offering world-class rides and a unique forest-themed water park.",
+    features: ["Dizzee Castle", "Drop Zone", "Forest Water Park", "Wave Pool", "Speed Slides", "Tagada", "Kids Zone", "Ocean View", "Food Village"]
   },
   {
     id: 3,
@@ -47,7 +50,8 @@ const fallbackParks = [
     adultPrice: 850,
     kidsPrice: 600,
     image: "/queensland_final.png",
-    desc: "An expansive theme park featuring 51 rides, including an enormous cable car and wave pool."
+    desc: "An expansive theme park featuring 51 diverse rides suitable for all age groups.",
+    features: ["Cable Car", "Columbus", "Giant Wheel", "Wave Pool", "Rain Dance", "Roller Coaster", "Splash Pad", "51 Rides", "Toddler Zone"]
   },
   {
     id: 4,
@@ -58,7 +62,8 @@ const fallbackParks = [
     adultPrice: 950,
     kidsPrice: 700,
     image: "/black_thunder_final.jpg",
-    desc: "Asia's No.1 water theme park with the majestic Nilgiris as a backdrop and extreme water slides."
+    desc: "Asia's No.1 water theme park with the majestic Nilgiris as a backdrop and extreme water slides.",
+    features: ["Black Hole Slide", "Kamikaze", "Tornado", "Wave Pool", "Lazy River", "Zip Line", "Go-Karts", "Rock Climbing", "50+ Attractions"]
   }
 ];
 
@@ -138,6 +143,15 @@ const ParkGrid = ({ onBook }) => {
                     Only <span>{park.tickets_available}</span> Tickets Remaining!
                   </div>
                 )}
+
+                <div className="park-features-section">
+                  <h4 className="features-title">RIDES & FEATURES</h4>
+                  <div className="features-badges">
+                    {(park.features || []).map((feature, i) => (
+                      <span key={i} className="feature-badge">{feature}</span>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="park-footer">
                   <div className="price-block">
