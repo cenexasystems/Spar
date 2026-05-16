@@ -179,7 +179,7 @@ button {
 
 .section-title {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: -0.5px;
