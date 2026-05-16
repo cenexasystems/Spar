@@ -341,8 +341,9 @@ const FlappyBuzz = () => {
 
   return (
     <section className="flappy-game-section" id="experiences">
-      <div className="game-header text-center w-full">
-        <h3 className="text-white-shimmer-rtl flex items-center justify-center gap-3">
+      <div className="section-header">
+        <p className="section-indicator">CHALLENGE</p>
+        <h2 className="section-title text-white-shimmer-rtl flex items-center justify-center gap-3">
           SPACE RANGER FLIGHT! 
           <span className="inline-block" style={{ width: '40px', height: '40px', filter: 'drop-shadow(0 0 8px rgba(255, 85, 0, 0.6))' }}>
             <svg viewBox="0 0 24 24" fill="none" strokeWidth="2">
@@ -354,8 +355,8 @@ const FlappyBuzz = () => {
               <path d="m21 3-9 9" stroke="#00D1FF" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </span>
-        </h3>
-        <p className="game-subtitle mt-2" style={{color: '#FF6B6B', fontWeight: 'bold'}}>
+        </h2>
+        <p className="section-subtitle mt-2">
           GOAL: REACH 100 POINTS TO UNLOCK A FREE TICKET REWARD!
         </p>
         {ticketClaimed && (

@@ -9,32 +9,7 @@
   box-sizing: border-box;
 }
 
-.game-header {
-  margin-bottom: 15px; /* Reduced from 40px */
-  width: 100%;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
 
-.game-header h3 {
-  text-align: center;
-  width: 100%;
-  margin: 0 auto;
-  font-size: 2.2rem; /* Scaled down for better proportion */
-  font-family: 'Luckiest Guy', cursive; /* Professional arcade font */
-  letter-spacing: 2px;
-}
-
-.game-subtitle {
-  text-align: center;
-  max-width: 600px;
-  margin: 10px auto 0 auto;
-  font-size: 0.85rem;
-  letter-spacing: 0.5px;
-}
 
 .game-wrapper {
   width: 100%;

@@ -170,25 +170,27 @@ button {
 
 .section-indicator {
   color: #00e5ff;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  font-size: 12px;
-  margin-bottom: 5px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 5px;
 }
 
 .section-title {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(2.5rem, 6vw, 4rem);
-  font-weight: 400;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
   line-height: 1.1;
   margin-bottom: 24px;
-  letter-spacing: 0.05em;
 }
 
 .section-subtitle {
-  color: var(--text-muted);
-  font-size: 1.1rem;
+  color: #ccc;
+  font-size: 15px;
+  font-weight: 400;
 }
 
 .experience-highlights {
