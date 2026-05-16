@@ -137,9 +137,12 @@
 }
 
 .rating-label {
-  color: #00D1FF;
-  font-family: 'Luckiest Guy', cursive;
-  letter-spacing: 1px;
+  color: #00e5ff;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
 }
 
 .stars-interactive {
@@ -149,15 +152,15 @@
 }
 
 .interactive-star {
-  color: #4B5563;
+  color: rgba(255, 215, 0, 0.2); /* Faint gold for inactive */
   transition: all 0.2s;
 }
 
 .interactive-star.active {
-  color: #C7FF00;
-  fill: #C7FF00;
+  color: #FFD700;
+  fill: #FFD700;
   transform: scale(1.1);
-  filter: drop-shadow(0 0 8px rgba(199, 255, 0, 0.6));
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4));
 }
 
 .interactive-star:hover {

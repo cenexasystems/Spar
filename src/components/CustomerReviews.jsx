@@ -81,7 +81,7 @@ const CustomerReviews = () => {
       <div className="max-width-wrapper">
         <div className="section-header">
           <p className="section-indicator">REVIEWS</p>
-          <h2 className="text-white-shimmer-rtl">WHAT  VISITORS  SAY</h2>
+          <h2 className="section-title text-white-shimmer-rtl">WHAT VISITORS SAY</h2>
           <p className="section-subtitle">See what others are saying about their experience.</p>
         </div>
 
