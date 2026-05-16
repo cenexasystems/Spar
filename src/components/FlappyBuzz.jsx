@@ -243,36 +243,28 @@ const FlappyBuzz = () => {
       
       incrementAttempts();
 
-      setGameStatus('INTRO');
-      gameStatusRef.current = 'INTRO';
-      
       if (introTimeout.current) clearTimeout(introTimeout.current);
       
-      // Step 1: Intro Image/Video for 2 seconds
-      introTimeout.current = setTimeout(() => {
-        setGameStatus('COUNTDOWN');
-        gameStatusRef.current = 'COUNTDOWN';
-        setCountdown(3);
-        
-        // Step 2: 3, 2, 1, GO sequence
-        setTimeout(() => setCountdown(2), 800);
-        setTimeout(() => setCountdown(1), 1600);
-        setTimeout(() => setCountdown('GO!'), 2400);
-        
-        // Step 3: Start PLAYING
-        setTimeout(() => {
-          birdPosRef.current = 200;
-          velocityRef.current = 0;
-          pipesRef.current = [];
-          setBirdPos(200);
-          setPipes([]);
-          setIsInitialWait(true); // Wait for first tap
-          setGameStatus('PLAYING');
-          gameStatusRef.current = 'PLAYING';
-        }, 3200);
-        
-      }, 4000); // Intro Video Length
+      setGameStatus('COUNTDOWN');
+      gameStatusRef.current = 'COUNTDOWN';
+      setCountdown(3);
       
+      // Step 2: 3, 2, 1, GO sequence
+      setTimeout(() => setCountdown(2), 800);
+      setTimeout(() => setCountdown(1), 1600);
+      setTimeout(() => setCountdown('GO!'), 2400);
+      
+      // Step 3: Start PLAYING
+      setTimeout(() => {
+        birdPosRef.current = 200;
+        velocityRef.current = 0;
+        pipesRef.current = [];
+        setBirdPos(200);
+        setPipes([]);
+        setIsInitialWait(true); // Wait for first tap
+        setGameStatus('PLAYING');
+        gameStatusRef.current = 'PLAYING';
+      }, 3200);      
     } else if (gameStatus === 'PLAYING') {
       if (isInitialWait) setIsInitialWait(false);
       velocityRef.current = JUMP_FORCE;
@@ -516,14 +508,7 @@ const FlappyBuzz = () => {
             </div>
           )}
 
-          {/* 2. INTRO Cimenatic */}
-          {gameStatus === 'INTRO' && (
-            <div className="game-overlay intro-screen">
-               <video className="intro-video" autoPlay muted playsInline onEnded={() => {}}>
-                 <source src={heroVideo} type="video/mp4" />
-               </video>
-            </div>
-          )}
+
 
           {/* 3. COUNTDOWN */}
           {gameStatus === 'COUNTDOWN' && (
