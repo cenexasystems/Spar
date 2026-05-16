@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Star, ArrowRight } from 'lucide-react';
+import { MapPin, Star, ArrowRight, Info, X } from 'lucide-react';
 import axios from 'axios';
 import './ParkGrid.css';
 
@@ -15,7 +15,8 @@ const fallbackParks = [
     kidsPrice: 1100,
     image: "/wonderla_final.jpg",
     desc: "The most popular theme park in India featuring world-class high-thrill rides and huge water parks.",
-    features: ["Rewind Ride", "Equinox", "Rain Disco", "Wave Pool", "Turbo Tunnel", "4D Theatre", "Go-Karting", "Lazy River", "Flash Tower"]
+    about: "Founded in 2000, Wonderla spans 82 acres and is India's most visited theme park chain with 43+ rides, world-class safety standards, and over 2 million annual visitors.",
+    features: ["Rewind Ride", "Equinox", "Maverick", "Flash Tower", "Rain Disco", "Wave Pool", "Turbo Tunnel", "Lazy River", "4D Theatre", "Go-Karting", "Water Pendulum"]
   },
   {
     id: 1,
@@ -27,7 +28,8 @@ const fallbackParks = [
     kidsPrice: 900,
     image: "/vgp-image.jpg",
     desc: "India's first and largest amusement park with over 45 thrilling rides and a private beach.",
-    features: ["Giant Wheel", "Roller Coaster", "Pirate Ship", "Snow Park", "Private Beach", "Wave Pool", "Haunted House", "Live Shows", "Bumper Cars"]
+    about: "India's oldest amusement park since 1975, VGP spans 45+ acres offering 45 rides, a private beach, snow park, live cultural shows and a haunted house.",
+    features: ["Giant Wheel", "Roller Coaster", "Pirate Ship", "Break Dance", "Bumper Cars", "Snow Park", "Private Beach", "Wave Pool", "Haunted House", "Live Shows", "Splash Zone"]
   },
   {
     id: 2,
@@ -39,7 +41,8 @@ const fallbackParks = [
     kidsPrice: 750,
     image: "/mgm-image.jpg",
     desc: "The Pioneer of entertainment, offering world-class rides and a unique forest-themed water park.",
-    features: ["Dizzee Castle", "Drop Zone", "Forest Water Park", "Wave Pool", "Speed Slides", "Tagada", "Kids Zone", "Ocean View", "Food Village"]
+    about: "Launched in 1991 on Chennai's ECR coastline, MGM Dizzee World offers a forest-themed water park, ocean views, roller coasters and a dedicated kids adventure zone.",
+    features: ["Roller Coaster", "Dizzee Castle", "Drop Zone", "Tagada", "Merry Go Round", "Forest Water Park", "Wave Pool", "Speed Slides", "Kiddies Pool", "Kids Zone", "Food Village"]
   },
   {
     id: 3,
@@ -51,7 +54,8 @@ const fallbackParks = [
     kidsPrice: 600,
     image: "/queensland_final.png",
     desc: "An expansive theme park featuring 51 diverse rides suitable for all age groups.",
-    features: ["Cable Car", "Columbus", "Giant Wheel", "Wave Pool", "Rain Dance", "Roller Coaster", "Splash Pad", "51 Rides", "Toddler Zone"]
+    about: "One of Tamil Nadu's largest parks with 51 rides for all ages, Queens Land features TN's largest cable car, a giant wave pool, and a dedicated toddler zone.",
+    features: ["Cable Car", "Giant Wheel", "Columbus", "Roller Coaster", "Bumper Cars", "Wave Pool", "Rain Dance", "Splash Pad", "51 Rides", "Toddler Zone", "Panoramic Views"]
   },
   {
     id: 4,
@@ -63,13 +67,15 @@ const fallbackParks = [
     kidsPrice: 700,
     image: "/black_thunder_final.jpg",
     desc: "Asia's No.1 water theme park with the majestic Nilgiris as a backdrop and extreme water slides.",
-    features: ["Black Hole Slide", "Kamikaze", "Tornado", "Wave Pool", "Lazy River", "Zip Line", "Go-Karts", "Rock Climbing", "50+ Attractions"]
+    about: "Asia's No.1 rated water theme park since 1991, Black Thunder sits at the Nilgiri foothills with 50+ attractions, extreme slides and a stunning mountain backdrop.",
+    features: ["Black Hole Slide", "Kamikaze", "Tornado", "Wave Pool", "Lazy River", "Body Slides", "Go-Karts", "Zip Line", "Rock Climbing", "50+ Attractions"]
   }
 ];
 
 const ParkGrid = ({ onBook }) => {
   const [parks, setParks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAboutPark, setSelectedAboutPark] = useState(null);
 
   useEffect(() => {
     const fetchParks = async () => {
@@ -144,14 +150,10 @@ const ParkGrid = ({ onBook }) => {
                   </div>
                 )}
 
-                <div className="park-features-section">
-                  <h4 className="features-title">RIDES & FEATURES</h4>
-                  <div className="features-badges">
-                    {(park.features || []).map((feature, i) => (
-                      <span key={i} className="feature-badge">{feature}</span>
-                    ))}
-                  </div>
-                </div>
+                <button className="about-park-btn" onClick={() => setSelectedAboutPark(park)}>
+                  <Info size={14} style={{ marginRight: '6px' }} />
+                  About This Park
+                </button>
 
                 <div className="park-footer">
                   <div className="price-block">
@@ -167,6 +169,46 @@ const ParkGrid = ({ onBook }) => {
           ))}
         </div>
       </div>
+
+      {/* About Park Modal */}
+      {selectedAboutPark && (
+        <div className="about-modal-overlay animate-fade-in" onClick={() => setSelectedAboutPark(null)}>
+          <motion.div 
+            className="about-modal-content glass-morphism" 
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+          >
+            <button className="about-modal-close" onClick={() => setSelectedAboutPark(null)}>
+              <X size={24} />
+            </button>
+            
+            <div className="about-modal-header">
+              <h2 className="text-white-shimmer-rtl">{selectedAboutPark.name}</h2>
+              <div className="park-location" style={{ marginTop: '5px' }}>
+                <MapPin size={14} style={{ marginRight: '6px' }} />
+                {selectedAboutPark.location}
+              </div>
+            </div>
+
+            <div className="about-modal-body">
+              <section className="about-section">
+                <h4 className="section-label">ABOUT</h4>
+                <p className="about-text">{selectedAboutPark.about || selectedAboutPark.desc}</p>
+              </section>
+
+              <section className="about-features-section">
+                <h4 className="section-label">RIDES & FEATURES</h4>
+                <div className="features-badges">
+                  {(selectedAboutPark.features || []).map((feature, i) => (
+                    <span key={i} className="feature-badge">{feature}</span>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 };

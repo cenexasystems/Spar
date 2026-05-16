@@ -168,20 +168,109 @@
   animation: pulse-mission 1.5s infinite alternate;
 }
 
-.park-features-section {
+.about-park-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
   margin: 15px 0;
+  padding: 0;
+  transition: all 0.3s ease;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
-.features-title {
-  font-size: 0.7rem;
-  font-weight: 700;
+.about-park-btn:hover {
+  color: var(--primary-light-green);
+  text-decoration-color: var(--primary-light-green);
+}
+
+/* About Modal Styles */
+.about-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.about-modal-content {
+  background: #0a0b10;
+  width: 100%;
+  max-width: 600px;
+  border-radius: 32px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.about-modal-close {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.about-modal-close:hover {
+  background: #fff;
+  color: #000;
+  transform: rotate(90deg);
+}
+
+.about-modal-header {
+  margin-bottom: 30px;
+}
+
+.about-modal-header h2 {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.about-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 800;
   text-transform: uppercase;
   color: var(--primary-light-green);
-  letter-spacing: 0.1em;
-  margin-bottom: 10px;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
 }
 
-.features-badges {
+.about-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #cbd5e1;
+}
+
+.about-features-section .features-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -191,8 +280,8 @@
   background-color: #1a1a2e;
   color: var(--text-muted);
   font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   font-weight: 600;
   white-space: nowrap;
