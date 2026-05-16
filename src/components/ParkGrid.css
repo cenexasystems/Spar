@@ -79,6 +79,9 @@
   font-weight: 800;
   line-height: 1.2;
   font-family: 'Outfit', sans-serif;
+  min-height: 48px; /* Support up to 2 lines consistently */
+  display: flex;
+  align-items: center;
 }
 
 .park-desc {
