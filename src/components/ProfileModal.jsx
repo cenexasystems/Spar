@@ -1,12 +1,27 @@
 import React from 'react';
-import { X, Calendar, MapPin, Hash, User as UserIcon, Mail, Phone, Coins, Orbit, Star } from 'lucide-react';
+import { X, Calendar, MapPin, Hash, User as UserIcon, Mail, Phone, Coins, Orbit, Star, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './ProfileModal.css';
+
+const getStatusInfo = (status) => ({
+  pending: { label: 'Pending Verification', color: '#FFC107', icon: <Clock size={12}/> },
+  verified: { label: 'Verified', color: '#00D1FF', icon: <CheckCircle size={12}/> },
+  completed: { label: 'Completed', color: '#C7FF00', icon: <CheckCircle size={12}/> },
+  cancelled: { label: 'Cancelled', color: '#FF6B6B', icon: <XCircle size={12}/> },
+}[status] || { label: status || 'Unknown', color: '#94A3B8', icon: <Clock size={12}/> });
 
 const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
   const { user, logout } = useAuth();
 
   if (!isOpen || !user) return null;
+
+  const verifiedBookings = (user.bookings || []).filter(b => b.status === 'verified' || b.status === 'completed');
+  const pendingBookings = (user.bookings || []).filter(b => b.status === 'pending');
+  const upcomingBookings = (user.bookings || []).filter(b => {
+    if (b.status === 'cancelled') return false;
+    if (!b.visitDate) return b.status === 'verified';
+    return new Date(b.visitDate) >= new Date() && (b.status === 'verified' || b.status === 'pending');
+  });
 
   return (
     <div className="profile-modal-overlay">
@@ -69,6 +84,30 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
           </div>
         )}
 
+        {/* Upcoming Visits */}
+        {upcomingBookings.length > 0 && (
+          <div className="upcoming-section">
+            <h3 className="section-mini-title"><Calendar size={14} color="#00D1FF"/> UPCOMING VISITS</h3>
+            <div className="upcoming-cards">
+              {upcomingBookings.slice(0, 2).map((t, i) => {
+                const si = getStatusInfo(t.status);
+                return (
+                  <div key={i} className="upcoming-card glass-morphism">
+                    <div className="upcoming-card-top">
+                      <span className="park-badge-mini">{t.parkName || 'SPAR PARK'}</span>
+                      <span className="upcoming-status" style={{ color: si.color, borderColor: si.color }}>{si.icon} {si.label}</span>
+                    </div>
+                    <div className="upcoming-card-body">
+                      <span><Calendar size={12}/> {t.visitDate ? new Date(t.visitDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'TBD'}</span>
+                      <span><MapPin size={12}/> {t.wonderlaLocation || (t.tickets || 1) + ' Visitors'}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="profile-ledger custom-scrollbar">
           <h3 className="profile-ledger-title">
             <span>YOUR DIGITAL PASSES</span>
@@ -81,46 +120,53 @@ const ProfileModal = ({ isOpen, onClose, onOpenClaim }) => {
             </div>
           ) : (
             <div className="tickets-grid">
-              {[...user.bookings].reverse().map((ticket, idx) => (
-                <div key={idx} className="digital-wallet-ticket glass-morphism">
-                  <div className="wallet-ticket-header">
-                     <span className="park-badge">{ticket.parkName || ticket.park || 'SPAR PARK'}</span>
-                     {ticket.paymentMethod === 'FREE' || ticket.payment === 'FREE' || !(ticket.totalAmount || ticket.totalPrice) ? (
-                       <span className="price-badge free">FREE TICKET 🎉</span>
-                     ) : (
-                       <span className="price-badge">₹{ticket.totalAmount || ticket.totalPrice}</span>
-                     )}
-                  </div>
-                  
-                  <div className="wallet-ticket-body">
-                     <div className="ticket-meta-row">
-                       <Calendar size={14} color="#00D1FF" />
-                       {ticket.date || new Date(ticket.createdAt || ticket.timestamp || Date.now()).toLocaleDateString()}
-                     </div>
-                     <div className="ticket-meta-row">
-                       <MapPin size={14} color="#00D1FF" />
-                       {ticket.timeSlot || (ticket.tickets || 1) + ' Visitors'}
-                     </div>
-                  </div>
+              {[...user.bookings].reverse().map((ticket, idx) => {
+                const si = getStatusInfo(ticket.status);
+                return (
+                  <div key={idx} className={`digital-wallet-ticket glass-morphism ${ticket.status === 'verified' || ticket.status === 'completed' ? 'verified-ticket' : ''}`}
+                    style={{ borderLeftColor: si.color }}>
+                    <div className="wallet-ticket-header">
+                       <span className="park-badge">{ticket.parkName || ticket.park || 'SPAR PARK'}</span>
+                       {ticket.paymentMethod === 'FREE' || !(ticket.totalAmount || ticket.totalPrice) ? (
+                         <span className="price-badge free">FREE 🎉</span>
+                       ) : (
+                         <span className="price-badge">₹{ticket.totalAmount || ticket.totalPrice}</span>
+                       )}
+                    </div>
 
-                  <div className="wallet-ticket-footer">
-                     <div className="barcode-sim"></div>
-                     <span className="ticket-id-tag">
-                       <Hash size={12}/> {ticket.bookingId || ticket.id || ('TNX-' + Math.floor(Math.random() * 100000))}
-                     </span>
+                    <div className="wallet-ticket-status-row">
+                      <span className="ticket-status-pill" style={{ color: si.color, borderColor: si.color }}>
+                        {si.icon} {si.label}
+                      </span>
+                    </div>
+                    
+                    <div className="wallet-ticket-body">
+                       <div className="ticket-meta-row">
+                         <Calendar size={14} color="#00D1FF" />
+                         {ticket.visitDate ? new Date(ticket.visitDate).toLocaleDateString('en-IN') : (ticket.date || new Date(ticket.createdAt || Date.now()).toLocaleDateString())}
+                       </div>
+                       <div className="ticket-meta-row">
+                         <MapPin size={14} color="#00D1FF" />
+                         {ticket.wonderlaLocation || (ticket.tickets || 1) + ' Visitors'}
+                       </div>
+                    </div>
+
+                    <div className="wallet-ticket-footer">
+                       <div className="barcode-sim"></div>
+                       <span className="ticket-id-tag">
+                         <Hash size={12}/> {ticket.bookingId || ticket.id || ('TNX-' + Math.floor(Math.random() * 100000))}
+                       </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
         <button 
           className="btn-primary profile-logout-btn"
-          onClick={() => {
-            onClose();
-            logout();
-          }}
+          onClick={() => { onClose(); logout(); }}
         >
           LOG OUT
         </button>

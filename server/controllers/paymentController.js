@@ -1,11 +1,35 @@
-const crypto = require('crypto');
-const QRCode = require('qrcode');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const multer = require('multer');
+const path = require('path');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Multer config for payment screenshot uploads
+// ─────────────────────────────────────────────────────────────────────────────
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '..', 'uploads'));
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `payment_${Date.now()}_${Math.floor(Math.random() * 10000)}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp/;
+    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowed.test(file.mimetype);
+    if (ext && mime) return cb(null, true);
+    cb(new Error('Only image files (JPG, PNG, WebP) are allowed'));
+  }
+}).single('paymentScreenshot');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Send WhatsApp message via Meta Cloud API
-// Docs: https://developers.facebook.com/docs/whatsapp/cloud-api/messages
 // ─────────────────────────────────────────────────────────────────────────────
 const sendWhatsApp = async (phone, message) => {
   const token = process.env.META_WHATSAPP_TOKEN;
@@ -16,10 +40,9 @@ const sendWhatsApp = async (phone, message) => {
     return;
   }
 
-  // Phone in E.164 format without the '+', e.g. 919876543210
   const to = phone.startsWith('+')
     ? phone.replace('+', '')
-    : `91${phone}`;   // default to India +91 if no country code
+    : `91${phone}`;
 
   try {
     const response = await fetch(
@@ -40,25 +63,19 @@ const sendWhatsApp = async (phone, message) => {
     );
 
     const result = await response.json();
-
     if (!response.ok) {
       console.error('[WhatsApp] Meta API error:', JSON.stringify(result));
     } else {
       console.log(`[WhatsApp] Message sent to ${to}, id: ${result.messages?.[0]?.id}`);
     }
   } catch (err) {
-    // Never fail the booking if WhatsApp fails
     console.error('[WhatsApp] Fetch failed:', err.message);
   }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/payment/create-order
-//
-// 1. Creates a PENDING booking in MongoDB
-// 2. Generates a UPI deep-link QR that opens Google Pay / PhonePe / Paytm
-//    when scanned. The user pays directly to your UPI ID.
-// 3. Returns the QR (base64 PNG) + booking info to the frontend.
+// Creates a PENDING booking. The frontend shows the real GPay QR image.
 // ─────────────────────────────────────────────────────────────────────────────
 const createOrder = async (req, res) => {
   const {
@@ -70,6 +87,10 @@ const createOrder = async (req, res) => {
     totalAmount,
     paymentMethod,
     parkPrefix,
+    wonderlaLocation,
+    visitDate,
+    userEmail,
+    userPhone,
   } = req.body;
 
   if (!parkName || !totalAmount || totalAmount <= 0) {
@@ -82,7 +103,6 @@ const createOrder = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // ── 1. Create PENDING booking ──────────────────────────────────────────
     const bkPrefix = parkPrefix || 'BK';
     const bkId = bkPrefix + '-' + Math.floor(Math.random() * 9000 + 1000);
 
@@ -90,8 +110,12 @@ const createOrder = async (req, res) => {
       bookingId: bkId,
       user: req.user._id,
       userName: user.name,
+      userEmail: userEmail || user.email || '',
+      userPhone: userPhone || user.phone || '',
       parkName,
       parkId,
+      wonderlaLocation: wonderlaLocation || '',
+      visitDate: visitDate || null,
       tickets: tickets || (adultTickets || 0) + (childTickets || 0),
       adultTickets: adultTickets || 0,
       childTickets: childTickets || 0,
@@ -101,14 +125,10 @@ const createOrder = async (req, res) => {
       transactionId: '',
     });
 
-    // ── 2. Build UPI deep-link QR ──────────────────────────────────────────
-    // This format is accepted by Google Pay, PhonePe, Paytm, BHIM, Paytm etc.
-    const upiId = process.env.UPI_ID;
-    if (!upiId) {
-      return res.status(500).json({ message: 'UPI_ID is not configured on the server.' });
-    }
-
+    const upiId = process.env.UPI_ID || 'yourupiid@okaxis';
     const merchantName = process.env.MERCHANT_NAME || 'SPAR Amusements';
+
+    // Build UPI deep link for mobile
     const upiString =
       `upi://pay?pa=${encodeURIComponent(upiId)}` +
       `&pn=${encodeURIComponent(merchantName)}` +
@@ -116,24 +136,14 @@ const createOrder = async (req, res) => {
       `&cu=INR` +
       `&tn=${encodeURIComponent('Booking ' + bkId)}`;
 
-    const qrCodeDataUrl = await QRCode.toDataURL(upiString, {
-      errorCorrectionLevel: 'H',
-      width: 320,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF',
-      },
-    });
-
     return res.status(201).json({
       bookingId: bkId,
       mongoBookingId: booking._id,
+      ticketId: booking.ticketId,
       amount: totalAmount,
       upiId,
       merchantName,
-      qrCodeDataUrl,   // <img src={qrCodeDataUrl} /> — ready to display
-      upiString,       // for intent-based launch on mobile: window.location.href = upiString
+      upiString,
     });
   } catch (error) {
     console.error('[createOrder]', error);
@@ -142,93 +152,119 @@ const createOrder = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/payment/verify
-//
-// Called by the frontend AFTER the user has paid via GPay and enters their
-// UPI Transaction Reference Number (UTR / Transaction ID shown in GPay receipt).
-//
-// Since GPay has no server-to-server callback, we:
-//   1. Accept the UTR the user submits
-//   2. Mark the booking confirmed
-//   3. Send WhatsApp confirmation via Meta Cloud API
-//
-// IMPORTANT: For production, you (the admin) should cross-check the UTR in
-// your bank/UPI statement. The admin panel shows all bookings + their UTR.
+// POST /api/payment/upload-screenshot
+// User uploads payment screenshot after paying via GPay
 // ─────────────────────────────────────────────────────────────────────────────
-const verifyPayment = async (req, res) => {
-  const {
-    mongoBookingId,   // MongoDB _id of the booking
-    bookingId,        // human-readable booking ID e.g. "SPR-1234"
-    utrNumber,        // UPI Transaction Reference entered by user
-  } = req.body;
+const uploadScreenshot = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message || 'Upload failed' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
 
-  if (!mongoBookingId || !utrNumber) {
-    return res
-      .status(400)
-      .json({ message: 'mongoBookingId and utrNumber are required.' });
-  }
+    const { mongoBookingId } = req.body;
+    if (!mongoBookingId) {
+      return res.status(400).json({ message: 'mongoBookingId is required' });
+    }
 
-  // Basic UTR format check: 12-digit numeric (standard UPI UTR)
-  const utrRegex = /^\d{12}$|^[A-Za-z0-9]{10,22}$/;
-  if (!utrRegex.test(utrNumber.trim())) {
-    return res
-      .status(400)
-      .json({ message: 'Invalid UTR format. Check your GPay receipt for the 12-digit reference number.' });
+    try {
+      const booking = await Booking.findById(mongoBookingId);
+      if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+      booking.paymentScreenshot = `/uploads/${req.file.filename}`;
+      await booking.save();
+
+      return res.json({
+        message: 'Screenshot uploaded successfully',
+        screenshotPath: booking.paymentScreenshot,
+        booking
+      });
+    } catch (error) {
+      console.error('[uploadScreenshot]', error);
+      return res.status(500).json({ message: error.message });
+    }
+  });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/payment/confirm-booking
+// User confirms they have paid and uploaded screenshot
+// Booking stays in "pending" status until admin verifies
+// ─────────────────────────────────────────────────────────────────────────────
+const confirmBooking = async (req, res) => {
+  const { mongoBookingId, bookingId } = req.body;
+
+  if (!mongoBookingId) {
+    return res.status(400).json({ message: 'mongoBookingId is required.' });
   }
 
   try {
-    // Prevent duplicate confirmation
-    const existing = await Booking.findById(mongoBookingId);
-    if (!existing) return res.status(404).json({ message: 'Booking not found.' });
-    if (existing.status === 'confirmed') {
-      return res.json({ message: 'Booking already confirmed.', booking: existing });
+    const booking = await Booking.findById(mongoBookingId);
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+
+    // Booking stays pending — admin will verify after checking screenshot
+    // Just mark that user has completed the payment flow
+    if (!booking.paymentScreenshot) {
+      return res.status(400).json({ message: 'Please upload your payment screenshot first.' });
     }
 
-    // ── Update booking ─────────────────────────────────────────────────────
-    const booking = await Booking.findByIdAndUpdate(
-      mongoBookingId,
-      {
-        status: 'confirmed',
-        transactionId: utrNumber.trim().toUpperCase(),
-      },
-      { new: true }
-    );
-
-    // ── Send WhatsApp via Meta Cloud API ───────────────────────────────────
+    // Send WhatsApp notification
     const user = await User.findById(booking.user);
     if (user?.phone) {
       const msg =
-        `🎉 *Booking Confirmed!*\n\n` +
+        `🎫 *Booking Submitted!*\n\n` +
         `Hello ${booking.userName},\n\n` +
-        `Your booking at *${booking.parkName}* is confirmed.\n\n` +
+        `Your booking at *${booking.parkName}* has been submitted for verification.\n\n` +
         `📋 *Booking ID:* ${booking.bookingId}\n` +
-        `💳 *UPI Ref (UTR):* ${utrNumber.trim().toUpperCase()}\n` +
+        `🎟️ *Ticket ID:* ${booking.ticketId}\n` +
         `🎟️ *Tickets:* ${booking.adultTickets} Adult(s)` +
         (booking.childTickets > 0 ? `, ${booking.childTickets} Kid(s)` : '') +
-        `\n💰 *Amount Paid:* ₹${booking.totalAmount}\n\n` +
-        `📲 Show this message at the entrance. Enjoy your visit! 🚀\n\n` +
+        `\n💰 *Amount:* ₹${booking.totalAmount}\n` +
+        (booking.wonderlaLocation ? `📍 *Location:* ${booking.wonderlaLocation}\n` : '') +
+        (booking.visitDate ? `📅 *Visit Date:* ${new Date(booking.visitDate).toLocaleDateString('en-IN')}\n` : '') +
+        `\n⏳ Your payment is being verified by our team. You'll receive a confirmation shortly.\n\n` +
         `— SPAR Amusements`;
 
       await sendWhatsApp(user.phone, msg);
     }
 
     return res.json({
-      message: 'Payment confirmed! Booking is now active.',
+      message: 'Booking submitted for verification! You will be notified once verified.',
       booking,
     });
+  } catch (error) {
+    console.error('[confirmBooking]', error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── Legacy verify endpoint (kept for backwards compatibility) ──────────────
+const verifyPayment = async (req, res) => {
+  const { mongoBookingId, utrNumber } = req.body;
+
+  if (!mongoBookingId) {
+    return res.status(400).json({ message: 'mongoBookingId is required.' });
+  }
+
+  try {
+    const existing = await Booking.findById(mongoBookingId);
+    if (!existing) return res.status(404).json({ message: 'Booking not found.' });
+
+    if (utrNumber) {
+      existing.transactionId = utrNumber.trim().toUpperCase();
+    }
+    await existing.save();
+
+    return res.json({ message: 'Payment info recorded.', booking: existing });
   } catch (error) {
     console.error('[verifyPayment]', error);
     return res.status(500).json({ message: error.message });
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/payment/webhook
-// Meta WhatsApp Cloud API webhook — receives incoming messages from users
-// Also used as the verification endpoint (GET) during Meta app setup
-// ─────────────────────────────────────────────────────────────────────────────
-
-// GET /api/payment/webhook  — Meta webhook verification (one-time setup)
+// ── Webhook endpoints ─────────────────────────────────────────────────────
 const webhookVerify = (req, res) => {
   const verify_token = process.env.META_WEBHOOK_VERIFY_TOKEN;
   const mode = req.query['hub.mode'];
@@ -242,9 +278,7 @@ const webhookVerify = (req, res) => {
   return res.sendStatus(403);
 };
 
-// POST /api/payment/webhook — receives WhatsApp messages (optional: for auto-replies)
 const webhookReceive = async (req, res) => {
-  // Always respond 200 immediately to Meta
   res.sendStatus(200);
 
   try {
@@ -259,14 +293,13 @@ const webhookReceive = async (req, res) => {
     if (!messages || messages.length === 0) return;
 
     const incomingMsg = messages[0];
-    const fromPhone = incomingMsg.from;   // sender's phone number
+    const fromPhone = incomingMsg.from;
     const text = incomingMsg.text?.body || '';
 
     console.log(`[Meta Webhook] Message from ${fromPhone}: ${text}`);
-    // You can add auto-reply logic here if needed
   } catch (err) {
     console.error('[Meta Webhook] Processing error:', err.message);
   }
 };
 
-module.exports = { createOrder, verifyPayment, webhookVerify, webhookReceive };
+module.exports = { createOrder, uploadScreenshot, confirmBooking, verifyPayment, webhookVerify, webhookReceive };

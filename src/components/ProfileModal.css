@@ -369,6 +369,54 @@
   border-radius: 10px;
 }
 
+/* UPCOMING VISITS */
+.upcoming-section { margin-bottom: 20px; }
+.section-mini-title {
+  font-size: 0.78rem; font-weight: 800; color: #00D1FF;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.upcoming-cards { display: flex; flex-direction: column; gap: 10px; }
+.upcoming-card {
+  padding: 12px; border-radius: 10px;
+  border: 1px solid rgba(0, 209, 255, 0.15);
+  background: rgba(0, 209, 255, 0.04);
+}
+.upcoming-card-top {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+}
+.park-badge-mini { font-weight: 800; font-size: 0.85rem; color: #fff; }
+.upcoming-status {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.68rem; font-weight: 800; padding: 3px 8px;
+  border-radius: 50px; border: 1px solid; text-transform: uppercase;
+}
+.upcoming-card-body {
+  display: flex; gap: 16px;
+}
+.upcoming-card-body span {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.8rem; color: #94A3B8; font-weight: 600;
+}
+
+/* TICKET STATUS */
+.wallet-ticket-status-row { margin-bottom: 8px; }
+.ticket-status-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.68rem; font-weight: 800; padding: 3px 10px;
+  border-radius: 50px; border: 1px solid; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.verified-ticket {
+  border-left-color: #00D1FF !important;
+  box-shadow: inset 0 0 20px rgba(0, 209, 255, 0.05);
+}
+.verified-ticket::after {
+  content: ''; position: absolute; top: 0; right: 0;
+  width: 40px; height: 40px;
+  background: radial-gradient(circle, rgba(0, 209, 255, 0.15) 0%, transparent 70%);
+}
+
 /* FLOATING ELEMENTS ANIMATIONS */
 
 .profile-floating-elements {
