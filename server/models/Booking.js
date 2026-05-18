@@ -19,6 +19,12 @@ const bookingSchema = mongoose.Schema(
     parkName: { type: String, required: true },
     parkId: { type: mongoose.Schema.Types.Mixed },
     wonderlaLocation: { type: String, default: '' },  // Only for Wonderla bookings
+    whatsappNumber: { type: String, default: '' },
+    ticketType: { type: String, default: '' },
+    srCitizenTickets: { type: Number, default: 0 },
+    buffetCount: { type: Number, default: 0 },
+    lockerSelected: { type: Boolean, default: false },
+    couponApplied: { type: String, default: '' },
     visitDate: { type: Date },
     adultTickets: { type: Number, default: 0 },
     childTickets: { type: Number, default: 0 },

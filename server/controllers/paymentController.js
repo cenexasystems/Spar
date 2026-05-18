@@ -91,6 +91,12 @@ const createOrder = async (req, res) => {
     visitDate,
     userEmail,
     userPhone,
+    whatsapp,
+    ticketType,
+    srCitizenTickets,
+    buffetCount,
+    lockerSelected,
+    couponApplied,
   } = req.body;
 
   if (!parkName || !totalAmount || totalAmount <= 0) {
@@ -115,6 +121,12 @@ const createOrder = async (req, res) => {
       parkName,
       parkId,
       wonderlaLocation: wonderlaLocation || '',
+      whatsappNumber: whatsapp || '',
+      ticketType: ticketType || '',
+      srCitizenTickets: srCitizenTickets || 0,
+      buffetCount: buffetCount || 0,
+      lockerSelected: lockerSelected || false,
+      couponApplied: couponApplied || '',
       visitDate: visitDate || null,
       tickets: tickets || (adultTickets || 0) + (childTickets || 0),
       adultTickets: adultTickets || 0,
@@ -212,7 +224,8 @@ const confirmBooking = async (req, res) => {
 
     // Send WhatsApp notification
     const user = await User.findById(booking.user);
-    if (user?.phone) {
+    const targetPhone = booking.whatsappNumber || booking.userPhone || (user && user.phone) || '';
+    if (targetPhone) {
       const msg =
         `🎫 *Booking Submitted!*\n\n` +
         `Hello ${booking.userName},\n\n` +
@@ -221,13 +234,16 @@ const confirmBooking = async (req, res) => {
         `🎟️ *Ticket ID:* ${booking.ticketId}\n` +
         `🎟️ *Tickets:* ${booking.adultTickets} Adult(s)` +
         (booking.childTickets > 0 ? `, ${booking.childTickets} Kid(s)` : '') +
+        (booking.srCitizenTickets > 0 ? `, ${booking.srCitizenTickets} Senior(s)` : '') +
         `\n💰 *Amount:* ₹${booking.totalAmount}\n` +
         (booking.wonderlaLocation ? `📍 *Location:* ${booking.wonderlaLocation}\n` : '') +
         (booking.visitDate ? `📅 *Visit Date:* ${new Date(booking.visitDate).toLocaleDateString('en-IN')}\n` : '') +
+        (booking.whatsappNumber ? `📱 *WhatsApp:* ${booking.whatsappNumber}\n` : '') +
+        (booking.ticketType ? `🎟️ *Ticket Type:* ${booking.ticketType.toUpperCase()}\n` : '') +
         `\n⏳ Your payment is being verified by our team. You'll receive a confirmation shortly.\n\n` +
         `— SPAR Amusements`;
 
-      await sendWhatsApp(user.phone, msg);
+      await sendWhatsApp(targetPhone, msg);
     }
 
     return res.json({

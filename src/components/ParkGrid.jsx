@@ -171,44 +171,173 @@ const ParkGrid = ({ onBook }) => {
       </div>
 
       {/* About Park Modal */}
-      {selectedAboutPark && (
-        <div className="about-modal-overlay animate-fade-in" onClick={() => setSelectedAboutPark(null)}>
-          <motion.div 
-            className="about-modal-content glass-morphism" 
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-          >
-            <button className="about-modal-close" onClick={() => setSelectedAboutPark(null)}>
-              <X size={24} />
-            </button>
-            
-            <div className="about-modal-header">
-              <h2 className="text-white-shimmer-rtl">{selectedAboutPark.name}</h2>
-              <div className="park-location" style={{ marginTop: '5px' }}>
-                <MapPin size={14} style={{ marginRight: '6px' }} />
-                {selectedAboutPark.location}
-              </div>
-            </div>
-
-            <div className="about-modal-body">
-              <section className="about-section">
-                <h4 className="section-label">ABOUT</h4>
-                <p className="about-text">{selectedAboutPark.about || selectedAboutPark.desc}</p>
-              </section>
-
-              <section className="about-features-section">
-                <h4 className="section-label">RIDES & FEATURES</h4>
-                <div className="features-badges">
-                  {(selectedAboutPark.features || []).map((feature, i) => (
-                    <span key={i} className="feature-badge">{feature}</span>
-                  ))}
+      {selectedAboutPark && (() => {
+        const isWonderla = selectedAboutPark.name?.toLowerCase().includes('wonderla');
+        return (
+          <div className="about-modal-overlay animate-fade-in" onClick={() => setSelectedAboutPark(null)}>
+            <motion.div 
+              className={`about-modal-content glass-morphism ${isWonderla ? 'wonderla-modal-wide' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+            >
+              <button className="about-modal-close" onClick={() => setSelectedAboutPark(null)}>
+                <X size={24} />
+              </button>
+              
+              <div className="about-modal-header">
+                <h2 className="text-white-shimmer-rtl">{selectedAboutPark.name}</h2>
+                <div className="park-location" style={{ marginTop: '5px' }}>
+                  <MapPin size={14} style={{ marginRight: '6px' }} />
+                  {selectedAboutPark.location}
                 </div>
-              </section>
-            </div>
-          </motion.div>
-        </div>
-      )}
+              </div>
+
+              <div className="about-modal-body" style={{ paddingBottom: '20px' }}>
+                {isWonderla ? (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                      <section className="about-section">
+                        <h4 className="section-label">ABOUT</h4>
+                        <p className="about-text">
+                          Wonderla is India's largest and most-visited amusement park chain, operated by Wonderla Holidays Limited. 
+                          Founded in 2000 by Kochouseph Chittilappilly, the brand has grown to 5 parks across India — Kochi, Bengaluru, 
+                          Hyderabad, Bhubaneswar, and Chennai. Every Wonderla park combines high-thrill land rides, expansive water 
+                          attractions, family zones, and world-class safety standards, making it India's most trusted theme park 
+                          experience for over two decades.
+                        </p>
+                      </section>
+
+                      <section className="about-section">
+                        <h4 className="section-label">PARK TIMINGS</h4>
+                        <ul className="wonderla-timing-list">
+                          <li className="wonderla-timing-item">🗓️ <strong>Weekdays:</strong> 11:00 AM – 6:00 PM</li>
+                          <li className="wonderla-timing-item">🎉 <strong>Weekends & Public Holidays:</strong> 11:00 AM – 7:00 PM</li>
+                          <li className="wonderla-timing-item">🌊 <strong>Water Rides:</strong> 12:30 PM – 5:00 PM</li>
+                          <li className="wonderla-timing-item">✨ Open all days of the year</li>
+                        </ul>
+                        <span className="wonderla-note">* Timings may vary by location and season. Check official site before visiting.</span>
+                      </section>
+
+                      <section className="about-section">
+                        <h4 className="section-label">TICKET PRICES</h4>
+                        <table className="wonderla-pricing-table">
+                          <thead>
+                            <tr>
+                              <th>Category</th>
+                              <th>Regular</th>
+                              <th>Fast Track</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td><strong>Adult</strong></td>
+                              <td>₹1,489</td>
+                              <td>₹2,019</td>
+                            </tr>
+                            <tr>
+                              <td><strong>Child (85–140cm)</strong></td>
+                              <td>₹1,191</td>
+                              <td>₹1,615</td>
+                            </tr>
+                            <tr>
+                              <td><strong>Senior Citizen</strong></td>
+                              <td>₹946</td>
+                              <td>—</td>
+                            </tr>
+                            <tr>
+                              <td><strong>Child (below 85cm)</strong></td>
+                              <td style={{ color: '#6BCB77', fontWeight: 'bold' }}>FREE</td>
+                              <td style={{ color: '#6BCB77', fontWeight: 'bold' }}>FREE</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <span className="wonderla-note">
+                          * Weekend prices slightly higher. 10% off for online booking. 20% off for college students with valid ID. Prices vary by location. GST applicable.
+                        </span>
+                      </section>
+
+                      <section className="about-features-section">
+                        <h4 className="section-label">STAR RIDES</h4>
+                        <div className="features-badges">
+                          {["🎢 Roller Coasters", "🌊 Wave Pool", "💫 Rain Disco", "🌀 Tornado Slide", "🛝 Lazy River", "⚡ High Thrill Rides", "🎡 Giant Ferris Wheel", "🎠 Kids Zone", "🚡 Aerial Rides", "🎭 4D Theatre", "🎆 Laser & Light Shows", "🎵 Musical Fountain"].map((badge, i) => (
+                            <span key={i} className="feature-badge" style={{ fontSize: '12px', background: 'rgba(255,255,255,0.04)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>{badge}</span>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="about-section">
+                        <h4 className="section-label">PARK RULES</h4>
+                        <ul className="wonderla-rules-list">
+                          <li className="wonderla-rule-item">🚫 No outside food or beverages allowed</li>
+                          <li className="wonderla-rule-item">👙 Proper swimwear mandatory for water rides (no sarees, dupattas, shirts with buttons)</li>
+                          <li className="wonderla-rule-item">📏 Height-based restrictions apply at each ride</li>
+                          <li className="wonderla-rule-item">👶 Children below 110cm must be with an adult at all times</li>
+                          <li className="wonderla-rule-item">🔒 Lockers available for rent</li>
+                          <li className="wonderla-rule-item">🚑 First-aid & paramedic stations inside the park</li>
+                          <li className="wonderla-rule-item">♿ Wheelchair access & barrier-free pathways available</li>
+                          <li className="wonderla-rule-item">📵 No photography on rides</li>
+                          <li className="wonderla-rule-item">🧴 Sunscreen recommended before water rides</li>
+                          <li className="wonderla-rule-item">🍔 Multiple food courts and restaurants inside</li>
+                        </ul>
+                      </section>
+
+                      <section className="about-features-section">
+                        <h4 className="section-label">FACILITIES</h4>
+                        <div className="features-badges">
+                          {["Themed Restaurants", "Locker Rooms", "Baby Care Zones", "First Aid Centre", "Changing Rooms", "Wheelchair Access", "Free Parking", "Conference Hall", "Retail Outlets", "RO Treated Pool Water"].map((facility, i) => (
+                            <span key={i} className="feature-badge" style={{ background: 'rgba(0, 209, 255, 0.05)', color: '#00D1FF', border: '1px solid rgba(0, 209, 255, 0.1)' }}>{facility}</span>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="about-section">
+                        <h4 className="section-label">GOOD TO KNOW</h4>
+                        <ul className="wonderla-good-list">
+                          <li className="wonderla-good-item">✅ One ticket = Unlimited rides (no per-ride charges)</li>
+                          <li className="wonderla-good-item">✅ Online booking saves 10% on ticket price</li>
+                          <li className="wonderla-good-item">✅ Fast Track tickets let you skip ride queues</li>
+                          <li className="wonderla-good-item">✅ Group discounts for 10+ visitors</li>
+                          <li className="wonderla-good-item">✅ Birthday & student ID special offers available</li>
+                          <li className="wonderla-good-item">✅ Water quality tested daily — RO treated pools</li>
+                          <li className="wonderla-good-item">✅ Trained lifeguards on all water attractions</li>
+                          <li className="wonderla-good-item">✅ In-house ride engineering & daily safety checks</li>
+                        </ul>
+                      </section>
+                    </div>
+
+                    {/* Book Tickets CTA Footer spanning full width */}
+                    <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px' }}>
+                      <button className="sticky-book-btn" style={{ width: '100%', position: 'static', boxShadow: '0 8px 32px rgba(199, 255, 0, 0.15)' }} onClick={() => {
+                        onBook(selectedAboutPark);
+                        setSelectedAboutPark(null);
+                      }}>
+                        BOOK TICKETS →
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <section className="about-section">
+                      <h4 className="section-label">ABOUT</h4>
+                      <p className="about-text">{selectedAboutPark.about || selectedAboutPark.desc}</p>
+                    </section>
+
+                    <section className="about-features-section">
+                      <h4 className="section-label">RIDES & FEATURES</h4>
+                      <div className="features-badges">
+                        {(selectedAboutPark.features || []).map((feature, i) => (
+                          <span key={i} className="feature-badge">{feature}</span>
+                        ))}
+                      </div>
+                    </section>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
     </section>
   );
 };
