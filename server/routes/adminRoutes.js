@@ -28,4 +28,17 @@ router.post('/parks', protect, admin, createPark);
 router.put('/parks/:id', protect, admin, updatePark);
 router.delete('/parks/:id', protect, admin, deletePark);
 
+// Coupons
+const { 
+  createCoupon, 
+  getCoupons, 
+  deleteCoupon,
+  getCouponUsage
+} = require('../controllers/adminController');
+
+router.post('/coupons', protect, admin, createCoupon);
+router.get('/coupons/:parkId', protect, admin, getCoupons);
+router.delete('/coupons/:id', protect, admin, deleteCoupon);
+router.get('/coupons/:code/usage', protect, admin, getCouponUsage);
+
 module.exports = router;

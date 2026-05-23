@@ -25,6 +25,8 @@ const bookingSchema = mongoose.Schema(
     buffetCount: { type: Number, default: 0 },
     lockerSelected: { type: Boolean, default: false },
     couponApplied: { type: String, default: '' },
+    discountAmount: { type: Number, default: 0 },
+    couponProcessed: { type: Boolean, default: false },
     visitDate: { type: Date },
     adultTickets: { type: Number, default: 0 },
     childTickets: { type: Number, default: 0 },
@@ -34,7 +36,7 @@ const bookingSchema = mongoose.Schema(
     status: { 
       type: String, 
       default: 'pending', 
-      enum: ['pending', 'verified', 'completed', 'cancelled'] 
+      enum: ['pending', 'verified', 'completed', 'cancelled', 'rejected', 'ticketsent'] 
     },
     transactionId: { type: String, default: '' },
     paymentScreenshot: { type: String, default: '' },  // Path to uploaded screenshot

@@ -166,20 +166,33 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     };
   };
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     const code = couponInput.trim().toUpperCase();
-    if (code === 'SPAR20') {
-      setAppliedCoupon({ code, type: 'percent', value: 20 });
-      setCouponError('');
-    } else if (code === 'WDL10') {
-      setAppliedCoupon({ code, type: 'percent', value: 10 });
-      setCouponError('');
-    } else if (code === 'WELCOME') {
-      setAppliedCoupon({ code, type: 'flat', value: 100 });
-      setCouponError('');
-    } else {
+    if (!code) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+    
+    setCouponError('');
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await axios.post(`${API_URL}/coupons/validate`, {
+        code,
+        parkId: selectedPark?.name || 'all'
+      });
+      
+      const { valid, discountType, discountValue } = response.data;
+      if (valid) {
+        setAppliedCoupon({ 
+          code, 
+          type: discountType === 'percentage' ? 'percent' : 'flat', 
+          value: discountValue 
+        });
+        setCouponError('');
+      }
+    } catch (err) {
       setAppliedCoupon(null);
-      setCouponError('Invalid coupon');
+      setCouponError(err.response?.data?.message || 'Invalid coupon');
     }
   };
 
@@ -236,7 +249,8 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
         seniorTickets: isWonderla ? formData.seniorCount : 0,
         buffetCount: isWonderla && formData.buffetSelected ? (formData.adultCount + formData.childCount + formData.seniorCount) : 0,
         lockerSelected: isWonderla && formData.lockerSelected ? true : false,
-        couponApplied: appliedCoupon ? appliedCoupon.code : ''
+        couponApplied: appliedCoupon ? appliedCoupon.code : '',
+        discountAmount: isWonderla ? getWonderlaTotals().couponDiscount : 0
       });
       setOrderData(order);
       setStep(3);
@@ -633,9 +647,14 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                     </button>
                   </div>
                   {appliedCoupon && (
-                    <p style={{ color: '#6BCB77', fontSize: '12px', fontWeight: 'bold', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      ✅ Coupon "{appliedCoupon.code}" applied! ({appliedCoupon.type === 'percent' ? `${appliedCoupon.value}%` : `₹${appliedCoupon.value}`} discount)
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+                      <p style={{ color: '#6BCB77', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        ✅ {appliedCoupon.code} applied! You save ₹{totals.couponDiscount}
+                      </p>
+                      <button onClick={() => { setAppliedCoupon(null); setCouponInput(''); }} style={{ background: 'none', border: 'none', color: '#FF6B6B', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                        ✕ Remove
+                      </button>
+                    </div>
                   )}
                   {couponError && (
                     <p style={{ color: '#FF6B6B', fontSize: '12px', fontWeight: 'bold', marginTop: '8px' }}>
@@ -728,6 +747,11 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
               <img src="/gpay_qr.jpg" alt="GPay QR Code" className="gpay-qr-image" />
               <p className="qr-upi-text">UPI ID: {orderData?.upiId}</p>
               <p className="qr-amount-text">Amount: ₹{orderData?.amount}</p>
+              {appliedCoupon && (
+                <p style={{ fontSize: '11px', color: '#6BCB77', marginTop: '4px', fontWeight: 'bold' }}>
+                  (incl. {appliedCoupon.code} discount)
+                </p>
+              )}
             </div>
 
             {orderData?.upiString && (
@@ -859,6 +883,12 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                   <div className="ticket-detail"><span className="detail-label">Name</span><span className="detail-value">{formData.name}</span></div>
                   <div className="ticket-detail"><span className="detail-label">Visit Date</span><span className="detail-value">{new Date(formData.visitDate).toLocaleDateString('en-IN')}</span></div>
                   <div className="ticket-detail"><span className="detail-label">Members</span><span className="detail-value">{getMembersString()}</span></div>
+                  {appliedCoupon && (
+                    <div className="ticket-detail" style={{ gridColumn: '1 / -1', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                      <span className="detail-label">COUPON APPLIED</span>
+                      <span className="detail-value" style={{ color: '#6BCB77' }}>{appliedCoupon.code} (−₹{getWonderlaTotals().couponDiscount})</span>
+                    </div>
+                  )}
                   <div className="ticket-detail"><span className="detail-label">Amount</span><span className="detail-value highlight">₹{currentTotal}</span></div>
                   {isWonderla && formData.whatsapp && (
                     <div className="ticket-detail" style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px', marginTop: '4px' }}>

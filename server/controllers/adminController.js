@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Booking = require('../models/Booking');
 const Park = require('../models/Park');
 const Revenue = require('../models/Revenue');
+const Coupon = require('../models/Coupon');
 
 const getAdminStats = async (req, res) => {
   try {
@@ -75,10 +76,10 @@ const searchBookings = async (req, res) => {
 // ── Update booking status (admin verification flow) ───────────────────────
 const updateBookingStatus = async (req, res) => {
   const { status, adminNotes } = req.body;
-  const validStatuses = ['pending', 'verified', 'completed', 'cancelled'];
+  const validStatuses = ['pending', 'verified', 'completed', 'cancelled', 'rejected', 'ticketsent'];
 
   if (!validStatuses.includes(status)) {
-    return res.status(400).json({ message: 'Invalid status. Use: pending, verified, completed, cancelled' });
+    return res.status(400).json({ message: 'Invalid status. Use: pending, verified, completed, cancelled, rejected, ticketsent' });
   }
 
   try {
@@ -101,6 +102,18 @@ const updateBookingStatus = async (req, res) => {
         parkName: booking.parkName,
         addedBy: req.user.name || 'Admin'
       });
+    }
+
+    if (status === 'rejected' && previousStatus !== 'rejected') {
+      if (booking.couponApplied && booking.couponProcessed) {
+        const coupon = await Coupon.findOne({ code: booking.couponApplied.toUpperCase() });
+        if (coupon) {
+          coupon.usedCount = Math.max(0, coupon.usedCount - 1);
+          if (coupon.usedCount < coupon.usageLimit) coupon.isActive = true;
+          await coupon.save();
+        }
+        booking.couponProcessed = false;
+      }
     }
 
     if (status === 'completed') {
@@ -188,6 +201,54 @@ const deletePark = async (req, res) => {
   }
 };
 
+const createCoupon = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const existing = await Coupon.findOne({ code: code.toUpperCase() });
+    if (existing) return res.status(400).json({ message: "Coupon code already exists" });
+
+    req.body.code = code.toUpperCase();
+    const coupon = await Coupon.create(req.body);
+    res.status(201).json(coupon);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCoupons = async (req, res) => {
+  try {
+    const { parkId } = req.params;
+    let query = {};
+    if (parkId && parkId !== 'all') {
+      query.applicablePark = { $in: ['all', parkId] };
+    }
+    const coupons = await Coupon.find(query).sort('-createdAt');
+    res.json(coupons);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteCoupon = async (req, res) => {
+  try {
+    const coupon = await Coupon.findByIdAndDelete(req.params.id);
+    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    res.json({ message: 'Coupon removed' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCouponUsage = async (req, res) => {
+  try {
+    const { code } = req.params;
+    const bookings = await Booking.find({ couponApplied: code.toUpperCase() }).populate('user', 'name');
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   getAdminStats, 
   searchBookings,
@@ -197,5 +258,9 @@ module.exports = {
   getRevenueEntries,
   createPark, 
   updatePark, 
-  deletePark 
+  deletePark,
+  createCoupon,
+  getCoupons,
+  deleteCoupon,
+  getCouponUsage
 };

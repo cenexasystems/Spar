@@ -8,7 +8,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const parkRoutes = require('./routes/parkRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
-
+const couponRoutes = require('./routes/couponRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -50,6 +50,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/parks', parkRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/coupons', couponRoutes);
 
 app.get('/', (req, res) => {
   res.send('SPAR Amusements API is running...');

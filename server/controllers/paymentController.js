@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
 const multer = require('multer');
 const path = require('path');
 
@@ -127,6 +128,7 @@ const createOrder = async (req, res) => {
       buffetCount: buffetCount || 0,
       lockerSelected: lockerSelected || false,
       couponApplied: couponApplied || '',
+      discountAmount: req.body.discountAmount || 0,
       visitDate: visitDate || null,
       tickets: tickets || (adultTickets || 0) + (childTickets || 0),
       adultTickets: adultTickets || 0,
@@ -220,6 +222,19 @@ const confirmBooking = async (req, res) => {
     // Just mark that user has completed the payment flow
     if (!booking.paymentScreenshot) {
       return res.status(400).json({ message: 'Please upload your payment screenshot first.' });
+    }
+
+    if (booking.couponApplied && !booking.couponProcessed) {
+      const coupon = await Coupon.findOne({ code: booking.couponApplied.toUpperCase() });
+      if (coupon) {
+        coupon.usedCount += 1;
+        if (coupon.usedCount >= coupon.usageLimit) {
+          coupon.isActive = false;
+        }
+        await coupon.save();
+      }
+      booking.couponProcessed = true;
+      await booking.save();
     }
 
     // Send WhatsApp notification
