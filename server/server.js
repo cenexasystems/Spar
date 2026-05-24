@@ -21,13 +21,17 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5174',
   'https://spar-sepia.vercel.app',
-  process.env.FRONTEND_URL,   // e.g. https://your-app.vercel.app
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman, server-to-server)
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow no-origin requests (Postman, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow all Vercel preview + production URLs
+    if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return callback(null, true);
+    // Allow explicitly listed origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true
