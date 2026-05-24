@@ -234,6 +234,14 @@ const FlappyBuzz = () => {
 
   const jump = () => {
     if (gameStatus === 'START') {
+      if (!user) {
+        setErrorMsg('You must login first to play!');
+        interceptAuth(() => {
+          setErrorMsg('');
+        });
+        return;
+      }
+
       if (attemptsToday >= 3) {
         setGameStatus('GAME_OVER');
         gameStatusRef.current = 'GAME_OVER';
@@ -287,15 +295,18 @@ const FlappyBuzz = () => {
       gameStatusRef.current = 'GAME_OVER';
       
       // Record Score to track attempts and potentially award the IMPOSSIBLE REWARD
-      interceptAuth(async () => {
-        try {
-          const data = await recordGameScoreRequest(score);
-          if (data.reward === 'FREE_TICKET') setGameReward('FREE_TICKET');
-          syncUser(data.updatedUser);
-        } catch (err) {
-          setErrorMsg(err.message);
-        }
-      });
+      if (user) {
+        const recordScore = async () => {
+          try {
+            const data = await recordGameScoreRequest(score);
+            if (data.reward === 'FREE_TICKET') setGameReward('FREE_TICKET');
+            syncUser(data.updatedUser);
+          } catch (err) {
+            setErrorMsg(err.message);
+          }
+        };
+        recordScore();
+      }
     }
   };
 
@@ -505,6 +516,7 @@ const FlappyBuzz = () => {
                     </div>
                   </div>
                 )}
+                {errorMsg && <p className="text-red-500 font-bold mt-4" style={{textShadow: '0 2px 4px rgba(0,0,0,0.8)'}}>{errorMsg}</p>}
               </div>
             </div>
           )}

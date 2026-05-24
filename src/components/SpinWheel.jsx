@@ -38,7 +38,15 @@ const SpinWheel = ({ isOpen, onClose }) => {
   const handleSpin = () => {
     if (isSpinning) return;
     
-    interceptAuth(async () => {
+    if (!user) {
+      setErrorMsg('You must login first to play!');
+      interceptAuth(() => {
+        setErrorMsg('');
+      });
+      return;
+    }
+    
+    const performSpin = async () => {
       try {
         setIsSpinning(true);
         setPrize(null);
@@ -79,7 +87,9 @@ const SpinWheel = ({ isOpen, onClose }) => {
         setIsSpinning(false);
         setErrorMsg(err.message);
       }
-    });
+    };
+    
+    performSpin();
   };
 
   const resetWheel = () => {
