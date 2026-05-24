@@ -2,7 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { Resend } = require('resend');
+const Brevo = require('@getbrevo/brevo');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -343,18 +343,21 @@ const forgotPassword = async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl = `${frontendUrl}?resetToken=${rawToken}`;
 
-    // Fail fast if Resend API key is not configured
-    if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY not set in environment variables.');
+    // Fail fast if Brevo API key is not configured
+    if (!process.env.BREVO_API_KEY) {
+      console.error('BREVO_API_KEY not set in environment variables.');
       return res.status(500).json({ message: 'Email service not configured. Contact support.' });
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { error: emailError } = await resend.emails.send({
-      from: `SPAR Amusements <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`,
-      to: user.email,
+    const brevoClient = Brevo.ApiClient.instance;
+    brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
+    const transactionalApi = new Brevo.TransactionalEmailsApi();
+
+    const emailResult = await transactionalApi.sendTransacEmail({
+      sender: { name: 'SPAR Amusements', email: process.env.BREVO_SENDER_EMAIL || 'cenexasystems@gmail.com' },
+      to: [{ email: user.email, name: user.name }],
       subject: '🎡 SPAR — Reset Your Password',
-      html: `
+      htmlContent: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0f172a;color:#fff;border-radius:16px;padding:32px;">
           <h2 style="font-size:2rem;background:linear-gradient(90deg,#BF00FF,#00D1FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SPAR AMUSEMENTS</h2>
           <h3 style="color:#C7FF00;margin-bottom:8px;">Password Reset Request</h3>
@@ -367,11 +370,7 @@ const forgotPassword = async (req, res) => {
       `
     });
 
-    if (emailError) {
-      console.error('Resend email error:', emailError);
-      return res.status(500).json({ message: 'Failed to send reset email. Please try again.' });
-    }
-
+    console.log('Brevo email sent:', emailResult?.messageId);
 
     res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (error) {
