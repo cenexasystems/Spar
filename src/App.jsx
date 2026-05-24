@@ -16,7 +16,7 @@ import SpinWheel from './components/SpinWheel';
 import SpaceBackground from './components/SpaceBackground';
 import AdminDashboard from './components/AdminDashboard';
 import PolicyModal from './components/PolicyModal';
-import managerImg from './assets/manager.jpg';
+import MeetAgent from './components/MeetAgent';
 import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './index.css';
@@ -84,6 +84,8 @@ function App() {
               selectedPark={selectedPark} 
             />
             
+            <MeetAgent />
+
             <footer className="main-footer">
               <div className="max-width-wrapper">
                 <div className="footer-grid">
@@ -117,7 +119,7 @@ function App() {
                     
                     <div className="footer-client-profile-vertical">
                       <div className="client-avatar-large">
-                        <img src={managerImg} alt="Your Manager" />
+                        <span>SA</span>
                       </div>
                       <div className="client-info-vertical">
                         <span className="client-name-vertical">Your Manager</span>
