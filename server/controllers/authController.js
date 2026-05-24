@@ -6,12 +6,18 @@ const nodemailer = require('nodemailer');
 
 // ── Email Transporter ─────────────────────────────────────────────────────────
 const createTransporter = () => nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // SSL
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // Use an App Password if 2FA is on
-  }
+    pass: process.env.EMAIL_PASS,
+  },
+  connectionTimeout: 10000, // 10 seconds — fail fast if creds are wrong
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
+
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -353,6 +359,13 @@ const forgotPassword = async (req, res) => {
     const resetUrl = `${frontendUrl}?resetToken=${rawToken}`;
 
     const transporter = createTransporter();
+
+    // Fail fast if email env vars aren't configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error('EMAIL_USER or EMAIL_PASS not set in environment variables.');
+      return res.status(500).json({ message: 'Email service not configured. Contact support.' });
+    }
+
     await transporter.sendMail({
       from: `"SPAR Amusements" <${process.env.EMAIL_USER}>`,
       to: user.email,
