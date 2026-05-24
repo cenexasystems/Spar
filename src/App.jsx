@@ -16,6 +16,8 @@ import SpinWheel from './components/SpinWheel';
 import SpaceBackground from './components/SpaceBackground';
 import AdminDashboard from './components/AdminDashboard';
 import PolicyModal from './components/PolicyModal';
+import managerImg from './assets/manager.jpg';
+import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './index.css';
 
@@ -113,27 +115,27 @@ function App() {
                   <div className="footer-contact-col">
                     <h4 className="text-white-shimmer-rtl" style={{ textTransform: 'uppercase' }}>Get in Touch</h4>
                     
-                    <div className="footer-client-profile">
-                      <div className="client-avatar">
-                        <span>SA</span>
+                    <div className="footer-client-profile-vertical">
+                      <div className="client-avatar-large">
+                        <img src={managerImg} alt="Your Manager" />
                       </div>
-                      <div className="client-info">
-                        <span className="client-name">Your Manager</span>
-                        <span className="client-role">Ticketing Agent</span>
+                      <div className="client-info-vertical">
+                        <span className="client-name-vertical">Your Manager</span>
+                        <span className="client-role-vertical">Ticketing Agent</span>
                       </div>
                     </div>
 
                     <div className="footer-contact-details">
                       <a href="tel:+919585964848" className="contact-row">
-                        <span className="contact-icon">📞</span>
+                        <span className="contact-icon"><Phone size={14} color="#00D1FF" /></span>
                         <span>+91 95859 64848</span>
                       </a>
                       <a href="mailto:sparamusements@gmail.com" className="contact-row">
-                        <span className="contact-icon">📧</span>
+                        <span className="contact-icon"><Mail size={14} color="#00D1FF" /></span>
                         <span>sparamusements@gmail.com</span>
                       </a>
                       <div className="contact-row address-row">
-                        <span className="contact-icon">📍</span>
+                        <span className="contact-icon"><MapPin size={14} color="#00D1FF" /></span>
                         <span>
                           Raksha Tower, F2-B 600/601,<br/>
                           P.H. Road, Arumbakkam,<br/>
@@ -144,7 +146,7 @@ function App() {
                     </div>
 
                     <a href="https://wa.me/919585964848" target="_blank" rel="noopener noreferrer" className="whatsapp-quick-btn">
-                      <span className="wa-icon">💬</span> CHAT ON WHATSAPP
+                      <MessageCircle size={16} /> CHAT ON WHATSAPP
                     </a>
                   </div>
                 </div>
