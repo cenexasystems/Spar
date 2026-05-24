@@ -2,24 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
-
-// ── Email Transporter ─────────────────────────────────────────────────────────
-const createTransporter = () => nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,       // STARTTLS (port 587) — works on Render free tier
-  requireTLS: true,
-  family: 4,           // Force IPv4 — Render IPv6 is unreachable
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 15000,
-});
-
+const { Resend } = require('resend');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -360,16 +343,15 @@ const forgotPassword = async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl = `${frontendUrl}?resetToken=${rawToken}`;
 
-    const transporter = createTransporter();
-
-    // Fail fast if email env vars aren't configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('EMAIL_USER or EMAIL_PASS not set in environment variables.');
+    // Fail fast if Resend API key is not configured
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY not set in environment variables.');
       return res.status(500).json({ message: 'Email service not configured. Contact support.' });
     }
 
-    await transporter.sendMail({
-      from: `"SPAR Amusements" <${process.env.EMAIL_USER}>`,
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { error: emailError } = await resend.emails.send({
+      from: `SPAR Amusements <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`,
       to: user.email,
       subject: '🎡 SPAR — Reset Your Password',
       html: `
@@ -384,6 +366,12 @@ const forgotPassword = async (req, res) => {
         </div>
       `
     });
+
+    if (emailError) {
+      console.error('Resend email error:', emailError);
+      return res.status(500).json({ message: 'Failed to send reset email. Please try again.' });
+    }
+
 
     res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (error) {
