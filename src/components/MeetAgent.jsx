@@ -12,19 +12,17 @@ const MeetAgent = () => {
             <img src={managerImg} alt="SPAR Amusements Agent" />
           </div>
           <div className="agent-trust-badges">
-            <span className="trust-badge">✅ Verified Ticketing Agent</span>
+            <span className="trust-badge">✅ Founder & Owner</span>
             <span className="trust-badge">🎟️ Official Park Partner</span>
           </div>
         </div>
         
         <div className="agent-details-col">
-          <span className="agent-label">YOUR TRUSTED BOOKING PARTNER</span>
+          <span className="agent-label">FOUNDER & OWNER</span>
           <h2 className="agent-name">SPAR Amusements</h2>
           
           <p className="agent-bio">
-            Based in Chennai, we are an authorised ticketing agent for Tamil Nadu's top amusement parks. 
-            We handle your entire booking end-to-end — from ticket selection to digital delivery on WhatsApp. 
-            No queues, no hassle, just fun.
+            Founded and operated by a passionate entrepreneur based in Chennai, SPAR Amusements is your trusted gateway to Tamil Nadu's best amusement parks. We bring you verified digital tickets, exclusive deals, and seamless WhatsApp delivery — all backed by years of experience in the ticketing industry.
           </p>
 
           <div className="agent-stats">
@@ -34,11 +32,11 @@ const MeetAgent = () => {
             </div>
             <div className="stat-card">
               <div className="stat-value">5</div>
-              <div className="stat-label">Parks Listed</div>
+              <div className="stat-label">Parks Partnered</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">2–4 hrs</div>
-              <div className="stat-label">Ticket Delivery</div>
+              <div className="stat-label">Avg. Ticket Delivery</div>
             </div>
           </div>
 
