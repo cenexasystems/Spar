@@ -136,10 +136,6 @@ function App() {
                         </span>
                       </div>
                     </div>
-
-                    <a href="https://wa.me/919585964848" target="_blank" rel="noopener noreferrer" className="footer-whatsapp-btn">
-                      <MessageCircle size={16} /> CHAT ON WHATSAPP
-                    </a>
                   </div>
                 </div>
                 
