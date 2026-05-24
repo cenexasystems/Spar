@@ -117,28 +117,26 @@ function App() {
                   <div className="footer-contact-col">
                     <h4 className="text-white-shimmer-rtl" style={{ textTransform: 'uppercase' }}>Get in Touch</h4>
                     
-                    <div className="footer-client-profile-vertical">
-                      <div className="client-avatar-large">
+                    <div className="footer-agent-box">
+                      <div className="footer-agent-avatar">
                         <span>SA</span>
                       </div>
-                      <div className="client-info-vertical">
-                        <span className="client-name-vertical">Your Manager</span>
-                        <span className="client-role-vertical">Ticketing Agent</span>
-                      </div>
+                      <span className="footer-agent-name">Founder, SPAR Amusements</span>
+                      <span className="footer-agent-title">Official Park Partner</span>
                     </div>
 
                     <div className="footer-contact-details">
-                      <a href="tel:+919585964848" className="contact-row">
-                        <span className="contact-icon"><Phone size={14} color="#00D1FF" /></span>
-                        <span>+91 95859 64848</span>
+                      <a href="tel:+919585964848" className="footer-contact-row">
+                        <span className="footer-contact-icon"><Phone size={14} color="#00D1FF" /></span>
+                        <span className="footer-contact-text">+91 95859 64848</span>
                       </a>
-                      <a href="mailto:sparamusements@gmail.com" className="contact-row">
-                        <span className="contact-icon"><Mail size={14} color="#00D1FF" /></span>
-                        <span>sparamusements@gmail.com</span>
+                      <a href="mailto:sparamusements@gmail.com" className="footer-contact-row">
+                        <span className="footer-contact-icon"><Mail size={14} color="#00D1FF" /></span>
+                        <span className="footer-contact-text">sparamusements@gmail.com</span>
                       </a>
-                      <div className="contact-row address-row">
-                        <span className="contact-icon"><MapPin size={14} color="#00D1FF" /></span>
-                        <span>
+                      <div className="footer-contact-row footer-address-row">
+                        <span className="footer-contact-icon"><MapPin size={14} color="#00D1FF" /></span>
+                        <span className="footer-contact-text">
                           Raksha Tower, F2-B 600/601,<br/>
                           P.H. Road, Arumbakkam,<br/>
                           Chennai – 600 106.<br/>
@@ -147,7 +145,7 @@ function App() {
                       </div>
                     </div>
 
-                    <a href="https://wa.me/919585964848" target="_blank" rel="noopener noreferrer" className="whatsapp-quick-btn">
+                    <a href="https://wa.me/919585964848" target="_blank" rel="noopener noreferrer" className="footer-whatsapp-btn">
                       <MessageCircle size={16} /> CHAT ON WHATSAPP
                     </a>
                   </div>
