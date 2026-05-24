@@ -117,14 +117,6 @@ function App() {
                   <div className="footer-contact-col">
                     <h4 className="text-white-shimmer-rtl" style={{ textTransform: 'uppercase' }}>Get in Touch</h4>
                     
-                    <div className="footer-agent-box">
-                      <div className="footer-agent-avatar">
-                        <span>SA</span>
-                      </div>
-                      <span className="footer-agent-name">Founder, SPAR Amusements</span>
-                      <span className="footer-agent-title">Official Park Partner</span>
-                    </div>
-
                     <div className="footer-contact-details">
                       <a href="tel:+919585964848" className="footer-contact-row">
                         <span className="footer-contact-icon"><Phone size={14} color="#00D1FF" /></span>
