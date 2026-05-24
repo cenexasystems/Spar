@@ -110,18 +110,47 @@ function App() {
                     </ul>
                   </div>
 
-                  <div className="footer-newsletter-col">
-                    <h4 className="text-white-shimmer-rtl">Stay in the Loop! 🎢</h4>
-                    <p>Get exclusive ticket drops and ride updates.</p>
-                    <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
-                      <input type="email" placeholder="Enter your email" required />
-                      <button type="submit" className="neon-btn">SUBSCRIBE</button>
-                    </form>
+                  <div className="footer-contact-col">
+                    <h4 className="text-white-shimmer-rtl" style={{ textTransform: 'uppercase' }}>Get in Touch</h4>
+                    
+                    <div className="footer-client-profile">
+                      <div className="client-avatar">
+                        <span>SA</span>
+                      </div>
+                      <div className="client-info">
+                        <span className="client-name">Your Manager</span>
+                        <span className="client-role">Ticketing Agent</span>
+                      </div>
+                    </div>
+
+                    <div className="footer-contact-details">
+                      <a href="tel:+919585964848" className="contact-row">
+                        <span className="contact-icon">📞</span>
+                        <span>+91 95859 64848</span>
+                      </a>
+                      <a href="mailto:sparamusements@gmail.com" className="contact-row">
+                        <span className="contact-icon">📧</span>
+                        <span>sparamusements@gmail.com</span>
+                      </a>
+                      <div className="contact-row address-row">
+                        <span className="contact-icon">📍</span>
+                        <span>
+                          Raksha Tower, F2-B 600/601,<br/>
+                          P.H. Road, Arumbakkam,<br/>
+                          Chennai – 600 106.<br/>
+                          Tamil Nadu, India.
+                        </span>
+                      </div>
+                    </div>
+
+                    <a href="https://wa.me/919585964848" target="_blank" rel="noopener noreferrer" className="whatsapp-quick-btn">
+                      <span className="wa-icon">💬</span> CHAT ON WHATSAPP
+                    </a>
                   </div>
                 </div>
                 
                 <div className="footer-bottom">
-                  <p>© {new Date().getFullYear()} SPAR Amusements. All rights reserved. Built for Thrill Seekers.</p>
+                  <p>© {new Date().getFullYear()} SPAR Amusements. All rights reserved. Operated by SPAR Amusements, Chennai.</p>
                   <div className="footer-legal">
                     <a href="#" onClick={(e) => { e.preventDefault(); setActivePolicy('privacy'); }}>Privacy Policy</a>
                     <span className="divider">•</span>
