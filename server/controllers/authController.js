@@ -1,6 +1,17 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+// ── Email Transporter ─────────────────────────────────────────────────────────
+const createTransporter = () => nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, // Use an App Password if 2FA is on
+  }
+});
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -19,8 +30,20 @@ const registerUser = async (req, res) => {
   const { name, email, phone, password, avatar } = req.body;
 
   try {
-    const userExists = await User.findOne({ email });
+    // Phone validation: must have at least 10 digits if provided
+    if (phone) {
+      const digits = phone.replace(/\D/g, '');
+      if (digits.length < 10) {
+        return res.status(400).json({ message: 'Phone number must contain at least 10 digits.' });
+      }
+    }
 
+    // Password strength: minimum 6 characters
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'Account exists! Switch to LOGIN to enter.' });
     }
@@ -32,7 +55,7 @@ const registerUser = async (req, res) => {
       sparId: generateSparId(),
       name,
       email,
-      phone,
+      phone: phone || '',
       password: hashedPassword,
       avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
     });
@@ -303,4 +326,85 @@ const promoteToAdmin = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, googleLogin, getUserProfile, updateUserAvatar, spinWheel, recordGameScore, deductCoins, promoteToAdmin };
+// ── Forgot Password ────────────────────────────────────────────────────────────
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Generic response to prevent email enumeration
+      return res.json({ message: 'If that email exists, a reset link has been sent.' });
+    }
+
+    // Google-only accounts have no password
+    if (!user.password) {
+      return res.status(400).json({ message: 'This account uses Google Sign-In. No password to reset.' });
+    }
+
+    // Generate secure random token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}?resetToken=${rawToken}`;
+
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: `"SPAR Amusements" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: '🎡 SPAR — Reset Your Password',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0f172a;color:#fff;border-radius:16px;padding:32px;">
+          <h2 style="font-size:2rem;background:linear-gradient(90deg,#BF00FF,#00D1FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SPAR AMUSEMENTS</h2>
+          <h3 style="color:#C7FF00;margin-bottom:8px;">Password Reset Request</h3>
+          <p style="color:#94A3B8;">Hi <strong style="color:#fff">${user.name}</strong>, we received a request to reset your password.</p>
+          <a href="${resetUrl}" style="display:inline-block;margin:24px 0;padding:14px 32px;background:linear-gradient(135deg,#BF00FF,#00D1FF);color:#fff;font-weight:800;text-decoration:none;border-radius:12px;font-size:1rem;">RESET PASSWORD</a>
+          <p style="color:#64748B;font-size:0.85rem;">This link expires in <strong style="color:#fff">1 hour</strong>. If you did not request this, ignore this email.</p>
+          <hr style="border-color:rgba(255,255,255,0.1);margin:24px 0;" />
+          <p style="color:#334155;font-size:0.75rem;">© 2025 SPAR Amusements. Sent to ${user.email}</p>
+        </div>
+      `
+    });
+
+    res.json({ message: 'If that email exists, a reset link has been sent.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Failed to send reset email. Please try again.' });
+  }
+};
+
+// ── Reset Password ─────────────────────────────────────────────────────────────
+const resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  try {
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Reset link is invalid or has expired.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password reset successfully! You can now log in.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, googleLogin, getUserProfile, updateUserAvatar, spinWheel, recordGameScore, deductCoins, promoteToAdmin, forgotPassword, resetPassword };

@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [pendingAction, setPendingAction] = useState(null);
   const [shouldOpenProfile, setShouldOpenProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [resetToken, setResetToken] = useState(null); // from URL param
 
   useEffect(() => {
     if (user?.token) {
@@ -21,6 +22,18 @@ export const AuthProvider = ({ children }) => {
       delete axios.defaults.headers.common['Authorization'];
     }
   }, [user]);
+
+  // Check URL for reset token (from password reset email)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('resetToken');
+    if (token) {
+      setResetToken(token);
+      setIsAuthModalOpen(true);
+      // Clean URL without reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -169,6 +182,24 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('spar_session');
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      return data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to send reset email.');
+    }
+  };
+
+  const resetPassword = async (token, password) => {
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/reset-password`, { token, password });
+      return data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Password reset failed.');
+    }
+  };
+
   const addBooking = async (ticketData) => {
     if (!user) return;
 
@@ -227,7 +258,11 @@ export const AuthProvider = ({ children }) => {
       recordGameScoreRequest,
       deductCoinsRequest,
       shouldOpenProfile,
-      setShouldOpenProfile
+      setShouldOpenProfile,
+      forgotPassword,
+      resetPassword,
+      resetToken,
+      setResetToken,
     }}>
       {!isLoading && children}
     </AuthContext.Provider>

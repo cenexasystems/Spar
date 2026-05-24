@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Phone, User as UserIcon, ArrowRight, ShieldCheck, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { X, Mail, Lock, Phone, User as UserIcon, ArrowRight, ShieldCheck, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, KeyRound, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 import './AuthModal.css';
@@ -13,19 +13,21 @@ const EYES = ['default', 'happy', 'hearts', 'wink', 'surprised', 'cry'];
 const MOUTHS = ['default', 'smile', 'serious', 'sad', 'grimace'];
 
 const AuthModal = () => {
-  const { isAuthModalOpen, closeAuthModal, loginUser, registerUser, loginGoogle, updateAvatar, setShouldOpenProfile } = useAuth();
+  const { isAuthModalOpen, closeAuthModal, loginUser, registerUser, loginGoogle, updateAvatar, setShouldOpenProfile, forgotPassword, resetPassword, resetToken, setResetToken } = useAuth();
   
-  const [tab, setTab] = useState('signup'); // Default to 'signup' as requested
-  const [authStep, setAuthStep] = useState('form'); // 'form', 'avatar', 'success'
+  // If we have a resetToken from the URL, start in reset-password mode
+  const [tab, setTab] = useState('signup');
+  // 'form' | 'avatar' | 'success' | 'forgot' | 'forgot-sent' | 'reset-password'
+  const [authStep, setAuthStep] = useState(resetToken ? 'reset-password' : 'form');
   const [isGoogleSignupFlow, setIsGoogleSignupFlow] = useState(false);
   
-  // Form State
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   
-  // Avatar Creation State
   const [gender, setGender] = useState('boy');
   const [skinIdx, setSkinIdx] = useState(0);
   const [hairIdx, setHairIdx] = useState(0);
@@ -35,6 +37,7 @@ const AuthModal = () => {
   const [mouthIdx, setMouthIdx] = useState(0);
 
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = useGoogleLogin({
@@ -61,46 +64,62 @@ const AuthModal = () => {
 
   if (!isAuthModalOpen) return null;
 
+  // --- Validation helpers ---
+  const validatePhone = (p) => {
+    if (!p || p.trim() === '') return true; // optional
+    const digits = p.replace(/\D/g, '');
+    return digits.length >= 10;
+  };
+
+  const validatePassword = (p) => p && p.length >= 6;
+
   const getAvatarUrl = () => {
     const hairArr = gender === 'boy' ? HAIR_BOY : HAIR_GIRL;
     let url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${email || 'Cadet'}`;
     url += `&skinColor=${SKIN_COLORS[skinIdx]}`;
     url += `&top=${hairArr[hairIdx]}`;
     url += `&eyes=${EYES[eyeIdx]}&mouth=${MOUTHS[mouthIdx]}`;
-    
     if (GLASSES[glassIdx] !== 'none') {
       url += `&accessoriesProbability=100&accessories=${GLASSES[glassIdx]}`;
     } else {
       url += `&accessoriesProbability=0`;
     }
-    
     if (gender === 'boy' && BEARDS[beardIdx] !== 'none') {
       url += `&facialHairProbability=100&facialHair=${BEARDS[beardIdx]}`;
     } else {
       url += `&facialHairProbability=0`;
     }
-
     return url;
   };
 
   const handleInitialSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    
-    if (tab === 'login') {
-      setIsLoading(true);
-      try {
-        await loginUser(email, password);
-        setAuthStep('success');
-        setShouldOpenProfile(true); 
-        setTimeout(() => resetState(), 1500);
-      } catch (err) {
-        setErrorMsg(err.message);
-      } finally {
-        setIsLoading(false);
+
+    if (tab === 'signup') {
+      if (!validatePhone(phone)) {
+        setErrorMsg('Phone number must contain at least 10 digits.');
+        return;
       }
-    } else {
+      if (!validatePassword(password)) {
+        setErrorMsg('Password must be at least 6 characters.');
+        return;
+      }
       setAuthStep('avatar');
+      return;
+    }
+
+    // Login
+    setIsLoading(true);
+    try {
+      await loginUser(email, password);
+      setAuthStep('success');
+      setShouldOpenProfile(true); 
+      setTimeout(() => resetState(), 1500);
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,7 +136,44 @@ const AuthModal = () => {
       setTimeout(() => resetState(), 1500);
     } catch (err) {
       setErrorMsg(err.message);
-      setAuthStep('form'); // kick back to form to fix e.g. duplicate email
+      setAuthStep('form');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+    if (!email) { setErrorMsg('Please enter your email address.'); return; }
+    setIsLoading(true);
+    try {
+      const data = await forgotPassword(email);
+      setSuccessMsg(data.message);
+      setAuthStep('forgot-sent');
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!validatePassword(newPassword)) { setErrorMsg('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmPassword) { setErrorMsg('Passwords do not match.'); return; }
+    setIsLoading(true);
+    try {
+      const token = resetToken;
+      await resetPassword(token, newPassword);
+      setResetToken(null);
+      setSuccessMsg('Password reset! You can now log in.');
+      setAuthStep('success');
+      setTimeout(() => { setAuthStep('form'); setTab('login'); setSuccessMsg(''); }, 2000);
+    } catch (err) {
+      setErrorMsg(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -127,25 +183,33 @@ const AuthModal = () => {
     setTab('login');
     setAuthStep('form');
     setIsGoogleSignupFlow(false);
-    setFirstName('');
-    setEmail('');
-    setPhone('');
-    setPassword('');
-    setErrorMsg('');
-    setSkinIdx(0);
-    setHairIdx(0);
-    setGlassIdx(0);
-    setBeardIdx(0);
-    setEyeIdx(0);
-    setMouthIdx(0);
+    setFirstName(''); setEmail(''); setPhone(''); setPassword('');
+    setNewPassword(''); setConfirmPassword('');
+    setErrorMsg(''); setSuccessMsg('');
+    setSkinIdx(0); setHairIdx(0); setGlassIdx(0); setBeardIdx(0); setEyeIdx(0); setMouthIdx(0);
     setGender('boy');
+    setResetToken(null);
   };
 
-  const cycleArr = (val, setVal, arr, maxIdx) => {
-    setVal(val + 1 > maxIdx ? 0 : val + 1);
+  const cycleArr = (val, setVal, arr, maxIdx) => setVal(val + 1 > maxIdx ? 0 : val + 1);
+  const cycleArrBack = (val, setVal, arr, maxIdx) => setVal(val - 1 < 0 ? maxIdx : val - 1);
+
+  const getHeaderText = () => {
+    if (authStep === 'success') return 'ACCESS GRANTED';
+    if (authStep === 'avatar') return 'DESIGN YOUR AVATAR';
+    if (authStep === 'forgot') return 'FORGOT PASSWORD';
+    if (authStep === 'forgot-sent') return 'CHECK YOUR EMAIL';
+    if (authStep === 'reset-password') return 'RESET PASSWORD';
+    return tab === 'login' ? 'WELCOME BACK' : 'JOIN THE CREW';
   };
-  const cycleArrBack = (val, setVal, arr, maxIdx) => {
-    setVal(val - 1 < 0 ? maxIdx : val - 1);
+
+  const getSubtitle = () => {
+    if (authStep === 'success') return successMsg || 'Secure connection established...';
+    if (authStep === 'avatar') return 'Stand out in the SPAR network!';
+    if (authStep === 'forgot') return 'Enter your email to receive a reset link.';
+    if (authStep === 'forgot-sent') return 'A password reset link has been sent if that email is registered.';
+    if (authStep === 'reset-password') return 'Enter your new password below.';
+    return tab === 'login' ? 'Sign in to access your digital tickets.' : 'Sign up to lock in your arcade rewards!';
   };
 
   return (
@@ -164,120 +228,138 @@ const AuthModal = () => {
         </button>
 
         <div className="auth-header">
-           <h2 className="text-white-shimmer-rtl">
-             {authStep === 'success' ? 'ACCESS GRANTED' : 
-              authStep === 'avatar' ? 'DESIGN YOUR AVATAR' :
-              tab === 'login' ? 'WELCOME BACK' : 'JOIN THE CREW'}
-           </h2>
-           <p className="auth-subtitle text-muted">
-             {authStep === 'success' ? 'Secure connection established...' :
-              authStep === 'avatar' ? 'Stand out in the SPAR network!' :
-              tab === 'login' ? 'Sign in to access your digital tickets.' : 'Sign up to lock in your arcade rewards!'}
-           </p>
+           <h2 className="text-white-shimmer-rtl">{getHeaderText()}</h2>
+           <p className="auth-subtitle text-muted">{getSubtitle()}</p>
         </div>
 
-        {authStep === 'success' ? (
+        {/* SUCCESS */}
+        {authStep === 'success' && (
            <div className="auth-success-view flex-center">
               <div className="shield-loader scale-in">
                 <ShieldCheck size={80} color="#C7FF00" />
               </div>
            </div>
-        ) : authStep === 'avatar' ? (
+        )}
+
+        {/* FORGOT-SENT CONFIRMATION */}
+        {authStep === 'forgot-sent' && (
+          <div className="auth-success-view flex-center flex-col gap-4">
+            <div style={{ fontSize: '4rem' }}>📧</div>
+            <p style={{ color: '#C7FF00', fontWeight: 800, textAlign: 'center' }}>Link sent! Check your inbox.</p>
+            <button className="btn-primary auth-submit mt-2" onClick={() => { setAuthStep('form'); setTab('login'); }}>
+              BACK TO LOGIN
+            </button>
+          </div>
+        )}
+
+        {/* RESET PASSWORD FORM */}
+        {authStep === 'reset-password' && (
+          <form className="auth-form fade-in" onSubmit={handleResetPassword}>
+            {errorMsg && (
+              <div className="auth-error glass-morphism mb-4 flex items-center gap-2 text-red-400 p-3 rounded-lg border border-red-500/30">
+                <AlertCircle size={18} /><span className="text-sm font-bold">{errorMsg}</span>
+              </div>
+            )}
+            <div className="input-group">
+              <Lock size={18} className="input-icon" color="#94A3B8" />
+              <input type="password" className="modern-input with-icon" placeholder="New Password (min 6 chars)"
+                value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required autoComplete="new-password" />
+            </div>
+            <div className="input-group">
+              <Lock size={18} className="input-icon" color="#94A3B8" />
+              <input type="password" className="modern-input with-icon" placeholder="Confirm New Password"
+                value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" />
+            </div>
+            <button type="submit" className="btn-primary auth-submit mt-4" disabled={isLoading}>
+              {isLoading ? <div className="spinner"></div> : <><KeyRound size={18}/> SET NEW PASSWORD</>}
+            </button>
+          </form>
+        )}
+
+        {/* FORGOT PASSWORD FORM */}
+        {authStep === 'forgot' && (
+          <form className="auth-form fade-in" onSubmit={handleForgotPassword}>
+            {errorMsg && (
+              <div className="auth-error glass-morphism mb-4 flex items-center gap-2 text-red-400 p-3 rounded-lg border border-red-500/30">
+                <AlertCircle size={18} /><span className="text-sm font-bold">{errorMsg}</span>
+              </div>
+            )}
+            <div className="input-group">
+              <Mail size={18} className="input-icon" color="#94A3B8" />
+              <input type="email" className="modern-input with-icon" placeholder="Your registered email"
+                value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <button type="submit" className="btn-primary auth-submit mt-4" disabled={isLoading}>
+              {isLoading ? <div className="spinner"></div> : <><Send size={18}/> SEND RESET LINK</>}
+            </button>
+            <button type="button" className="builder-nav-btn glass-morphism mt-3 w-full" onClick={() => { setAuthStep('form'); setTab('login'); setErrorMsg(''); }}>
+              ← BACK TO LOGIN
+            </button>
+          </form>
+        )}
+
+        {/* AVATAR BUILDER */}
+        {authStep === 'avatar' && (
            <div className="avatar-builder fade-in">
               <div className="avatar-preview-box">
                 <img src={getAvatarUrl()} alt="Avatar Preview" className="avatar-preview-img" />
               </div>
               
               <div className="avatar-controls">
-                
                 <div className="builder-row">
                   <span className="builder-label">GENDER</span>
                   <div className="gender-toggles flex gap-2">
-                     <button 
-                       className={`builder-gender-btn ${gender === 'boy' ? 'active' : ''}`}
-                       onClick={() => { setGender('boy'); setHairIdx(0); }}
-                     >
-                       BOY
-                     </button>
-                     <button 
-                       className={`builder-gender-btn ${gender === 'girl' ? 'active' : ''}`}
-                       onClick={() => { setGender('girl'); setHairIdx(0); }}
-                     >
-                       GIRL
-                     </button>
+                     <button className={`builder-gender-btn ${gender === 'boy' ? 'active' : ''}`} onClick={() => { setGender('boy'); setHairIdx(0); }}>BOY</button>
+                     <button className={`builder-gender-btn ${gender === 'girl' ? 'active' : ''}`} onClick={() => { setGender('girl'); setHairIdx(0); }}>GIRL</button>
                   </div>
                 </div>
 
-                <div className="builder-row">
-                  <span className="builder-label">SKIN COLOR</span>
-                  <div className="builder-toggles">
-                    <button onClick={() => cycleArrBack(skinIdx, setSkinIdx, SKIN_COLORS, SKIN_COLORS.length-1)}><ChevronLeft size={16}/></button>
-                    <span className="builder-val">Variant {skinIdx + 1}</span>
-                    <button onClick={() => cycleArr(skinIdx, setSkinIdx, SKIN_COLORS, SKIN_COLORS.length-1)}><ChevronRight size={16}/></button>
+                {[
+                  { label: 'SKIN COLOR', val: skinIdx, setVal: setSkinIdx, arr: SKIN_COLORS, display: `Variant ${skinIdx + 1}` },
+                  { label: 'HAIR', val: hairIdx, setVal: setHairIdx, arr: gender === 'boy' ? HAIR_BOY : HAIR_GIRL, display: `Style ${hairIdx + 1}` },
+                  { label: 'GLASSES', val: glassIdx, setVal: setGlassIdx, arr: GLASSES, display: GLASSES[glassIdx].toUpperCase() },
+                  { label: 'EYES', val: eyeIdx, setVal: setEyeIdx, arr: EYES, display: EYES[eyeIdx].toUpperCase() },
+                  { label: 'MOUTH', val: mouthIdx, setVal: setMouthIdx, arr: MOUTHS, display: MOUTHS[mouthIdx].toUpperCase() },
+                ].map(({ label, val, setVal, arr, display }) => (
+                  <div className="builder-row" key={label}>
+                    <span className="builder-label">{label}</span>
+                    <div className="builder-toggles">
+                      <button onClick={() => cycleArrBack(val, setVal, arr, arr.length - 1)}><ChevronLeft size={16}/></button>
+                      <span className="builder-val">{display}</span>
+                      <button onClick={() => cycleArr(val, setVal, arr, arr.length - 1)}><ChevronRight size={16}/></button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="builder-row">
-                  <span className="builder-label">HAIR</span>
-                  <div className="builder-toggles">
-                    <button onClick={() => cycleArrBack(hairIdx, setHairIdx, gender === 'boy' ? HAIR_BOY : HAIR_GIRL, (gender === 'boy' ? HAIR_BOY : HAIR_GIRL).length-1)}><ChevronLeft size={16}/></button>
-                    <span className="builder-val">Style {hairIdx + 1}</span>
-                    <button onClick={() => cycleArr(hairIdx, setHairIdx, gender === 'boy' ? HAIR_BOY : HAIR_GIRL, (gender === 'boy' ? HAIR_BOY : HAIR_GIRL).length-1)}><ChevronRight size={16}/></button>
-                  </div>
-                </div>
-
-                <div className="builder-row">
-                  <span className="builder-label">GLASSES</span>
-                  <div className="builder-toggles">
-                    <button onClick={() => cycleArrBack(glassIdx, setGlassIdx, GLASSES, GLASSES.length-1)}><ChevronLeft size={16}/></button>
-                    <span className="builder-val">{GLASSES[glassIdx].toUpperCase()}</span>
-                    <button onClick={() => cycleArr(glassIdx, setGlassIdx, GLASSES, GLASSES.length-1)}><ChevronRight size={16}/></button>
-                  </div>
-                </div>
-
-                <div className="builder-row">
-                  <span className="builder-label">EYES</span>
-                  <div className="builder-toggles">
-                    <button onClick={() => cycleArrBack(eyeIdx, setEyeIdx, EYES, EYES.length-1)}><ChevronLeft size={16}/></button>
-                    <span className="builder-val">{EYES[eyeIdx].toUpperCase()}</span>
-                    <button onClick={() => cycleArr(eyeIdx, setEyeIdx, EYES, EYES.length-1)}><ChevronRight size={16}/></button>
-                  </div>
-                </div>
-
-                <div className="builder-row">
-                  <span className="builder-label">MOUTH</span>
-                  <div className="builder-toggles">
-                    <button onClick={() => cycleArrBack(mouthIdx, setMouthIdx, MOUTHS, MOUTHS.length-1)}><ChevronLeft size={16}/></button>
-                    <span className="builder-val">{MOUTHS[mouthIdx].toUpperCase()}</span>
-                    <button onClick={() => cycleArr(mouthIdx, setMouthIdx, MOUTHS, MOUTHS.length-1)}><ChevronRight size={16}/></button>
-                  </div>
-                </div>
+                ))}
 
                 {gender === 'boy' && (
                   <div className="builder-row">
                     <span className="builder-label">BEARD</span>
                     <div className="builder-toggles">
-                      <button onClick={() => cycleArrBack(beardIdx, setBeardIdx, BEARDS, BEARDS.length-1)}><ChevronLeft size={16}/></button>
+                      <button onClick={() => cycleArrBack(beardIdx, setBeardIdx, BEARDS, BEARDS.length - 1)}><ChevronLeft size={16}/></button>
                       <span className="builder-val">{beardIdx === 0 ? 'NONE' : `STYLE ${beardIdx}`}</span>
-                      <button onClick={() => cycleArr(beardIdx, setBeardIdx, BEARDS, BEARDS.length-1)}><ChevronRight size={16}/></button>
+                      <button onClick={() => cycleArr(beardIdx, setBeardIdx, BEARDS, BEARDS.length - 1)}><ChevronRight size={16}/></button>
                     </div>
                   </div>
                 )}
 
                 {isGoogleSignupFlow && (
                   <div className="builder-row google-extra-fields" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
-                    <span className="builder-label" style={{ textAlign: 'left', opacity: 0.8 }}>Add Phone Number (Required for Bookings)</span>
-                    <input 
-                      type="tel" 
-                      className="modern-input" 
-                      placeholder="Enter Phone Number..."
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px' }}
-                    />
+                    <span className="builder-label" style={{ textAlign: 'left', opacity: 0.8 }}>Phone Number (Required for Bookings)</span>
+                    <input type="tel" className="modern-input" placeholder="e.g. 9876543210"
+                      value={phone} onChange={(e) => setPhone(e.target.value)}
+                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px' }} />
+                    {phone && !validatePhone(phone) && (
+                      <span style={{ color: '#FF0055', fontSize: '0.75rem', fontWeight: 700 }}>⚠ Must be at least 10 digits</span>
+                    )}
                   </div>
                 )}
               </div>
+
+              {errorMsg && (
+                <div className="auth-error glass-morphism mt-3 flex items-center gap-2 text-red-400 p-3 rounded-lg border border-red-500/30 w-full">
+                  <AlertCircle size={18} /><span className="text-sm font-bold">{errorMsg}</span>
+                </div>
+              )}
 
               <div className="flex gap-2 mt-6 builder-actions">
                 <button className="builder-nav-btn glass-morphism" onClick={() => setAuthStep('form')}>BACK</button>
@@ -287,88 +369,73 @@ const AuthModal = () => {
                 </button>
               </div>
            </div>
-        ) : (
+        )}
+
+        {/* MAIN LOGIN / SIGNUP FORM */}
+        {authStep === 'form' && (
           <>
             <div className="auth-tabs">
-              <button 
-                 type="button"
-                 className={`tab-btn ${tab === 'login' ? 'active' : ''}`} 
-                 onClick={() => {setTab('login'); setErrorMsg('');}}
-              >
-                LOGIN
-              </button>
-              <button 
-                 type="button"
-                 className={`tab-btn ${tab === 'signup' ? 'active' : ''}`} 
-                 onClick={() => {setTab('signup'); setErrorMsg('');}}
-              >
-                SIGN UP
-              </button>
+              <button type="button" className={`tab-btn ${tab === 'login' ? 'active' : ''}`} onClick={() => { setTab('login'); setErrorMsg(''); }}>LOGIN</button>
+              <button type="button" className={`tab-btn ${tab === 'signup' ? 'active' : ''}`} onClick={() => { setTab('signup'); setErrorMsg(''); }}>SIGN UP</button>
             </div>
 
             {errorMsg && (
               <div className="auth-error glass-morphism mb-4 flex items-center gap-2 text-red-400 p-3 rounded-lg border border-red-500/30">
-                <AlertCircle size={18} />
-                <span className="text-sm font-bold">{errorMsg}</span>
+                <AlertCircle size={18} /><span className="text-sm font-bold">{errorMsg}</span>
               </div>
             )}
 
             <form className="auth-form fade-in" onSubmit={handleInitialSubmit}>
-              
               {tab === 'signup' && (
                 <>
                   <div className="input-group">
                     <UserIcon size={18} className="input-icon" color="#94A3B8" />
-                    <input 
-                      type="text" 
-                      className="modern-input with-icon" 
-                      placeholder="First Name"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                    />
+                    <input type="text" className="modern-input with-icon" placeholder="First Name"
+                      value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                   </div>
                   <div className="input-group">
                     <Phone size={18} className="input-icon" color="#94A3B8" />
-                    <input 
-                      type="tel" 
-                      className="modern-input with-icon" 
-                      placeholder="Phone Number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      required
-                    />
+                    <input type="tel" className="modern-input with-icon" placeholder="Phone Number (min 10 digits)"
+                      value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                    {phone && !validatePhone(phone) && (
+                      <span style={{ color: '#FF0055', fontSize: '0.72rem', fontWeight: 700, marginTop: '4px', display: 'block', paddingLeft: '4px' }}>
+                        ⚠ Must be at least 10 digits
+                      </span>
+                    )}
                   </div>
                 </>
               )}
 
               <div className="input-group">
                 <Mail size={18} className="input-icon" color="#94A3B8" />
-                <input 
-                  type="email" 
-                  className="modern-input with-icon" 
-                  placeholder="Email Address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <input type="email" className="modern-input with-icon" placeholder="Email Address"
+                  value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
 
               <div className="input-group">
                 <Lock size={18} className="input-icon" color="#94A3B8" />
-                <input 
-                  type="password" 
-                  className="modern-input with-icon" 
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="on"
-                />
+                <input type="password" className="modern-input with-icon"
+                  placeholder={tab === 'signup' ? 'Password (min 6 chars)' : 'Password'}
+                  value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="on" />
+                {tab === 'signup' && password && !validatePassword(password) && (
+                  <span style={{ color: '#FF0055', fontSize: '0.72rem', fontWeight: 700, marginTop: '4px', display: 'block', paddingLeft: '4px' }}>
+                    ⚠ Password must be at least 6 characters
+                  </span>
+                )}
               </div>
 
+              {tab === 'login' && (
+                <div style={{ textAlign: 'right', marginBottom: '8px', marginTop: '-4px' }}>
+                  <button type="button"
+                    style={{ background: 'none', border: 'none', color: '#00D1FF', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => { setAuthStep('forgot'); setErrorMsg(''); }}>
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
               <button type="submit" className="btn-primary auth-submit mt-4" disabled={isLoading}>
-                {isLoading ? <div className="spinner"></div> : 
+                {isLoading ? <div className="spinner"></div> :
                   <>{tab === 'login' ? 'INITIATE LOGIN' : 'DESIGN AVATAR'} <ArrowRight size={18}/></>
                 }
               </button>
