@@ -7,15 +7,17 @@ const nodemailer = require('nodemailer');
 // ── Email Transporter ─────────────────────────────────────────────────────────
 const createTransporter = () => nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // SSL
+  port: 587,
+  secure: false,       // STARTTLS (port 587) — works on Render free tier
+  requireTLS: true,
+  family: 4,           // Force IPv4 — Render IPv6 is unreachable
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 10000, // 10 seconds — fail fast if creds are wrong
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
 });
 
 
