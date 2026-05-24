@@ -15,6 +15,7 @@ import BookingModal from './components/BookingModal';
 import SpinWheel from './components/SpinWheel';
 import SpaceBackground from './components/SpaceBackground';
 import AdminDashboard from './components/AdminDashboard';
+import PolicyModal from './components/PolicyModal';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './index.css';
 
@@ -27,6 +28,7 @@ function App() {
   const [isBookingOpen, setIsBookingOpen] = React.useState(false);
   const [isSpinWheelOpen, setIsSpinWheelOpen] = React.useState(false);
   const [selectedPark, setSelectedPark] = React.useState(null);
+  const [activePolicy, setActivePolicy] = React.useState(null);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,6 +52,7 @@ function App() {
 
 
         <AuthModal />
+        <PolicyModal activePolicy={activePolicy} onClose={() => setActivePolicy(null)} />
         <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
         <ProfileModal 
           isOpen={isProfileOpen} 
@@ -89,12 +92,6 @@ function App() {
                     <p className="footer-description">
                       The ultimate destination for thrill-seekers and families. Experience world-class rollercoasters, digital arcade rewards, and unforgettable memories!
                     </p>
-                    <div className="social-links-styled">
-                      <a href="#" className="social-icon" title="Instagram">IG</a>
-                      <a href="#" className="social-icon" title="Twitter">TW</a>
-                      <a href="#" className="social-icon" title="Facebook">FB</a>
-                      <a href="#" className="social-icon" title="YouTube">YT</a>
-                    </div>
                   </div>
     
                   <div className="footer-links-col">
@@ -109,9 +106,7 @@ function App() {
                     <h4 className="text-white-shimmer-rtl">Support</h4>
                     <ul>
                       <li><a href="#" onClick={(e) => { e.preventDefault(); setIsSupportOpen(true); }}>Help Center</a></li>
-                      <li><a href="#">Ticket Policies</a></li>
-                      <li><a href="#">Park Accessibility</a></li>
-                      <li><a href="#" onClick={(e) => { e.preventDefault(); setIsSupportOpen(true); }}>Contact Us</a></li>
+                      <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePolicy('ticket'); }}>Ticket Policies</a></li>
                     </ul>
                   </div>
 
@@ -128,9 +123,9 @@ function App() {
                 <div className="footer-bottom">
                   <p>© {new Date().getFullYear()} SPAR Amusements. All rights reserved. Built for Thrill Seekers.</p>
                   <div className="footer-legal">
-                    <a href="#">Privacy Policy</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); setActivePolicy('privacy'); }}>Privacy Policy</a>
                     <span className="divider">•</span>
-                    <a href="#">Terms of Service</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); setActivePolicy('terms'); }}>Terms of Use</a>
                   </div>
                 </div>
               </div>
