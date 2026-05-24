@@ -46,12 +46,12 @@ const Hero = () => {
           </p>
           
           <div className="hero-cta-group">
-            <button className="btn-primary btn-large kids-floating">
+            <button 
+              className="btn-primary btn-large kids-floating"
+              onClick={() => document.getElementById('parks')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <Rocket size={20} style={{ marginRight: '10px' }} />
               START THE ADVENTURE
-            </button>
-            <button className="btn-outline btn-large flex-center">
-              WATCH THE FUN!
             </button>
           </div>
         </div>
