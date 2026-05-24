@@ -349,28 +349,38 @@ const forgotPassword = async (req, res) => {
       return res.status(500).json({ message: 'Email service not configured. Contact support.' });
     }
 
-    const brevoClient = Brevo.ApiClient.instance;
-    brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
-    const transactionalApi = new Brevo.TransactionalEmailsApi();
-
-    const emailResult = await transactionalApi.sendTransacEmail({
-      sender: { name: 'SPAR Amusements', email: process.env.BREVO_SENDER_EMAIL || 'cenexasystems@gmail.com' },
-      to: [{ email: user.email, name: user.name }],
-      subject: '🎡 SPAR — Reset Your Password',
-      htmlContent: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0f172a;color:#fff;border-radius:16px;padding:32px;">
-          <h2 style="font-size:2rem;background:linear-gradient(90deg,#BF00FF,#00D1FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SPAR AMUSEMENTS</h2>
-          <h3 style="color:#C7FF00;margin-bottom:8px;">Password Reset Request</h3>
-          <p style="color:#94A3B8;">Hi <strong style="color:#fff">${user.name}</strong>, we received a request to reset your password.</p>
-          <a href="${resetUrl}" style="display:inline-block;margin:24px 0;padding:14px 32px;background:linear-gradient(135deg,#BF00FF,#00D1FF);color:#fff;font-weight:800;text-decoration:none;border-radius:12px;font-size:1rem;">RESET PASSWORD</a>
-          <p style="color:#64748B;font-size:0.85rem;">This link expires in <strong style="color:#fff">1 hour</strong>. If you did not request this, ignore this email.</p>
-          <hr style="border-color:rgba(255,255,255,0.1);margin:24px 0;" />
-          <p style="color:#334155;font-size:0.75rem;">© 2025 SPAR Amusements. Sent to ${user.email}</p>
-        </div>
-      `
+    const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: 'SPAR Amusements', email: process.env.BREVO_SENDER_EMAIL || 'cenexasystems@gmail.com' },
+        to: [{ email: user.email, name: user.name }],
+        subject: '🎡 SPAR — Reset Your Password',
+        htmlContent: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0f172a;color:#fff;border-radius:16px;padding:32px;">
+            <h2 style="font-size:2rem;background:linear-gradient(90deg,#BF00FF,#00D1FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SPAR AMUSEMENTS</h2>
+            <h3 style="color:#C7FF00;margin-bottom:8px;">Password Reset Request</h3>
+            <p style="color:#94A3B8;">Hi <strong style="color:#fff">${user.name}</strong>, we received a request to reset your password.</p>
+            <a href="${resetUrl}" style="display:inline-block;margin:24px 0;padding:14px 32px;background:linear-gradient(135deg,#BF00FF,#00D1FF);color:#fff;font-weight:800;text-decoration:none;border-radius:12px;font-size:1rem;">RESET PASSWORD</a>
+            <p style="color:#64748B;font-size:0.85rem;">This link expires in <strong style="color:#fff">1 hour</strong>. If you did not request this, ignore this email.</p>
+            <hr style="border-color:rgba(255,255,255,0.1);margin:24px 0;" />
+            <p style="color:#334155;font-size:0.75rem;">© 2025 SPAR Amusements. Sent to ${user.email}</p>
+          </div>
+        `
+      })
     });
 
-    console.log('Brevo email sent:', emailResult?.messageId);
+    if (!emailResponse.ok) {
+      const errorData = await emailResponse.json();
+      console.error('Brevo email API error:', errorData);
+      return res.status(500).json({ message: 'Failed to send reset email. Please try again.' });
+    }
+
+    console.log('Brevo email sent successfully via API.');
 
     res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (error) {
