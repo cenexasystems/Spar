@@ -305,11 +305,8 @@ const promoteToAdmin = async (req, res) => {
   }
 
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findByIdAndUpdate(req.user._id, { isAdmin: true }, { new: true });
     if (!user) return res.status(404).json({ message: 'User not found' });
-
-    user.isAdmin = true;
-    await user.save();
 
     res.json({ message: 'Promoted to admin successfully', isAdmin: true });
   } catch (error) {

@@ -9,6 +9,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const parkRoutes = require('./routes/parkRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const couponRoutes = require('./routes/couponRoutes');
+const parkSettingsRoutes = require('./routes/parkSettingsRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -53,6 +54,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/parks', parkRoutes);
+app.use('/api/parks', parkSettingsRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/coupons', couponRoutes);
 

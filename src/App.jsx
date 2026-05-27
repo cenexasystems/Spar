@@ -153,7 +153,7 @@ function App() {
           } />
         </Routes>
         
-        <ChatBot />
+        {!isAdminRoute && <ChatBot />}
       </div>
   );
 }

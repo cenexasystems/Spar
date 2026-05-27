@@ -1,0 +1,133 @@
+.booking-page-wrapper {
+  min-height: 100vh;
+  padding-top: 140px; /* 72px navbar + 68px fixed summary bar */
+  background: #0a0a14;
+}
+
+.booking-summary-bar {
+  background: #111827;
+  border-bottom: 1px solid #222;
+  padding: 12px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.booking-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.booking-summary-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.booking-summary-name {
+  font-weight: bold;
+  color: white;
+  font-size: 14px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.booking-summary-loc {
+  color: #888;
+  font-size: 12px;
+  margin: 2px 0 0;
+}
+
+.booking-summary-price {
+  font-size: 13px;
+  color: #00D1FF;
+  font-weight: bold;
+}
+
+.booking-form-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.booking-step-indicator {
+  margin: 32px auto;
+  max-width: 500px;
+}
+
+/* Form Styles Override */
+.booking-page-wrapper .form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.booking-page-wrapper .form-input-wrapper label {
+  color: #00D1FF;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.booking-page-wrapper .form-input-wrapper input,
+.booking-page-wrapper .form-input-wrapper select {
+  background: #111827;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 14px 16px;
+  width: 100%;
+  color: white;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.booking-page-wrapper .form-input-wrapper input:focus,
+.booking-page-wrapper .form-input-wrapper select:focus {
+  outline: none;
+  border-color: #00D1FF;
+}
+
+.booking-page-wrapper .step-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.booking-page-wrapper .step-actions button {
+  height: 52px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .booking-page-wrapper .form-group-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .booking-summary-bar {
+    padding: 12px 20px;
+  }
+  .booking-form-container {
+    padding: 32px 16px 80px;
+  }
+}

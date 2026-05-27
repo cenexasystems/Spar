@@ -1,0 +1,3 @@
+const renderDetailedContent = () => {
+          if (isWonderla) {
+            

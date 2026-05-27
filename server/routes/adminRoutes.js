@@ -9,7 +9,15 @@ const {
   getRevenueEntries,
   createPark, 
   updatePark, 
-  deletePark 
+  deletePark,
+  createCoupon,
+  getCoupons,
+  deleteCoupon,
+  getCouponUsage,
+  updateVisitorCategories,
+  updateTicketPricing,
+  getPlatformSettings,
+  updatePlatformSettings
 } = require('../controllers/adminController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -28,14 +36,17 @@ router.post('/parks', protect, admin, createPark);
 router.put('/parks/:id', protect, admin, updatePark);
 router.delete('/parks/:id', protect, admin, deletePark);
 
-// Coupons
-const { 
-  createCoupon, 
-  getCoupons, 
-  deleteCoupon,
-  getCouponUsage
-} = require('../controllers/adminController');
+// Visitor Categories
+router.put('/parks/:id/categories', protect, admin, updateVisitorCategories);
 
+// Ticket Pricing
+router.put('/parks/:id/pricing', protect, admin, updateTicketPricing);
+
+// Platform Settings
+router.get('/platform-settings', protect, admin, getPlatformSettings);
+router.put('/platform-settings', protect, admin, updatePlatformSettings);
+
+// Coupons
 router.post('/coupons', protect, admin, createCoupon);
 router.get('/coupons/:parkId', protect, admin, getCoupons);
 router.delete('/coupons/:id', protect, admin, deleteCoupon);

@@ -22,6 +22,8 @@ const bookingSchema = mongoose.Schema(
     whatsappNumber: { type: String, default: '' },
     ticketType: { type: String, default: '' },
     srCitizenTickets: { type: Number, default: 0 },
+    studentTickets: { type: Number, default: 0 },
+    convenienceFee: { type: Number, default: 0 },
     buffetCount: { type: Number, default: 0 },
     lockerSelected: { type: Boolean, default: false },
     couponApplied: { type: String, default: '' },

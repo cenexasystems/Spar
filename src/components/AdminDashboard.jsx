@@ -29,11 +29,13 @@ const AdminDashboard = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
+  const [platformSettings, setPlatformSettings] = useState({ convenienceFee: { enabled: true, amount: 49 } });
   
   // Modals & Forms
   const [editingPark, setEditingPark] = useState(null);
+  const [editParkTab, setEditParkTab] = useState('basic');
   const [isAddingPark, setIsAddingPark] = useState(false);
-  const [newPark, setNewPark] = useState({ name: '', location: '', price: '', childPrice: '', seniorPrice: '', operatingHours: '', image: '', desc: '', status: 'active' });
+  const [newPark, setNewPark] = useState({ name: '', location: '', price: '', childPrice: '', seniorPrice: '', studentPrice: '', operatingHours: '', image: '', desc: '', status: 'active', visitorCategories: [], wonderlaPricing: {} });
   const [managingCouponsFor, setManagingCouponsFor] = useState(null);
   const [coupons, setCoupons] = useState([]);
   const [newCoupon, setNewCoupon] = useState({ code: '', discountType: 'percentage', discountValue: '', expiryDate: '', usageLimit: 100, applicablePark: 'all' });
@@ -69,9 +71,15 @@ const AdminDashboard = ({ onBack }) => {
       const { data } = await axios.get(`${API_URL}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } });
       setBookings(data.bookings || []);
       setUsers(data.users || []);
-      setParks(data.parks?.length > 0 ? data.parks : fallbackParks);
+      const finalParks = data.parks || [];
+      const existingNames = new Set(finalParks.map(p => p.name.toLowerCase()));
+      const missingFallbacks = fallbackParks.filter(p => !existingNames.has(p.name.toLowerCase()));
+      setParks([...finalParks, ...missingFallbacks]);
       setRevenueEntries(data.revenueEntries || []);
       setTotalRevenue(data.totalRevenue || 0);
+
+      const settingsRes = await axios.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } });
+      setPlatformSettings(settingsRes.data);
     } catch (err) { 
       console.error("Fetch Error:", err); 
       setParks(fallbackParks); 
@@ -96,6 +104,18 @@ const AdminDashboard = ({ onBack }) => {
     } catch (err) { alert("Status update failed: " + (err.response?.data?.message || err.message)); }
   };
 
+  const handleUpdateSettings = async (e) => {
+    e.preventDefault();
+    const token = getToken();
+    try {
+      await axios.post(`${API_URL}/admin/platform-settings`, platformSettings, { headers: { Authorization: `Bearer ${token}` } });
+      alert('Platform settings updated successfully!');
+      fetchData();
+    } catch (err) {
+      alert("Settings update failed: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   const handleAddPark = async (e) => {
     e.preventDefault();
     const token = getToken();
@@ -112,7 +132,14 @@ const AdminDashboard = ({ onBack }) => {
     if (!editingPark) return;
     const token = getToken();
     try {
-      await axios.put(`${API_URL}/admin/parks/${editingPark._id || editingPark.id}`, editingPark, { headers: { Authorization: `Bearer ${token}` } });
+      const parkId = editingPark._id || editingPark.id;
+      // If it's a fallback park (id is short like '1' or '2'), create it instead of updating to avoid ObjectId cast errors
+      if (parkId && parkId.toString().length < 24) {
+        const { _id, id, ...parkData } = editingPark;
+        await axios.post(`${API_URL}/admin/parks`, parkData, { headers: { Authorization: `Bearer ${token}` } });
+      } else {
+        await axios.put(`${API_URL}/admin/parks/${parkId}`, editingPark, { headers: { Authorization: `Bearer ${token}` } });
+      }
       setEditingPark(null);
       fetchData();
     } catch (err) { alert("Failed: " + (err.response?.data?.message || err.message)); }
@@ -265,6 +292,7 @@ const AdminDashboard = ({ onBack }) => {
         <button className={`tab-btn ${activeTab === 'revenue' ? 'active' : ''}`} onClick={() => setActiveTab('revenue')}><DollarSign size={16} /> REVENUE</button>
         <button className={`tab-btn ${activeTab === 'parks' ? 'active' : ''}`} onClick={() => setActiveTab('parks')}><MapPin size={16} /> PARKS</button>
         <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}><Users size={16} /> USERS</button>
+        <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}><Clock size={16} /> SETTINGS</button>
       </div>
 
       {/* Search Bar */}
@@ -481,35 +509,194 @@ const AdminDashboard = ({ onBack }) => {
             {/* Edit / Add Park Modal */}
             {(isAddingPark || editingPark) && (
               <div className="edit-modal-overlay">
-                <div className="edit-panel glass-morphism">
-                  <h3>{editingPark ? 'EDIT PARK' : 'ADD NEW PARK'}</h3>
+                <div className="edit-panel glass-morphism" style={{ maxWidth: '700px', width: '90vw' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3>{editingPark ? 'EDIT PARK' : 'ADD NEW PARK'}</h3>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button type="button" onClick={() => setEditParkTab('basic')} style={{ background: editParkTab === 'basic' ? '#00D1FF' : 'transparent', color: editParkTab === 'basic' ? '#000' : '#fff', border: '1px solid #00D1FF', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>BASIC DETAILS</button>
+                      <button type="button" onClick={() => setEditParkTab('categories')} style={{ background: editParkTab === 'categories' ? '#00D1FF' : 'transparent', color: editParkTab === 'categories' ? '#000' : '#fff', border: '1px solid #00D1FF', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>CATEGORIES</button>
+                      <button type="button" onClick={() => setEditParkTab('pricing')} style={{ background: editParkTab === 'pricing' ? '#00D1FF' : 'transparent', color: editParkTab === 'pricing' ? '#000' : '#fff', border: '1px solid #00D1FF', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>PRICING</button>
+                    </div>
+                  </div>
                   <form onSubmit={editingPark ? handleUpdatePark : handleAddPark}>
-                    <div className="input-group"><label>PARK NAME</label><input type="text" value={editingPark ? editingPark.name : newPark.name} onChange={(e) => editingPark ? setEditingPark({...editingPark, name: e.target.value}) : setNewPark({...newPark, name: e.target.value})} required /></div>
-                    <div className="input-group"><label>LOCATION / ADDRESS</label><input type="text" value={editingPark ? editingPark.location : newPark.location} onChange={(e) => editingPark ? setEditingPark({...editingPark, location: e.target.value}) : setNewPark({...newPark, location: e.target.value})} required /></div>
-                    
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                      <div className="input-group"><label>ADULT PRICE (₹)</label><input type="number" value={editingPark ? editingPark.price : newPark.price} onChange={(e) => editingPark ? setEditingPark({...editingPark, price: e.target.value}) : setNewPark({...newPark, price: e.target.value})} required /></div>
-                      <div className="input-group"><label>CHILD PRICE (₹)</label><input type="number" value={editingPark ? editingPark.childPrice : newPark.childPrice} onChange={(e) => editingPark ? setEditingPark({...editingPark, childPrice: e.target.value}) : setNewPark({...newPark, childPrice: e.target.value})} /></div>
-                    </div>
-                    
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                      <div className="input-group"><label>SENIOR CITIZEN PRICE (₹)</label><input type="number" value={editingPark ? editingPark.seniorPrice : newPark.seniorPrice} onChange={(e) => editingPark ? setEditingPark({...editingPark, seniorPrice: e.target.value}) : setNewPark({...newPark, seniorPrice: e.target.value})} /></div>
-                      <div className="input-group"><label>OPERATING HOURS</label><input type="text" placeholder="e.g. 10 AM - 6 PM" value={editingPark ? editingPark.operatingHours : newPark.operatingHours} onChange={(e) => editingPark ? setEditingPark({...editingPark, operatingHours: e.target.value}) : setNewPark({...newPark, operatingHours: e.target.value})} /></div>
-                    </div>
-                    
-                    <div className="input-group"><label>PARK DESCRIPTION</label><textarea rows="3" value={editingPark ? editingPark.desc : newPark.desc} onChange={(e) => editingPark ? setEditingPark({...editingPark, desc: e.target.value}) : setNewPark({...newPark, desc: e.target.value})} /></div>
-                    <div className="input-group"><label>IMAGE URL</label><input type="text" value={editingPark ? editingPark.image : newPark.image} onChange={(e) => editingPark ? setEditingPark({...editingPark, image: e.target.value}) : setNewPark({...newPark, image: e.target.value})} /></div>
-                    
-                    <div className="input-group">
-                      <label>STATUS</label>
-                      <select value={editingPark ? editingPark.status : newPark.status} onChange={(e) => editingPark ? setEditingPark({...editingPark, status: e.target.value}) : setNewPark({...newPark, status: e.target.value})}>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
+                    {editParkTab === 'basic' && (
+                      <div className="tab-content-anim">
+                        <div className="input-group"><label>PARK NAME</label><input type="text" value={editingPark ? editingPark.name : newPark.name} onChange={(e) => editingPark ? setEditingPark({...editingPark, name: e.target.value}) : setNewPark({...newPark, name: e.target.value})} required /></div>
+                        <div className="input-group"><label>LOCATION / ADDRESS</label><input type="text" value={editingPark ? editingPark.location : newPark.location} onChange={(e) => editingPark ? setEditingPark({...editingPark, location: e.target.value}) : setNewPark({...newPark, location: e.target.value})} required /></div>
+                        
+                        <div className="input-group"><label>OPERATING HOURS</label><input type="text" placeholder="e.g. 10 AM - 6 PM" value={editingPark ? editingPark.operatingHours : newPark.operatingHours} onChange={(e) => editingPark ? setEditingPark({...editingPark, operatingHours: e.target.value}) : setNewPark({...newPark, operatingHours: e.target.value})} /></div>
+                        
+                        <div className="input-group"><label>PARK DESCRIPTION</label><textarea rows="3" value={editingPark ? editingPark.desc : newPark.desc} onChange={(e) => editingPark ? setEditingPark({...editingPark, desc: e.target.value}) : setNewPark({...newPark, desc: e.target.value})} /></div>
+                        <div className="input-group"><label>IMAGE URL</label><input type="text" value={editingPark ? editingPark.image : newPark.image} onChange={(e) => editingPark ? setEditingPark({...editingPark, image: e.target.value}) : setNewPark({...newPark, image: e.target.value})} /></div>
+                        
+                        <div className="input-group">
+                          <label>STATUS</label>
+                          <select value={editingPark ? editingPark.status : newPark.status} onChange={(e) => editingPark ? setEditingPark({...editingPark, status: e.target.value}) : setNewPark({...newPark, status: e.target.value})}>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
 
-                    <div className="edit-actions">
-                      <button type="button" className="btn-cancel" onClick={() => { setIsAddingPark(false); setEditingPark(null); }}>CANCEL</button>
+                    {editParkTab === 'categories' && (() => {
+                      const categories = editingPark ? (editingPark.visitorCategories || []) : (newPark.visitorCategories || []);
+                      const updateCategory = (index, field, value) => {
+                        const updated = [...categories];
+                        updated[index] = { ...updated[index], [field]: value };
+                        if (editingPark) setEditingPark({...editingPark, visitorCategories: updated});
+                        else setNewPark({...newPark, visitorCategories: updated});
+                      };
+                      const removeCategory = (index) => {
+                        const updated = categories.filter((_, i) => i !== index);
+                        if (editingPark) setEditingPark({...editingPark, visitorCategories: updated});
+                        else setNewPark({...newPark, visitorCategories: updated});
+                      };
+                      const addCategory = () => {
+                        const updated = [...categories, { name: '', condition: '', isFree: false, isActive: true }];
+                        if (editingPark) setEditingPark({...editingPark, visitorCategories: updated});
+                        else setNewPark({...newPark, visitorCategories: updated});
+                      };
+                      
+                      return (
+                        <div className="tab-content-anim">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#888' }}>VISITOR CATEGORIES</label>
+                            <button type="button" onClick={addCategory} style={{ background: 'rgba(0, 209, 255, 0.1)', color: '#00D1FF', border: '1px solid rgba(0, 209, 255, 0.3)', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>+ ADD CATEGORY</button>
+                          </div>
+                          
+                          {categories.length === 0 ? (
+                            <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', padding: '20px 0' }}>No categories defined. Add one above.</p>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              {categories.map((cat, idx) => (
+                                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr auto auto auto', gap: '10px', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                  <input type="text" placeholder="Name (e.g. Adults)" value={cat.name} onChange={(e) => updateCategory(idx, 'name', e.target.value)} style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', fontSize: '12px', width: '100%' }} />
+                                  <input type="text" placeholder="Condition (e.g. >140cm)" value={cat.condition} onChange={(e) => updateCategory(idx, 'condition', e.target.value)} style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', fontSize: '12px', width: '100%' }} />
+                                  
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#ccc', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={cat.isFree} onChange={(e) => updateCategory(idx, 'isFree', e.target.checked)} />
+                                    Free
+                                  </label>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#ccc', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={cat.isActive} onChange={(e) => updateCategory(idx, 'isActive', e.target.checked)} />
+                                    Active
+                                  </label>
+                                  
+                                  <button type="button" onClick={() => removeCategory(idx)} style={{ background: 'none', border: 'none', color: '#FF3D3D', cursor: 'pointer', padding: '4px' }} title="Remove Category">
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {editParkTab === 'pricing' && (
+                      <div className="tab-content-anim">
+                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginBottom: '15px'}}>
+                          <div className="input-group"><label>ADULT PRICE (₹)</label><input type="number" value={editingPark ? editingPark.price || editingPark.adultPrice : newPark.price} onChange={(e) => editingPark ? setEditingPark({...editingPark, price: e.target.value, adultPrice: e.target.value}) : setNewPark({...newPark, price: e.target.value})} required /></div>
+                          <div className="input-group"><label>CHILD PRICE (₹)</label><input type="number" value={editingPark ? editingPark.childPrice : newPark.childPrice} onChange={(e) => editingPark ? setEditingPark({...editingPark, childPrice: e.target.value}) : setNewPark({...newPark, childPrice: e.target.value})} /></div>
+                        </div>
+                        
+                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginBottom: '15px'}}>
+                          <div className="input-group"><label>SENIOR CITIZEN PRICE (₹)</label><input type="number" value={editingPark ? editingPark.seniorPrice : newPark.seniorPrice} onChange={(e) => editingPark ? setEditingPark({...editingPark, seniorPrice: e.target.value}) : setNewPark({...newPark, seniorPrice: e.target.value})} /></div>
+                          <div className="input-group"><label>STUDENT PRICE (₹)</label><input type="number" value={editingPark ? editingPark.studentPrice : newPark.studentPrice} onChange={(e) => editingPark ? setEditingPark({...editingPark, studentPrice: e.target.value}) : setNewPark({...newPark, studentPrice: e.target.value})} /></div>
+                        </div>
+
+                        {(editingPark?.name === 'Wonderla' || newPark?.name === 'Wonderla') && (() => {
+                          const wPricing = editingPark ? (editingPark.wonderlaPricing || {}) : (newPark.wonderlaPricing || {});
+                          
+                          const updateLocData = (loc, field, val) => {
+                            const updated = { ...wPricing, [loc]: { ...wPricing[loc], [field]: val } };
+                            if (editingPark) setEditingPark({...editingPark, wonderlaPricing: updated});
+                            else setNewPark({...newPark, wonderlaPricing: updated});
+                          };
+
+                          const updateLocPrice = (loc, tier, ticket, val) => {
+                            const updated = { ...wPricing };
+                            if (!updated[loc][tier]) updated[loc][tier] = {};
+                            updated[loc][tier][ticket] = Number(val);
+                            if (editingPark) setEditingPark({...editingPark, wonderlaPricing: updated});
+                            else setNewPark({...newPark, wonderlaPricing: updated});
+                          };
+
+                          const addLocation = () => {
+                            const locName = prompt("Enter new location name (e.g. bangalore, kochi):");
+                            if (!locName || wPricing[locName]) return;
+                            const updated = { ...wPricing, [locName.toLowerCase()]: { normal: { adult: 0, child: 0, senior: 0, student: 0 }, fasttrack: { adult: 0, child: 0 }, fastTrackAvailable: false, parkHours: '', waterHours: '' } };
+                            if (editingPark) setEditingPark({...editingPark, wonderlaPricing: updated});
+                            else setNewPark({...newPark, wonderlaPricing: updated});
+                          };
+
+                          const removeLocation = (loc) => {
+                            const updated = { ...wPricing };
+                            delete updated[loc];
+                            if (editingPark) setEditingPark({...editingPark, wonderlaPricing: updated});
+                            else setNewPark({...newPark, wonderlaPricing: updated});
+                          };
+
+                          return (
+                            <div className="input-group" style={{ marginTop: '20px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '20px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                <div>
+                                  <label style={{ color: '#00D1FF' }}>WONDERLA LOCATIONS PRICING</label>
+                                  <p style={{fontSize: '11px', color: '#888'}}>Manage pricing for specific Wonderla locations.</p>
+                                </div>
+                                <button type="button" onClick={addLocation} style={{ background: 'rgba(0, 209, 255, 0.1)', color: '#00D1FF', border: '1px solid rgba(0, 209, 255, 0.3)', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>+ ADD LOCATION</button>
+                              </div>
+
+                              {Object.keys(wPricing).length === 0 ? (
+                                <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', padding: '10px 0' }}>No locations added.</p>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                  {Object.entries(wPricing).map(([loc, data]) => (
+                                    <div key={loc} style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0,209,255,0.2)' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                        <h4 style={{ margin: 0, color: '#fff', textTransform: 'uppercase', fontSize: '14px', letterSpacing: '1px' }}>📍 {loc}</h4>
+                                        <button type="button" onClick={() => removeLocation(loc)} style={{ background: 'none', border: 'none', color: '#FF3D3D', cursor: 'pointer' }}><Trash2 size={14}/></button>
+                                      </div>
+
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                                        <div><label style={{ fontSize: '10px', color: '#888' }}>PARK HOURS</label><input type="text" value={data.parkHours || ''} onChange={(e) => updateLocData(loc, 'parkHours', e.target.value)} style={{ padding: '6px', fontSize: '12px', width: '100%', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }} placeholder="e.g. 11AM–7PM" /></div>
+                                        <div><label style={{ fontSize: '10px', color: '#888' }}>WATER HOURS</label><input type="text" value={data.waterHours || ''} onChange={(e) => updateLocData(loc, 'waterHours', e.target.value)} style={{ padding: '6px', fontSize: '12px', width: '100%', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }} placeholder="e.g. 12PM–6PM" /></div>
+                                      </div>
+
+                                      <div style={{ marginBottom: '10px' }}>
+                                        <label style={{ fontSize: '11px', color: '#C7FF00', fontWeight: 'bold' }}>NORMAL TICKETS (₹)</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginTop: '4px' }}>
+                                          <div><span style={{fontSize:'10px', color:'#888'}}>Adult</span><input type="number" value={data.normal?.adult || 0} onChange={(e) => updateLocPrice(loc, 'normal', 'adult', e.target.value)} style={{ width: '100%', padding: '4px', fontSize: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} /></div>
+                                          <div><span style={{fontSize:'10px', color:'#888'}}>Child</span><input type="number" value={data.normal?.child || 0} onChange={(e) => updateLocPrice(loc, 'normal', 'child', e.target.value)} style={{ width: '100%', padding: '4px', fontSize: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} /></div>
+                                          <div><span style={{fontSize:'10px', color:'#888'}}>Senior</span><input type="number" value={data.normal?.senior || 0} onChange={(e) => updateLocPrice(loc, 'normal', 'senior', e.target.value)} style={{ width: '100%', padding: '4px', fontSize: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} /></div>
+                                          <div><span style={{fontSize:'10px', color:'#888'}}>Student</span><input type="number" value={data.normal?.student || 0} onChange={(e) => updateLocPrice(loc, 'normal', 'student', e.target.value)} style={{ width: '100%', padding: '4px', fontSize: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} /></div>
+                                        </div>
+                                      </div>
+
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                        <input type="checkbox" checked={data.fastTrackAvailable || false} onChange={(e) => updateLocData(loc, 'fastTrackAvailable', e.target.checked)} />
+                                        <label style={{ fontSize: '11px', color: '#BF00FF', fontWeight: 'bold' }}>FAST-TRACK TICKETS (₹)</label>
+                                      </div>
+                                      
+                                      {data.fastTrackAvailable && (
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                          <div><span style={{fontSize:'10px', color:'#888'}}>Adult</span><input type="number" value={data.fasttrack?.adult || 0} onChange={(e) => updateLocPrice(loc, 'fasttrack', 'adult', e.target.value)} style={{ width: '100%', padding: '4px', fontSize: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} /></div>
+                                          <div><span style={{fontSize:'10px', color:'#888'}}>Child</span><input type="number" value={data.fasttrack?.child || 0} onChange={(e) => updateLocPrice(loc, 'fasttrack', 'child', e.target.value)} style={{ width: '100%', padding: '4px', fontSize: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} /></div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    <div className="edit-actions" style={{marginTop: '20px'}}>
+                      <button type="button" className="btn-cancel" onClick={() => { setIsAddingPark(false); setEditingPark(null); setEditParkTab('basic'); }}>CANCEL</button>
                       <button type="submit" className="btn-save"><Save size={16} /> {editingPark ? 'UPDATE PARK' : 'SAVE PARK'}</button>
                     </div>
                   </form>
@@ -645,6 +832,38 @@ const AdminDashboard = ({ onBack }) => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* SETTINGS TAB */}
+        {activeTab === 'settings' && (
+          <div className="settings-tab-content">
+            <h3 className="section-heading text-white-shimmer-rtl" style={{marginBottom: '20px'}}>PLATFORM SETTINGS</h3>
+            <div className="settings-card glass-morphism p-5" style={{maxWidth: '600px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <form onSubmit={handleUpdateSettings}>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px'}}>
+                  <div>
+                    <h4 style={{fontSize: '14px', fontWeight: 'bold', color: '#fff', marginBottom: '4px'}}>Convenience Fee</h4>
+                    <p style={{fontSize: '12px', color: '#888'}}>Apply a global convenience fee to all bookings.</p>
+                  </div>
+                  <label className="switch">
+                    <input type="checkbox" checked={platformSettings.convenienceFee?.enabled || false} onChange={e => setPlatformSettings({...platformSettings, convenienceFee: {...platformSettings.convenienceFee, enabled: e.target.checked}})} />
+                    <span className="slider round"></span>
+                  </label>
+                </div>
+                
+                {platformSettings.convenienceFee?.enabled && (
+                  <div className="input-group" style={{marginBottom: '20px'}}>
+                    <label>FEE AMOUNT (₹)</label>
+                    <input type="number" value={platformSettings.convenienceFee?.amount || 0} onChange={e => setPlatformSettings({...platformSettings, convenienceFee: {...platformSettings.convenienceFee, amount: Number(e.target.value)}})} required style={{width: '150px'}} />
+                  </div>
+                )}
+
+                <div className="edit-actions" style={{marginTop: '30px', justifyContent: 'flex-start'}}>
+                  <button type="submit" className="btn-save"><Save size={16} /> SAVE SETTINGS</button>
+                </div>
+              </form>
             </div>
           </div>
         )}

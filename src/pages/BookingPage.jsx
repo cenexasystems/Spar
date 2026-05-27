@@ -3,7 +3,8 @@ import { X, User, Mail, Phone, Ticket, Search, Smartphone, CheckCircle, ArrowRig
 import { useAuth } from '../context/AuthContext';
 import confetti from 'canvas-confetti';
 import axios from 'axios';
-import './BookingModal.css';
+import '../components/BookingModal.css';
+import './BookingPage.css';
 
 const WONDERLA_LOCATIONS = [
   { value: 'bengaluru', label: 'Bengaluru', desc: 'Mysore Road, 28 km from the city' },
@@ -13,40 +14,61 @@ const WONDERLA_LOCATIONS = [
   { value: 'chennai', label: 'Chennai', desc: 'No 45/1 F, Illalur Village, Thiruporur, OMR' },
 ];
 
-const WONDERLA_LOCATION_PRICING = {
-  chennai: {
-    normal: { adult: 1803, child: 1486, senior: 1407, student: 1489 },
-    fasttrack: { adult: 2019, child: 1615, senior: 1615, student: 1800 },
-    fastTrackAvailable: true, parkHours: '11AM–7PM', waterHours: '12PM–6PM'
+const WONDERLA_PRICES = {
+  normal: {
+    adult: 1489,
+    child: 1191,
+    senior: 946,
+    infant: 0
   },
-  bengaluru: {
-    normal: { adult: 1973, child: 1622, senior: 1535, student: 1600 },
-    fasttrack: { adult: 2019, child: 1615, senior: 1615, student: 1800 },
-    fastTrackAvailable: true, parkHours: '11AM–7PM', waterHours: '12PM–6PM'
-  },
-  kochi: {
-    normal: { adult: 1803, child: 1486, senior: 1407, student: 1489 },
-    fasttrack: { adult: 2019, child: 1615, senior: 1615, student: 1800 },
-    fastTrackAvailable: true, parkHours: '11AM–7PM', waterHours: '12PM–6PM'
-  },
-  hyderabad: {
-    normal: { adult: 1803, child: 1486, senior: 1407, student: 1489 },
-    fasttrack: { adult: 2019, child: 1615, senior: 1615, student: 1800 },
-    fastTrackAvailable: true, parkHours: '11AM–7PM', waterHours: '12PM–6PM'
-  },
-  bhubaneswar: {
-    normal: { adult: 1058, child: 847, senior: 794, student: 900 },
-    fasttrack: null,
-    fastTrackAvailable: false, parkHours: '11AM–7PM', waterHours: '12PM–6PM'
+  fasttrack: {
+    adult: 2019,
+    child: 1615,
+    senior: 0,
+    infant: 0
   }
 };
 
-const BookingModal = ({ isOpen, onClose, selectedPark }) => {
+
+import { useParams, useNavigate } from 'react-router-dom';
+import { fallbackParks, getSlug } from '../utils/parksData';
+
+const BookingPage = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const [selectedPark, setSelectedPark] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchParks = async () => {
+      try {
+        const { data } = await axios.get('http://localhost:5000/api/parks');
+        if (data && data.length > 0) {
+          const found = data.find(p => getSlug(p.name) === slug);
+          if (found) {
+            setSelectedPark(found);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {}
+      
+      const fallback = fallbackParks.find(p => getSlug(p.name) === slug);
+      setSelectedPark(fallback);
+      setLoading(false);
+    };
+    fetchParks();
+  }, [slug]);
+
+  const isOpen = true;
+  const onClose = () => { window.history.length > 1 ? window.history.back() : navigate('/#parks'); };
+
+
   const { user, deductCoinsRequest } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: '', email: '', phone: '', adultTickets: 1, kidsTickets: 0, seniorTickets: 0, studentTickets: 0, referral: 'friends', visitDate: '', wonderlaLocation: null,
-    whatsapp: '', ticketType: 'normal', adultCount: 1, childCount: 0, seniorCount: 0, studentCount: 0, infantCount: 0, buffetSelected: false, lockerSelected: false, termsAccepted: false
+    name: '', email: '', phone: '', adultTickets: 1, kidsTickets: 0, referral: 'friends', visitDate: '', wonderlaLocation: 'bengaluru',
+    whatsapp: '', ticketType: 'normal', adultCount: 1, childCount: 0, seniorCount: 0, infantCount: 0, buffetSelected: false, lockerSelected: false, termsAccepted: false
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [rewardSelection, setRewardSelection] = useState({ type: 'none', coins: 0, benefit: 0 });
@@ -61,20 +83,11 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [copied, setCopied] = useState(false);
-  const [convenienceFeeConfig, setConvenienceFeeConfig] = useState({ enabled: true, amount: 49 });
 
   const fileInputRef = useRef(null);
   const successRef = useRef(null);
 
   const isWonderla = selectedPark?.name?.toLowerCase().includes('wonderla');
-
-  // Fetch convenience fee on mount
-  useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    axios.get(`${API_URL}/parks/platform-settings`).then(res => {
-      if (res.data?.convenienceFee) setConvenienceFeeConfig(res.data.convenienceFee);
-    }).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (user && isOpen) {
@@ -109,67 +122,41 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     setTimeout(() => confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: ['#C7FF00','#BF00FF','#00D1FF'], zIndex: 10001 }), 1500);
   };
 
-  if (!isOpen || !selectedPark) return null;
-
-  const convenienceFee = convenienceFeeConfig.enabled && convenienceFeeConfig.amount > 0 ? convenienceFeeConfig.amount : 0;
-
-  // Helper to get Wonderla prices for current location + ticket type
-  // Helper to get Wonderla prices for current location + ticket type
-  const getWonderlaLocationPrices = () => {
-    if (!formData.wonderlaLocation) return WONDERLA_LOCATION_PRICING.chennai.normal;
-    const loc = formData.wonderlaLocation;
-    const locData = WONDERLA_LOCATION_PRICING[loc] || WONDERLA_LOCATION_PRICING.chennai;
-    return locData[formData.ticketType || 'normal'] || locData.normal;
-  };
-  const getWonderlaLocationData = () => {
-    if (!formData.wonderlaLocation) return WONDERLA_LOCATION_PRICING.chennai;
-    const loc = formData.wonderlaLocation;
-    return WONDERLA_LOCATION_PRICING[loc] || WONDERLA_LOCATION_PRICING.chennai;
-  };
+  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner"></div></div>;
+  if (!selectedPark) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>Park not found.</div>;
+  if (!isOpen) return null;
 
   const adultPrice = selectedPark.adultPrice || parseInt(selectedPark.price);
   const kidsPrice = selectedPark.kidsPrice || parseInt(selectedPark.price) * 0.75;
-  const seniorPrice = selectedPark.seniorPrice || Math.round(adultPrice * 0.8);
-  const studentPrice = selectedPark.studentPrice || Math.round(adultPrice * 0.85);
-  let nonWonderlaSubtotal = (adultPrice * formData.adultTickets) + (kidsPrice * formData.kidsTickets) + (seniorPrice * formData.seniorTickets) + (studentPrice * formData.studentTickets);
+  let totalAmount = (adultPrice * formData.adultTickets) + (kidsPrice * formData.kidsTickets);
   let rewardMessage = "";
   if (rewardSelection.type === 'discount') {
-    nonWonderlaSubtotal -= (adultPrice * rewardSelection.benefit) / 100;
+    totalAmount -= (adultPrice * rewardSelection.benefit) / 100;
     rewardMessage = `${rewardSelection.benefit}% Discount Applied to 1 Adult Ticket!`;
   } else if (rewardSelection.type === 'free') {
-    nonWonderlaSubtotal -= adultPrice;
+    totalAmount -= adultPrice;
     rewardMessage = `1 FREE Adult Ticket Applied!`;
   }
-  // Non-wonderla coupon discount
-  let nonWonderlaCouponDiscount = 0;
-  if (!isWonderla && appliedCoupon) {
-    if (appliedCoupon.type === 'percent') nonWonderlaCouponDiscount = Math.round(nonWonderlaSubtotal * (appliedCoupon.value / 100));
-    else nonWonderlaCouponDiscount = Math.min(appliedCoupon.value, nonWonderlaSubtotal);
-  }
-  const totalAmount = Math.max(0, nonWonderlaSubtotal - nonWonderlaCouponDiscount) + convenienceFee;
 
   const getWonderlaSubtotal = () => {
-    const prices = getWonderlaLocationPrices();
+    const prices = WONDERLA_PRICES[formData.ticketType || 'normal'];
     const adultSub = (formData.adultCount || 0) * prices.adult;
     const childSub = (formData.childCount || 0) * prices.child;
-    const seniorSub = (formData.seniorCount || 0) * prices.senior;
-    const studentSub = (formData.studentCount || 0) * prices.student;
-    return adultSub + childSub + seniorSub + studentSub;
+    const seniorSub = formData.ticketType === 'normal' ? (formData.seniorCount || 0) * prices.senior : 0;
+    return adultSub + childSub + seniorSub;
   };
 
   const getWonderlaTotals = () => {
-    const prices = getWonderlaLocationPrices();
+    const prices = WONDERLA_PRICES[formData.ticketType || 'normal'];
     const adultPriceVal = prices.adult;
     const childPriceVal = prices.child;
-    const seniorPriceVal = prices.senior;
-    const studentPriceVal = prices.student;
+    const seniorPriceVal = formData.ticketType === 'normal' ? prices.senior : 0;
 
     const adultTickets = formData.adultCount || 0;
     const childTickets = formData.childCount || 0;
-    const seniorTickets = formData.seniorCount || 0;
-    const studentTickets = formData.studentCount || 0;
+    const seniorTickets = formData.ticketType === 'normal' ? (formData.seniorCount || 0) : 0;
 
-    let baseAmount = (adultTickets * adultPriceVal) + (childTickets * childPriceVal) + (seniorTickets * seniorPriceVal) + (studentTickets * studentPriceVal);
+    let baseAmount = (adultTickets * adultPriceVal) + (childTickets * childPriceVal) + (seniorTickets * seniorPriceVal);
     
     let coinsDiscount = 0;
     if (rewardSelection.type === 'discount') {
@@ -180,7 +167,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     
     const ticketSubtotal = Math.max(0, baseAmount - coinsDiscount);
     
-    const buffetCount = formData.buffetSelected ? (adultTickets + childTickets + seniorTickets + studentTickets) : 0;
+    const buffetCount = formData.buffetSelected ? (adultTickets + childTickets + seniorTickets) : 0;
     const buffetTotal = buffetCount * 470;
     const lockerTotal = formData.lockerSelected ? 100 : 0;
     
@@ -195,17 +182,16 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
       }
     }
     
-    const finalTotal = Math.max(0, subtotal - couponDiscount) + convenienceFee;
+    const convenienceFee = 99;
+    const finalTotal = Math.max(0, subtotal - couponDiscount + convenienceFee);
     
     return {
       adultPrice: adultPriceVal,
       childPrice: childPriceVal,
       seniorPrice: seniorPriceVal,
-      studentPrice: studentPriceVal,
       adultTickets,
       childTickets,
       seniorTickets,
-      studentTickets,
       buffetCount,
       buffetTotal,
       lockerTotal,
@@ -287,34 +273,21 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     try {
       if (rewardSelection.coins > 0) await deductCoinsRequest(rewardSelection.coins);
       const prefix = isWonderla ? 'WDL' : selectedPark.name.split(' ')[0].substring(0, 3).toUpperCase();
-      let couponDisc = 0;
-      if (isWonderla) {
-        couponDisc = getWonderlaTotals().couponDiscount;
-      } else if (appliedCoupon) {
-        let nonWonderlaSubtotal = (adultPrice * formData.adultTickets) + (kidsPrice * formData.kidsTickets) + (seniorPrice * formData.seniorTickets) + (studentPrice * formData.studentTickets);
-        if (rewardSelection.type === 'discount') nonWonderlaSubtotal -= (adultPrice * rewardSelection.benefit) / 100;
-        else if (rewardSelection.type === 'free') nonWonderlaSubtotal -= adultPrice;
-        if (appliedCoupon.type === 'percent') couponDisc = Math.round(nonWonderlaSubtotal * (appliedCoupon.value / 100));
-        else couponDisc = Math.min(appliedCoupon.value, nonWonderlaSubtotal);
-      }
-
       const { data: order } = await axios.post(`${API_URL}/payment/create-order`, {
         parkName: selectedPark.name, parkId: selectedPark._id || selectedPark.id,
-        tickets: isWonderla ? (formData.adultCount + formData.childCount + formData.seniorCount + formData.studentCount) : (formData.adultTickets + formData.kidsTickets + formData.seniorTickets + formData.studentTickets),
+        tickets: isWonderla ? (formData.adultCount + formData.childCount + formData.seniorCount) : (formData.adultTickets + formData.kidsTickets),
         adultTickets: isWonderla ? formData.adultCount : formData.adultTickets,
         childTickets: isWonderla ? formData.childCount : formData.kidsTickets,
-        seniorTickets: isWonderla ? formData.seniorCount : formData.seniorTickets,
-        studentTickets: isWonderla ? formData.studentCount : formData.studentTickets,
         totalAmount: currentTotal, paymentMethod: 'gpay', parkPrefix: prefix,
         wonderlaLocation: formData.wonderlaLocation, visitDate: formData.visitDate,
         userEmail: formData.email, userPhone: formData.phone,
         whatsapp: formData.whatsapp,
         ticketType: formData.ticketType,
-        convenienceFee: convenienceFee,
-        buffetCount: isWonderla && formData.buffetSelected ? (formData.adultCount + formData.childCount + formData.seniorCount + formData.studentCount) : 0,
+        seniorTickets: isWonderla ? formData.seniorCount : 0,
+        buffetCount: isWonderla && formData.buffetSelected ? (formData.adultCount + formData.childCount + formData.seniorCount) : 0,
         lockerSelected: isWonderla && formData.lockerSelected ? true : false,
         couponApplied: appliedCoupon ? appliedCoupon.code : '',
-        discountAmount: couponDisc
+        discountAmount: isWonderla ? getWonderlaTotals().couponDiscount : 0
       });
       setOrderData(order);
       setStep(3);
@@ -368,9 +341,33 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   };
 
   return (
-    <div className="modal-overlay booking-overlay">
-      <div className="modal-container booking-modal-flow glass-morphism solid-dark-bg">
-        <button className="close-btn" onClick={onClose} aria-label="Close"><X size={24} /></button>
+    
+    <div className="booking-page-wrapper">
+      <div className="booking-summary-bar">
+        <div className="booking-summary-left">
+          <img src={selectedPark.image} alt={selectedPark.name} className="booking-summary-img" />
+          <div>
+            <h2 className="booking-summary-name">{selectedPark.name}</h2>
+            <p className="booking-summary-loc">{selectedPark.location}</p>
+          </div>
+        </div>
+        <div className="booking-summary-price">
+          From ₹{adultPrice}
+        </div>
+      </div>
+
+      <div className="booking-form-container">
+        <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 24px' }}>
+        
+      <button 
+        onClick={onClose} 
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#00D1FF', cursor: 'pointer', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold' }}
+      >
+        <ArrowLeft size={16} /> Back to Parks
+      </button>
+
+
+  
 
         {/* Progress: 5 steps */}
         {step < 5 && (
@@ -423,68 +420,38 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                 </div>
               )}
 
-              {/* Wonderla Location Selection */}
+              {/* Wonderla Specific Ticket Type Selector */}
               {isWonderla && (
                 <div className="wonderla-location-section" style={{ marginTop: '14px' }}>
-                  <label className="wonderla-loc-label"><MapPin size={14}/> SELECT WONDERLA LOCATION</label>
+                  <label className="wonderla-loc-label">🎟️ SELECT TICKET TYPE</label>
                   <div className="wonderla-locations-grid">
-                    {WONDERLA_LOCATIONS.map(loc => (
-                      <button key={loc.value} type="button"
-                        className={`wonderla-loc-card ${formData.wonderlaLocation === loc.value ? 'selected' : ''}`}
-                        onClick={() => setFormData({...formData, wonderlaLocation: loc.value, ticketType: 'normal'})}
-                      >
-                        <span className="loc-name">{loc.label}</span>
-                        <span className="loc-desc">{loc.desc}</span>
-                      </button>
-                    ))}
+                    <button type="button"
+                      className={`wonderla-loc-card ${formData.ticketType === 'normal' ? 'selected' : ''}`}
+                      onClick={() => setFormData({...formData, ticketType: 'normal'})}
+                    >
+                      <span className="loc-name">NORMAL ENTRY</span>
+                      <span className="loc-desc">Access to all rides | 11AM–6PM</span>
+                      <span className="loc-desc" style={{ color: '#00D1FF', fontWeight: 'bold', marginTop: '4px' }}>
+                        Adult ₹1,489 | Child ₹1,191 | Senior ₹946
+                      </span>
+                    </button>
+                    <button type="button"
+                      className={`wonderla-loc-card ${formData.ticketType === 'fasttrack' ? 'selected' : ''}`}
+                      onClick={() => setFormData({...formData, ticketType: 'fasttrack', seniorCount: 0})}
+                    >
+                      <span className="loc-name">FAST TRACK</span>
+                      <span className="loc-desc">Skip the queues | Priority access</span>
+                      <span className="loc-desc" style={{ color: '#00D1FF', fontWeight: 'bold', marginTop: '4px' }}>
+                        Adult ₹2,019 | Child ₹1,615
+                      </span>
+                    </button>
                   </div>
-                  {!formData.wonderlaLocation && (
-                    <div style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
-                      👆 Select a location to see ticket prices
-                    </div>
-                  )}
-                  {formData.wonderlaLocation && (
-                    <div style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>
-                      🕐 Park: {getWonderlaLocationData().parkHours} | 🌊 Water Rides: {getWonderlaLocationData().waterHours}
-                    </div>
-                  )}
                 </div>
               )}
 
-              {/* Wonderla Conditional Block 3 */}
-              {isWonderla && formData.wonderlaLocation && (
-                <>
-                  {/* Wonderla Specific Ticket Type Selector */}
-                  <div className="wonderla-location-section" style={{ marginTop: '16px' }}>
-                    <label className="wonderla-loc-label">🎟️ SELECT TICKET TYPE</label>
-                    <div className="wonderla-locations-grid">
-                      <button type="button"
-                        className={`wonderla-loc-card ${formData.ticketType === 'normal' ? 'selected' : ''}`}
-                        onClick={() => setFormData({...formData, ticketType: 'normal'})}
-                      >
-                        <span className="loc-name">NORMAL ENTRY</span>
-                        <span className="loc-desc">Access to all rides | {getWonderlaLocationData().parkHours}</span>
-                        <span className="loc-desc" style={{ color: '#00D1FF', fontWeight: 'bold', marginTop: '4px' }}>
-                          Adult ₹{getWonderlaLocationData().normal.adult} | Child ₹{getWonderlaLocationData().normal.child} | Senior ₹{getWonderlaLocationData().normal.senior}
-                        </span>
-                      </button>
-                      {getWonderlaLocationData().fastTrackAvailable && (
-                        <button type="button"
-                          className={`wonderla-loc-card ${formData.ticketType === 'fasttrack' ? 'selected' : ''}`}
-                          onClick={() => setFormData({...formData, ticketType: 'fasttrack', seniorCount: 0, studentCount: 0})}
-                        >
-                          <span className="loc-name">FAST TRACK</span>
-                          <span className="loc-desc">Skip the queues | Priority access</span>
-                          <span className="loc-desc" style={{ color: '#00D1FF', fontWeight: 'bold', marginTop: '4px' }}>
-                            Adult ₹{getWonderlaLocationData().fasttrack.adult} | Child ₹{getWonderlaLocationData().fasttrack.child}
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Wonderla Specific Visitor Steppers */}
-                  <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Wonderla Specific Visitor Steppers */}
+              {isWonderla && (
+                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label className="wonderla-loc-label">👥 NUMBER OF VISITORS</label>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     
@@ -494,7 +461,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                         <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Adults (above 140cm)</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().adult} each</span>
+                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{formData.ticketType === 'fasttrack' ? '2,019' : '1,489'} each</span>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
                           <button type="button" onClick={() => setFormData(prev => ({ ...prev, adultCount: Math.max(0, prev.adultCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
                           <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.adultCount}</span>
@@ -504,12 +471,12 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                     </div>
 
                     {/* Row 2: Children */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: formData.ticketType === 'normal' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: formData.ticketType === 'normal' ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Children (85cm–140cm)</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().child} each</span>
+                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{formData.ticketType === 'fasttrack' ? '1,615' : '1,191'} each</span>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
                           <button type="button" onClick={() => setFormData(prev => ({ ...prev, childCount: Math.max(0, prev.childCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
                           <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.childCount}</span>
@@ -525,7 +492,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                           <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Senior Citizens (60+)</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().senior} each</span>
+                          <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹946 each</span>
                           <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <button type="button" onClick={() => setFormData(prev => ({ ...prev, seniorCount: Math.max(0, prev.seniorCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
                             <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.seniorCount}</span>
@@ -535,31 +502,13 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                       </div>
                     )}
 
-                    {/* Row 4: Students */}
-                    {formData.ticketType === 'normal' && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Students (valid ID)</span>
-                          <span style={{ fontSize: '10px', color: '#888', fontStyle: 'italic' }}>🎓 Present valid student ID at park entry</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().student} each</span>
-                          <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentCount: Math.max(0, prev.studentCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                            <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.studentCount}</span>
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentCount: prev.studentCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Row 5: Children Free */}
+                    {/* Row 4: Children Free */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Below minimum height</span>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Children (below 85cm)</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#6BCB77', fontWeight: 700 }}>FREE</span>
+                        <span style={{ fontSize: '11px', color: '#6BCB77', fontWeight: 700 }}>FREE — no ticket needed</span>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
                           <button type="button" onClick={() => setFormData(prev => ({ ...prev, infantCount: Math.max(0, prev.infantCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
                           <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.infantCount}</span>
@@ -569,124 +518,42 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                     </div>
                   </div>
 
-                  <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
-                    <span>👶 Children below 85cm enter FREE</span>
-                    <span style={{ marginLeft: '12px' }}>🎓 Student ID required at entry</span>
-                  </div>
-
                   {/* Running Total display */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', marginBottom: '8px', marginTop: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', marginBottom: '8px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 900, color: '#94A3B8', letterSpacing: '1px' }}>TOTAL TICKETS AMOUNT</span>
                     <span style={{ fontSize: '18px', fontWeight: 900, color: '#C7FF00' }}>₹{getWonderlaSubtotal().toLocaleString('en-IN')}</span>
                   </div>
+                </div>
+              )}
 
-                  {/* Add-ons Section moved here */}
-                  <div className="addons-section" style={{ marginTop: '8px', borderRadius: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <h4 style={{ fontSize: '11px', fontWeight: 900, color: '#C7FF00', letterSpacing: '1.5px', marginBottom: '10px' }}>⚡ CHOOSE OPTIONAL ADD-ONS</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <button type="button"
-                        className={`wonderla-loc-card ${formData.buffetSelected ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, buffetSelected: !prev.buffetSelected }))}
-                        style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer', border: formData.buffetSelected ? '1.5px solid #C7FF00' : '1.5px solid rgba(255,255,255,0.1)', background: formData.buffetSelected ? 'rgba(199,255,0,0.1)' : 'rgba(0,0,0,0.3)', borderRadius: '8px' }}
+              {/* Wonderla Location Selection */}
+              {isWonderla && (
+                <div className="wonderla-location-section">
+                  <label className="wonderla-loc-label"><MapPin size={14}/> SELECT WONDERLA LOCATION</label>
+                  <div className="wonderla-locations-grid">
+                    {WONDERLA_LOCATIONS.map(loc => (
+                      <button key={loc.value} type="button"
+                        className={`wonderla-loc-card ${formData.wonderlaLocation === loc.value ? 'selected' : ''}`}
+                        onClick={() => setFormData({...formData, wonderlaLocation: loc.value})}
                       >
-                        <span className="loc-name" style={{ fontSize: '12px', fontWeight: '800', color: '#fff' }}>🍔 Buffet Combo</span>
-                        <span className="loc-desc" style={{ fontSize: '10px', color: '#94A3B8' }}>₹470 per person</span>
+                        <span className="loc-name">{loc.label}</span>
+                        <span className="loc-desc">{loc.desc}</span>
                       </button>
-                      <button type="button"
-                        className={`wonderla-loc-card ${formData.lockerSelected ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, lockerSelected: !prev.lockerSelected }))}
-                        style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer', border: formData.lockerSelected ? '1.5px solid #C7FF00' : '1.5px solid rgba(255,255,255,0.1)', background: formData.lockerSelected ? 'rgba(199,255,0,0.1)' : 'rgba(0,0,0,0.3)', borderRadius: '8px' }}
-                      >
-                        <span className="loc-name" style={{ fontSize: '12px', fontWeight: '800', color: '#fff' }}>🔑 Locker Rental</span>
-                        <span className="loc-desc" style={{ fontSize: '10px', color: '#94A3B8' }}>₹100 flat rate</span>
-                      </button>
-                    </div>
+                    ))}
                   </div>
                 </div>
-                </>
               )}
 
               {/* Standard visitor counters (only for non-Wonderla) */}
               {!isWonderla && (
-                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label className="wonderla-loc-label">👥 NUMBER OF VISITORS</label>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Adults</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{adultPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, adultTickets: Math.max(0, prev.adultTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.adultTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, adultTickets: prev.adultTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Children</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{kidsPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, kidsTickets: Math.max(0, prev.kidsTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.kidsTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, kidsTickets: prev.kidsTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Senior Citizens</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{seniorPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, seniorTickets: Math.max(0, prev.seniorTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.seniorTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, seniorTickets: prev.seniorTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Students (valid ID)</span>
-                        <span style={{ fontSize: '10px', color: '#888', fontStyle: 'italic' }}>🎓 Present valid student ID at park entry</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{studentPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentTickets: Math.max(0, prev.studentTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.studentTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentTickets: prev.studentTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Below minimum height</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#6BCB77', fontWeight: 700 }}>FREE</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, infantCount: Math.max(0, prev.infantCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.infantCount}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, infantCount: prev.infantCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
+                <div className="form-group-row">
+                  <div className="form-input-wrapper">
+                    <label><Ticket size={14}/> NO. OF ADULTS</label>
+                    <input type="number" min="1" max="20" value={formData.adultTickets} onChange={(e) => setFormData({...formData, adultTickets: parseInt(e.target.value) || 1})} required />
                   </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', marginBottom: '8px', marginTop: '8px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 900, color: '#94A3B8', letterSpacing: '1px' }}>TOTAL TICKETS AMOUNT</span>
-                    <span style={{ fontSize: '18px', fontWeight: 900, color: '#C7FF00' }}>₹{nonWonderlaSubtotal.toLocaleString('en-IN')}</span>
+                  <div className="form-input-wrapper">
+                    <label><Ticket size={14}/> NO. OF KIDS</label>
+                    <input type="number" min="0" max="20" value={formData.kidsTickets} onChange={(e) => setFormData({...formData, kidsTickets: parseInt(e.target.value) || 0})} />
                   </div>
                 </div>
               )}
@@ -716,7 +583,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                 </div>
               )}
 
-              <button type="submit" className="btn-primary next-btn" disabled={isWonderla && (!formData.wonderlaLocation || !formData.termsAccepted || (formData.adultCount === 0 && formData.childCount === 0))}>
+              <button type="submit" className="btn-primary next-btn" disabled={isWonderla && (!formData.termsAccepted || (formData.adultCount === 0 && formData.childCount === 0))}>
                 REVIEW ORDER <ArrowRight size={20}/>
               </button>
             </form>
@@ -731,14 +598,37 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
               <h2 className="step-title">REVIEW & PAY 📱</h2>
               <p className="step-subtitle text-xs">Verify your booking details then proceed to payment.</p>
 
-              {/* Add-ons were moved to Step 1 */}
+              {/* Wonderla Optional Add-ons section in Step 2 */}
+              {isWonderla && (
+                <div className="addons-section mb-4" style={{ borderRadius: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <h4 style={{ fontSize: '11px', fontWeight: 900, color: '#C7FF00', letterSpacing: '1.5px', marginBottom: '10px' }}>⚡ CHOOSE OPTIONAL ADD-ONS</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <button type="button"
+                      className={`wonderla-loc-card ${formData.buffetSelected ? 'selected' : ''}`}
+                      onClick={() => setFormData(prev => ({ ...prev, buffetSelected: !prev.buffetSelected }))}
+                      style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer', border: formData.buffetSelected ? '1.5px solid #C7FF00' : '1.5px solid rgba(255,255,255,0.1)', background: formData.buffetSelected ? 'rgba(199,255,0,0.1)' : 'rgba(0,0,0,0.3)', borderRadius: '8px' }}
+                    >
+                      <span className="loc-name" style={{ fontSize: '12px', fontWeight: '800', color: '#fff' }}>🍔 Buffet Combo</span>
+                      <span className="loc-desc" style={{ fontSize: '10px', color: '#94A3B8' }}>₹470 per person</span>
+                    </button>
+                    <button type="button"
+                      className={`wonderla-loc-card ${formData.lockerSelected ? 'selected' : ''}`}
+                      onClick={() => setFormData(prev => ({ ...prev, lockerSelected: !prev.lockerSelected }))}
+                      style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer', border: formData.lockerSelected ? '1.5px solid #C7FF00' : '1.5px solid rgba(255,255,255,0.1)', background: formData.lockerSelected ? 'rgba(199,255,0,0.1)' : 'rgba(0,0,0,0.3)', borderRadius: '8px' }}
+                    >
+                      <span className="loc-name" style={{ fontSize: '12px', fontWeight: '800', color: '#fff' }}>🔑 Locker Rental</span>
+                      <span className="loc-desc" style={{ fontSize: '10px', color: '#94A3B8' }}>₹100 flat rate</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="cart-summary-card compact-summary glass-morphism mb-4">
                 <div className="summary-park-info py-2">
                   <img src={selectedPark.image} alt={selectedPark.name} className="summary-park-img small-thumb" />
                   <div className="summary-park-text">
                     <h3 className="text-base">{selectedPark.name}</h3>
-                    <p className="text-xs">{isWonderla && formData.wonderlaLocation ? `LOCATION: Wonderla ${WONDERLA_LOCATIONS.find(l => l.value === formData.wonderlaLocation)?.label}` : selectedPark.location}</p>
+                    <p className="text-xs">{isWonderla && formData.wonderlaLocation ? WONDERLA_LOCATIONS.find(l => l.value === formData.wonderlaLocation)?.label + ' — ' + WONDERLA_LOCATIONS.find(l => l.value === formData.wonderlaLocation)?.desc : selectedPark.location}</p>
                   </div>
                 </div>
                 
@@ -752,7 +642,6 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                       {totals.adultTickets > 0 && <div className="bill-row"><span className="bill-label">Adults</span><span className="bill-value">{totals.adultTickets} × ₹{totals.adultPrice} = ₹{totals.adultTickets * totals.adultPrice}</span></div>}
                       {totals.childTickets > 0 && <div className="bill-row"><span className="bill-label">Children</span><span className="bill-value">{totals.childTickets} × ₹{totals.childPrice} = ₹{totals.childTickets * totals.childPrice}</span></div>}
                       {totals.seniorTickets > 0 && <div className="bill-row"><span className="bill-label">Sr.Citizens</span><span className="bill-value">{totals.seniorTickets} × ₹{totals.seniorPrice} = ₹{totals.seniorTickets * totals.seniorPrice}</span></div>}
-                      {totals.studentTickets > 0 && <div className="bill-row"><span className="bill-label">Students</span><span className="bill-value">{totals.studentTickets} × ₹{totals.studentPrice} = ₹{totals.studentTickets * totals.studentPrice}</span></div>}
                       {formData.infantCount > 0 && <div className="bill-row"><span className="bill-label">Infants (&lt;85cm)</span><span className="bill-value">{formData.infantCount} × FREE</span></div>}
                       {totals.buffetCount > 0 && <div className="bill-row"><span className="bill-label">🍔 Buffet Combo</span><span className="bill-value">{totals.buffetCount} × ₹470 = ₹{totals.buffetTotal}</span></div>}
                       {formData.lockerSelected && <div className="bill-row"><span className="bill-label">🔑 Locker Rental</span><span className="bill-value">₹100</span></div>}
@@ -761,24 +650,13 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                       
                       <div style={{ margin: '8px 0', borderTop: '1px dashed rgba(255,255,255,0.1)' }}></div>
                       <div className="bill-row"><span className="bill-label">Subtotal</span><span className="bill-value">₹{totals.subtotal}</span></div>
-                      {convenienceFee > 0 && <div className="bill-row"><span className="bill-label">Convenience Fee</span><span className="bill-value">₹{convenienceFee}</span></div>}
+                      <div className="bill-row"><span className="bill-label">Convience fee</span><span className="bill-value">₹{totals.convenienceFee}</span></div>
                       <div className="bill-row total mt-2"><span className="text-xs font-black">TOTAL</span><span className="text-lg font-black" style={{ color: '#C7FF00', fontSize: '1.4rem' }}>₹{totals.finalTotal}</span></div>
                     </>
                   ) : (
                     <>
-                      {formData.adultTickets > 0 && <div className="bill-row"><span className="bill-label">Adults</span><span className="bill-value">{formData.adultTickets} × ₹{adultPrice} = ₹{formData.adultTickets * adultPrice}</span></div>}
-                      {formData.kidsTickets > 0 && <div className="bill-row"><span className="bill-label">Children</span><span className="bill-value">{formData.kidsTickets} × ₹{kidsPrice} = ₹{formData.kidsTickets * kidsPrice}</span></div>}
-                      {formData.seniorTickets > 0 && <div className="bill-row"><span className="bill-label">Sr.Citizens</span><span className="bill-value">{formData.seniorTickets} × ₹{seniorPrice} = ₹{formData.seniorTickets * seniorPrice}</span></div>}
-                      {formData.studentTickets > 0 && <div className="bill-row"><span className="bill-label">Students</span><span className="bill-value">{formData.studentTickets} × ₹{studentPrice} = ₹{formData.studentTickets * studentPrice}</span></div>}
-                      {formData.infantCount > 0 && <div className="bill-row"><span className="bill-label">Infants (&lt;85cm)</span><span className="bill-value">{formData.infantCount} × FREE</span></div>}
-                      
-                      <div style={{ margin: '8px 0', borderTop: '1px dashed rgba(255,255,255,0.1)' }}></div>
-                      <div className="bill-row"><span className="bill-label">Subtotal</span><span className="bill-value">₹{nonWonderlaSubtotal}</span></div>
-                      
-                      {appliedCoupon && (
-                        <div className="bill-row"><span className="bill-label" style={{ color: '#6BCB77' }}>🏷️ Coupon Discount ({appliedCoupon.code})</span><span className="bill-value" style={{ color: '#6BCB77' }}>-₹{nonWonderlaCouponDiscount}</span></div>
-                      )}
-                      {convenienceFee > 0 && <div className="bill-row"><span className="bill-label">Convenience Fee</span><span className="bill-value">₹{convenienceFee}</span></div>}
+                      <div className="bill-row"><span className="bill-label">🎟️ adults</span><span className="bill-value">{formData.adultTickets} × ₹{adultPrice}</span></div>
+                      {formData.kidsTickets > 0 && <div className="bill-row"><span className="bill-label">👶 kids</span><span className="bill-value">{formData.kidsTickets} × ₹{kidsPrice}</span></div>}
                       <div className="bill-row total mt-2"><span className="text-xs font-black">TOTAL</span><span className="text-lg font-black text-lime-400">₹{totalAmount}</span></div>
                     </>
                   )}
@@ -1100,9 +978,10 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
             </div>
           );
         })()}
+        </div>
       </div>
     </div>
   );
 };
 
-export default BookingModal;
+export default BookingPage;

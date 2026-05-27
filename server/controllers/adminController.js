@@ -3,6 +3,7 @@ const Booking = require('../models/Booking');
 const Park = require('../models/Park');
 const Revenue = require('../models/Revenue');
 const Coupon = require('../models/Coupon');
+const PlatformSettings = require('../models/PlatformSettings');
 
 const getAdminStats = async (req, res) => {
   try {
@@ -174,7 +175,12 @@ const getRevenueEntries = async (req, res) => {
 
 const createPark = async (req, res) => {
   try {
-    const park = await Park.create(req.body);
+    // Ensure required fields have defaults so fallback parks can be persisted cleanly
+    const parkData = {
+      image: '/wonderla_final.jpg', // safe default
+      ...req.body,
+    };
+    const park = await Park.create(parkData);
     res.status(201).json(park);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -183,7 +189,11 @@ const createPark = async (req, res) => {
 
 const updatePark = async (req, res) => {
   try {
-    const park = await Park.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const park = await Park.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: false }
+    );
     if (!park) return res.status(404).json({ message: 'Park not found' });
     res.json(park);
   } catch (error) {
@@ -249,6 +259,72 @@ const getCouponUsage = async (req, res) => {
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW: Visitor Categories per park
+// ═══════════════════════════════════════════════════════════════════════════
+const updateVisitorCategories = async (req, res) => {
+  try {
+    const { categories } = req.body;
+    const park = await Park.findById(req.params.id);
+    if (!park) return res.status(404).json({ message: 'Park not found' });
+    park.visitorCategories = categories;
+    await park.save();
+    res.json({ message: 'Visitor categories updated', park });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW: Ticket Pricing per park
+// ═══════════════════════════════════════════════════════════════════════════
+const updateTicketPricing = async (req, res) => {
+  try {
+    const { ticketPricing, wonderlaPricing } = req.body;
+    const park = await Park.findById(req.params.id);
+    if (!park) return res.status(404).json({ message: 'Park not found' });
+    if (ticketPricing !== undefined) park.ticketPricing = ticketPricing;
+    if (wonderlaPricing !== undefined) park.wonderlaPricing = wonderlaPricing;
+    await park.save();
+    res.json({ message: 'Pricing updated', park });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW: Platform Settings (convenience fee, etc.)
+// ═══════════════════════════════════════════════════════════════════════════
+const getPlatformSettings = async (req, res) => {
+  try {
+    let settings = await PlatformSettings.findOne({});
+    if (!settings) {
+      settings = await PlatformSettings.create({ convenienceFee: 49, convenienceFeeEnabled: true });
+    }
+    res.json({ convenienceFee: { amount: settings.convenienceFee, enabled: settings.convenienceFeeEnabled } });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updatePlatformSettings = async (req, res) => {
+  try {
+    const { convenienceFee } = req.body; // Expecting { amount, enabled }
+    if (convenienceFee !== undefined) {
+      let settings = await PlatformSettings.findOne({});
+      if (!settings) {
+        settings = new PlatformSettings();
+      }
+      if (convenienceFee.amount !== undefined) settings.convenienceFee = Number(convenienceFee.amount);
+      if (convenienceFee.enabled !== undefined) settings.convenienceFeeEnabled = Boolean(convenienceFee.enabled);
+      await settings.save();
+    }
+    res.json({ message: 'Platform settings saved' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   getAdminStats, 
   searchBookings,
@@ -262,5 +338,9 @@ module.exports = {
   createCoupon,
   getCoupons,
   deleteCoupon,
-  getCouponUsage
+  getCouponUsage,
+  updateVisitorCategories,
+  updateTicketPricing,
+  getPlatformSettings,
+  updatePlatformSettings
 };
