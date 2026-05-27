@@ -127,6 +127,181 @@ const AdminDashboard = ({ onBack }) => {
     } catch (err) { alert("Failed: " + (err.response?.data?.message || err.message)); }
   };
 
+  const getDefaultCategories = (parkName) => {
+    if (parkName.toLowerCase().includes('wonderla')) {
+      return [
+        { id: 'adult', name: 'Adults', condition: '>140cm', isFree: false, isActive: true, order: 1 },
+        { id: 'child', name: 'Children', condition: '85–140cm', isFree: false, isActive: true, order: 2 },
+        { id: 'senior', name: 'Sr. Citizen', condition: 'Age 60+', isFree: false, isActive: true, order: 3 },
+        { id: 'student', name: 'Student', condition: 'College ID', isFree: false, isActive: true, order: 4 },
+        { id: 'infant', name: 'Below 85cm', condition: 'FREE', isFree: true, isActive: true, order: 5 }
+      ];
+    } else {
+      return [
+        { id: 'adult', name: 'Adults', condition: 'Adults', isFree: false, isActive: true, order: 1 },
+        { id: 'child', name: 'Children', condition: 'Children', isFree: false, isActive: true, order: 2 },
+        { id: 'senior', name: 'Sr. Citizen', condition: 'Sr. Citizen', isFree: false, isActive: true, order: 3 },
+        { id: 'student', name: 'Student', condition: 'Student', isFree: false, isActive: true, order: 4 }
+      ];
+    }
+  };
+
+  const handleEditParkClick = async (p) => {
+    const token = getToken();
+    const parkId = p._id || p.id;
+    
+    // Set basic editingPark first so modal opens immediately
+    setEditingPark(p);
+    setEditParkTab('basic');
+
+    try {
+      // Fetch categories
+      const catRes = await axios.get(`${API_URL}/parks/${parkId}/categories?all=true`, { headers: { Authorization: `Bearer ${token}` } });
+      let categories = catRes.data;
+      if (!categories || categories.length === 0) {
+        categories = getDefaultCategories(p.name);
+      }
+
+      // Fetch pricing
+      const pricingRes = await axios.get(`${API_URL}/parks/${parkId}/pricing?all=true`, { headers: { Authorization: `Bearer ${token}` } });
+      const pricingArray = pricingRes.data;
+      
+      let wPricing = {};
+      let singlePrices = {};
+      if (p.name === 'Wonderla') {
+        if (pricingArray && pricingArray.length > 0) {
+          pricingArray.forEach(record => {
+            const loc = record.location || 'chennai';
+            if (!wPricing[loc]) {
+              wPricing[loc] = {
+                normal: { adult: 0, child: 0, senior: 0, student: 0 },
+                fasttrack: { adult: 0, child: 0 },
+                fastTrackAvailable: false,
+                parkHours: '',
+                waterHours: ''
+              };
+            }
+            wPricing[loc].fastTrackAvailable = record.fastTrackAvailable;
+            if (record.ticketType === 'normal') {
+              wPricing[loc].normal = record.prices;
+            } else if (record.ticketType === 'fasttrack') {
+              wPricing[loc].fasttrack = record.prices;
+            }
+          });
+        }
+      } else {
+        if (pricingArray && pricingArray.length > 0) {
+          const normalRecord = pricingArray.find(r => r.ticketType === 'normal');
+          if (normalRecord && normalRecord.prices) {
+            singlePrices = {
+              price: normalRecord.prices.adult || normalRecord.prices.price || p.price,
+              adultPrice: normalRecord.prices.adult || p.price,
+              childPrice: normalRecord.prices.child || p.childPrice,
+              seniorPrice: normalRecord.prices.senior || p.seniorPrice,
+              studentPrice: normalRecord.prices.student || p.studentPrice
+            };
+          }
+        }
+      }
+
+      setEditingPark(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          visitorCategories: categories,
+          wonderlaPricing: p.name === 'Wonderla' ? (Object.keys(wPricing).length > 0 ? wPricing : prev.wonderlaPricing || {}) : undefined,
+          ...singlePrices
+        };
+      });
+
+    } catch (error) {
+      console.error("Error loading park details:", error);
+      setEditingPark(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          visitorCategories: prev.visitorCategories || getDefaultCategories(p.name)
+        };
+      });
+    }
+  };
+
+  const handleSaveCategories = async () => {
+    if (!editingPark) return;
+    const token = getToken();
+    const parkId = editingPark._id || editingPark.id;
+    const categories = editingPark.visitorCategories || [];
+    
+    const cleanCategories = categories.map((cat, index) => ({
+      id: cat.id || cat.name.toLowerCase().replace(/[^a-z0-9]/g, '') || `cat_${index}`,
+      name: cat.name,
+      condition: cat.condition || '',
+      isFree: !!cat.isFree,
+      isActive: cat.isActive !== undefined ? !!cat.isActive : true,
+      order: cat.order !== undefined ? Number(cat.order) : index + 1
+    }));
+
+    try {
+      await axios.post(`${API_URL}/parks/${parkId}/categories`, { categories: cleanCategories }, { headers: { Authorization: `Bearer ${token}` } });
+      alert('Visitor categories saved successfully!');
+      setEditingPark({ ...editingPark, visitorCategories: cleanCategories });
+    } catch (err) {
+      alert("Failed to save categories: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleSavePricing = async () => {
+    if (!editingPark) return;
+    const token = getToken();
+    const parkId = editingPark._id || editingPark.id;
+    
+    let pricingData = [];
+    if (editingPark.name === 'Wonderla') {
+      const wPricing = editingPark.wonderlaPricing || {};
+      pricingData = Object.entries(wPricing).flatMap(([loc, data]) => {
+        const records = [];
+        if (data.normal) {
+          records.push({
+            location: loc,
+            ticketType: 'normal',
+            prices: data.normal,
+            fastTrackAvailable: !!data.fastTrackAvailable
+          });
+        }
+        if (data.fasttrack && data.fastTrackAvailable) {
+          records.push({
+            location: loc,
+            ticketType: 'fasttrack',
+            prices: data.fasttrack,
+            fastTrackAvailable: !!data.fastTrackAvailable
+          });
+        }
+        return records;
+      });
+    } else {
+      pricingData = [
+        {
+          location: null,
+          ticketType: 'normal',
+          prices: {
+            adult: Number(editingPark.price || editingPark.adultPrice || 0),
+            child: Number(editingPark.childPrice || 0),
+            senior: Number(editingPark.seniorPrice || 0),
+            student: Number(editingPark.studentPrice || 0)
+          },
+          fastTrackAvailable: false
+        }
+      ];
+    }
+
+    try {
+      await axios.post(`${API_URL}/parks/${parkId}/pricing`, { pricingData }, { headers: { Authorization: `Bearer ${token}` } });
+      alert('Ticket pricing saved successfully!');
+    } catch (err) {
+      alert("Failed to save pricing: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   const handleUpdatePark = async (e) => {
     e.preventDefault();
     if (!editingPark) return;
@@ -499,7 +674,7 @@ const AdminDashboard = ({ onBack }) => {
                   <div className="text-xs" style={{marginTop:'10px', color:'#888'}}>Bookings this month: <strong style={{color:'#fff'}}>{p.bookings || Math.floor(Math.random()*50)}</strong></div>
                   
                   <div className="park-card-actions">
-                    <button className="btn-edit-park" onClick={() => setEditingPark(p)}><Edit3 size={14}/> EDIT PARK</button>
+                    <button className="btn-edit-park" onClick={() => handleEditParkClick(p)}><Edit3 size={14}/> EDIT PARK</button>
                     <button className="btn-manage-coupons" onClick={() => setManagingCouponsFor(p)}><Tag size={14}/> MANAGE COUPONS</button>
                   </div>
                 </div>
@@ -590,6 +765,11 @@ const AdminDashboard = ({ onBack }) => {
                               ))}
                             </div>
                           )}
+                          <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+                            <button type="button" onClick={handleSaveCategories} className="btn-save" style={{ padding: '8px 16px', fontSize: '12px' }}>
+                              <Save size={14} style={{ marginRight: '6px' }} /> SAVE CATEGORIES
+                            </button>
+                          </div>
                         </div>
                       );
                     })()}
@@ -689,11 +869,16 @@ const AdminDashboard = ({ onBack }) => {
                                   ))}
                                 </div>
                               )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
+                          <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+                            <button type="button" onClick={handleSavePricing} className="btn-save" style={{ padding: '8px 16px', fontSize: '12px' }}>
+                              <Save size={14} style={{ marginRight: '6px' }} /> SAVE PRICING
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
 
                     <div className="edit-actions" style={{marginTop: '20px'}}>
                       <button type="button" className="btn-cancel" onClick={() => { setIsAddingPark(false); setEditingPark(null); setEditParkTab('basic'); }}>CANCEL</button>

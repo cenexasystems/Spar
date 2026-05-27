@@ -16,8 +16,11 @@ router.get('/', async (req, res) => {
 // Get platform settings (convenience fee) - Public
 router.get('/platform-settings', async (req, res) => {
   try {
-    const convenienceFee = await PlatformSettings.getSetting('convenienceFee', { enabled: true, amount: 49 });
-    res.json({ convenienceFee });
+    let settings = await PlatformSettings.findOne({});
+    if (!settings) {
+      settings = await PlatformSettings.create({ convenienceFee: 49, convenienceFeeEnabled: true });
+    }
+    res.json({ convenienceFee: { amount: settings.convenienceFee, enabled: settings.convenienceFeeEnabled } });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

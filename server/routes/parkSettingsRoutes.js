@@ -9,6 +9,10 @@ router.get('/:parkId/categories', async (req, res) => {
   try {
     const pc = await ParkCategory.findOne({ parkId: req.params.parkId });
     if (!pc) return res.json([]);
+    const { all } = req.query;
+    if (all === 'true') {
+      return res.json(pc.categories);
+    }
     const activeCategories = pc.categories.filter(c => c.isActive);
     res.json(activeCategories);
   } catch (error) {
@@ -19,7 +23,12 @@ router.get('/:parkId/categories', async (req, res) => {
 // ── GET: Ticket Pricing ───────────────────────────────────────────────────
 router.get('/:parkId/pricing', async (req, res) => {
   try {
-    const { location, ticketType } = req.query;
+    const { location, ticketType, all } = req.query;
+    
+    if (all === 'true') {
+      const pricing = await ParkPricing.find({ parkId: req.params.parkId });
+      return res.json(pricing);
+    }
     
     let query = { parkId: req.params.parkId };
     

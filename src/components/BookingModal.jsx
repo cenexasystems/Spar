@@ -62,11 +62,78 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   const [couponError, setCouponError] = useState('');
   const [copied, setCopied] = useState(false);
   const [convenienceFeeConfig, setConvenienceFeeConfig] = useState({ enabled: true, amount: 49 });
+  const [activeCategories, setActiveCategories] = useState([]);
+  const [livePricing, setLivePricing] = useState({ prices: {}, fastTrackAvailable: true });
 
   const fileInputRef = useRef(null);
   const successRef = useRef(null);
 
   const isWonderla = selectedPark?.name?.toLowerCase().includes('wonderla');
+
+  const getDefaultCategories = (parkName) => {
+    if (parkName.toLowerCase().includes('wonderla')) {
+      return [
+        { id: 'adult', name: 'Adults', condition: '>140cm', isFree: false, isActive: true, order: 1 },
+        { id: 'child', name: 'Children', condition: '85–140cm', isFree: false, isActive: true, order: 2 },
+        { id: 'senior', name: 'Sr. Citizen', condition: 'Age 60+', isFree: false, isActive: true, order: 3 },
+        { id: 'student', name: 'Student', condition: 'College ID', isFree: false, isActive: true, order: 4 },
+        { id: 'infant', name: 'Below 85cm', condition: 'FREE', isFree: true, isActive: true, order: 5 }
+      ];
+    } else {
+      return [
+        { id: 'adult', name: 'Adults', condition: 'Adults', isFree: false, isActive: true, order: 1 },
+        { id: 'child', name: 'Children', condition: 'Children', isFree: false, isActive: true, order: 2 },
+        { id: 'senior', name: 'Sr. Citizen', condition: 'Sr. Citizen', isFree: false, isActive: true, order: 3 },
+        { id: 'student', name: 'Student', condition: 'Student', isFree: false, isActive: true, order: 4 }
+      ];
+    }
+  };
+
+  const getCategoryPrice = (catId) => {
+    if (livePricing.prices && livePricing.prices[catId] !== undefined) {
+      return livePricing.prices[catId];
+    }
+    
+    if (isWonderla) {
+      const loc = formData.wonderlaLocation || 'chennai';
+      const locData = WONDERLA_LOCATION_PRICING[loc] || WONDERLA_LOCATION_PRICING.chennai;
+      const ticketPrices = locData[formData.ticketType || 'normal'] || locData.normal;
+      return ticketPrices[catId] || 0;
+    } else {
+      if (catId === 'adult') return selectedPark.adultPrice || parseInt(selectedPark.price) || 0;
+      if (catId === 'child') return selectedPark.kidsPrice || parseInt(selectedPark.price) * 0.75 || 0;
+      if (catId === 'senior') return selectedPark.seniorPrice || Math.round((selectedPark.adultPrice || parseInt(selectedPark.price)) * 0.8) || 0;
+      if (catId === 'student') return selectedPark.studentPrice || Math.round((selectedPark.adultPrice || parseInt(selectedPark.price)) * 0.85) || 0;
+      return 0;
+    }
+  };
+
+  const updateVisitorCount = (catId, delta) => {
+    setFormData(prev => {
+      const counts = {
+        adult: prev.adultCount || prev.adultTickets || 0,
+        child: prev.childCount || prev.kidsTickets || 0,
+        senior: prev.seniorCount || prev.seniorTickets || 0,
+        student: prev.studentCount || prev.studentTickets || 0,
+        infant: prev.infantCount || 0
+      };
+      
+      counts[catId] = Math.max(0, (counts[catId] || 0) + delta);
+      
+      return {
+        ...prev,
+        adultCount: counts.adult,
+        adultTickets: counts.adult,
+        childCount: counts.child,
+        kidsTickets: counts.child,
+        seniorCount: counts.senior,
+        seniorTickets: counts.senior,
+        studentCount: counts.student,
+        studentTickets: counts.student,
+        infantCount: counts.infant
+      };
+    });
+  };
 
   // Fetch convenience fee on mount
   useEffect(() => {
@@ -75,6 +142,46 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
       if (res.data?.convenienceFee) setConvenienceFeeConfig(res.data.convenienceFee);
     }).catch(() => {});
   }, []);
+
+  // Fetch active categories when modal opens
+  useEffect(() => {
+    if (isOpen && selectedPark) {
+      const parkId = selectedPark._id || selectedPark.id;
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      axios.get(`${API_URL}/parks/${parkId}/categories`).then(res => {
+        if (res.data && res.data.length > 0) {
+          setActiveCategories(res.data);
+        } else {
+          setActiveCategories(getDefaultCategories(selectedPark.name));
+        }
+      }).catch(() => {
+        setActiveCategories(getDefaultCategories(selectedPark.name));
+      });
+    }
+  }, [isOpen, selectedPark]);
+
+  // Fetch pricing when park, location, or ticket type changes
+  useEffect(() => {
+    if (isOpen && selectedPark) {
+      const parkId = selectedPark._id || selectedPark.id;
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      
+      let url = `${API_URL}/parks/${parkId}/pricing?ticketType=${formData.ticketType || 'normal'}`;
+      if (isWonderla && formData.wonderlaLocation) {
+        url += `&location=${formData.wonderlaLocation}`;
+      }
+      
+      axios.get(url).then(res => {
+        if (res.data && res.data.prices) {
+          setLivePricing(res.data);
+        } else {
+          setLivePricing({ prices: {}, fastTrackAvailable: true });
+        }
+      }).catch(() => {
+        setLivePricing({ prices: {}, fastTrackAvailable: true });
+      });
+    }
+  }, [isOpen, selectedPark, formData.wonderlaLocation, formData.ticketType]);
 
   useEffect(() => {
     if (user && isOpen) {
@@ -116,10 +223,12 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   // Helper to get Wonderla prices for current location + ticket type
   // Helper to get Wonderla prices for current location + ticket type
   const getWonderlaLocationPrices = () => {
-    if (!formData.wonderlaLocation) return WONDERLA_LOCATION_PRICING.chennai.normal;
-    const loc = formData.wonderlaLocation;
-    const locData = WONDERLA_LOCATION_PRICING[loc] || WONDERLA_LOCATION_PRICING.chennai;
-    return locData[formData.ticketType || 'normal'] || locData.normal;
+    return {
+      adult: getCategoryPrice('adult'),
+      child: getCategoryPrice('child'),
+      senior: getCategoryPrice('senior'),
+      student: getCategoryPrice('student')
+    };
   };
   const getWonderlaLocationData = () => {
     if (!formData.wonderlaLocation) return WONDERLA_LOCATION_PRICING.chennai;
@@ -127,10 +236,10 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     return WONDERLA_LOCATION_PRICING[loc] || WONDERLA_LOCATION_PRICING.chennai;
   };
 
-  const adultPrice = selectedPark.adultPrice || parseInt(selectedPark.price);
-  const kidsPrice = selectedPark.kidsPrice || parseInt(selectedPark.price) * 0.75;
-  const seniorPrice = selectedPark.seniorPrice || Math.round(adultPrice * 0.8);
-  const studentPrice = selectedPark.studentPrice || Math.round(adultPrice * 0.85);
+  const adultPrice = getCategoryPrice('adult');
+  const kidsPrice = getCategoryPrice('child');
+  const seniorPrice = getCategoryPrice('senior');
+  const studentPrice = getCategoryPrice('student');
   let nonWonderlaSubtotal = (adultPrice * formData.adultTickets) + (kidsPrice * formData.kidsTickets) + (seniorPrice * formData.seniorTickets) + (studentPrice * formData.studentTickets);
   let rewardMessage = "";
   if (rewardSelection.type === 'discount') {
@@ -487,86 +596,35 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                   <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label className="wonderla-loc-label">👥 NUMBER OF VISITORS</label>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    
-                    {/* Row 1: Adults */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Adults (above 140cm)</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().adult} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, adultCount: Math.max(0, prev.adultCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.adultCount}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, adultCount: prev.adultCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Row 2: Children */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: formData.ticketType === 'normal' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Children (85cm–140cm)</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().child} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, childCount: Math.max(0, prev.childCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.childCount}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, childCount: prev.childCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Row 3: Senior Citizens */}
-                    {formData.ticketType === 'normal' && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Senior Citizens (60+)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().senior} each</span>
-                          <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, seniorCount: Math.max(0, prev.seniorCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                            <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.seniorCount}</span>
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, seniorCount: prev.seniorCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
+                    {activeCategories.map((cat, idx) => {
+                      const price = getCategoryPrice(cat.id);
+                      const count = cat.id === 'adult' ? (formData.adultCount || 0) :
+                                    cat.id === 'child' ? (formData.childCount || 0) :
+                                    cat.id === 'senior' ? (formData.seniorCount || 0) :
+                                    cat.id === 'student' ? (formData.studentCount || 0) :
+                                    cat.id === 'infant' ? (formData.infantCount || 0) : 0;
+                                    
+                      return (
+                        <div key={cat.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < activeCategories.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{cat.name} {cat.condition ? `(${cat.condition})` : ''}</span>
+                            {cat.id === 'student' && <span style={{ fontSize: '10px', color: '#888', fontStyle: 'italic' }}>🎓 Present valid student ID at park entry</span>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {cat.isFree ? (
+                              <span style={{ fontSize: '11px', color: '#6BCB77', fontWeight: 700 }}>FREE</span>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{price} each</span>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                              <button type="button" onClick={() => updateVisitorCount(cat.id, -1)} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
+                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{count}</span>
+                              <button type="button" onClick={() => updateVisitorCount(cat.id, 1)} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Row 4: Students */}
-                    {formData.ticketType === 'normal' && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Students (valid ID)</span>
-                          <span style={{ fontSize: '10px', color: '#888', fontStyle: 'italic' }}>🎓 Present valid student ID at park entry</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{getWonderlaLocationPrices().student} each</span>
-                          <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentCount: Math.max(0, prev.studentCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                            <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.studentCount}</span>
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentCount: prev.studentCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Row 5: Children Free */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Below minimum height</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#6BCB77', fontWeight: 700 }}>FREE</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, infantCount: Math.max(0, prev.infantCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.infantCount}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, infantCount: prev.infantCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
 
                   <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
@@ -611,77 +669,35 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                 <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label className="wonderla-loc-label">👥 NUMBER OF VISITORS</label>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Adults</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{adultPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, adultTickets: Math.max(0, prev.adultTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.adultTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, adultTickets: prev.adultTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
+                    {activeCategories.map((cat, idx) => {
+                      const price = getCategoryPrice(cat.id);
+                      const count = cat.id === 'adult' ? (formData.adultTickets || 0) :
+                                    cat.id === 'child' ? (formData.kidsTickets || 0) :
+                                    cat.id === 'senior' ? (formData.seniorTickets || 0) :
+                                    cat.id === 'student' ? (formData.studentTickets || 0) :
+                                    cat.id === 'infant' ? (formData.infantCount || 0) : 0;
+                                    
+                      return (
+                        <div key={cat.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < activeCategories.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{cat.name} {cat.condition ? `(${cat.condition})` : ''}</span>
+                            {cat.id === 'student' && <span style={{ fontSize: '10px', color: '#888', fontStyle: 'italic' }}>🎓 Present valid student ID at park entry</span>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {cat.isFree ? (
+                              <span style={{ fontSize: '11px', color: '#6BCB77', fontWeight: 700 }}>FREE</span>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{price} each</span>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                              <button type="button" onClick={() => updateVisitorCount(cat.id, -1)} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
+                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{count}</span>
+                              <button type="button" onClick={() => updateVisitorCount(cat.id, 1)} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Children</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{kidsPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, kidsTickets: Math.max(0, prev.kidsTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.kidsTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, kidsTickets: prev.kidsTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Senior Citizens</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{seniorPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, seniorTickets: Math.max(0, prev.seniorTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.seniorTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, seniorTickets: prev.seniorTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Students (valid ID)</span>
-                        <span style={{ fontSize: '10px', color: '#888', fontStyle: 'italic' }}>🎓 Present valid student ID at park entry</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#00D1FF', fontWeight: 700 }}>@ ₹{studentPrice} each</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentTickets: Math.max(0, prev.studentTickets - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.studentTickets}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, studentTickets: prev.studentTickets + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>Below minimum height</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '11px', color: '#6BCB77', fontWeight: 700 }}>FREE</span>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#090B11', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, infantCount: Math.max(0, prev.infantCount - 1) }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>−</button>
-                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>{formData.infantCount}</span>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, infantCount: prev.infantCount + 1 }))} style={{ background: 'none', border: 'none', color: '#C7FF00', fontWeight: 'bold', fontSize: '16px', padding: '0 8px', cursor: 'pointer' }}>+</button>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', marginBottom: '8px', marginTop: '8px' }}>
