@@ -152,13 +152,6 @@ const ParkGrid = ({ onBook }) => {
                 <h3 className="park-name" onClick={() => onBook(park)} style={{ cursor: 'pointer' }}>{park.name}</h3>
                 <p className="park-desc">{park.desc}</p>
                 
-                {park.tickets_available && (
-                  <div className="mission-cap-alert">
-                    <div className="pulse-dot"></div>
-                    Only <span>{park.tickets_available}</span> Tickets Remaining!
-                  </div>
-                )}
-
                 <button className="about-park-btn" onClick={() => setSelectedAboutPark(park)}>
                   <Info size={14} style={{ marginRight: '6px' }} />
                   About This Park

@@ -45,6 +45,7 @@ router.put('/parks/:id/pricing', protect, admin, updateTicketPricing);
 // Platform Settings
 router.get('/platform-settings', protect, admin, getPlatformSettings);
 router.put('/platform-settings', protect, admin, updatePlatformSettings);
+router.post('/platform-settings', protect, admin, updatePlatformSettings);
 
 // Coupons
 router.post('/coupons', protect, admin, createCoupon);

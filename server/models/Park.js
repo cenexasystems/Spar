@@ -19,7 +19,6 @@ const parkSchema = mongoose.Schema(
     image: { type: String, required: true },
     desc: { type: String, default: '' },
     rating: { type: Number, default: 4.5 },
-    tickets_available: { type: Number, default: 100 },
     parkPrefix: { type: String, default: 'BK' },
     isActive: { type: Boolean, default: true },
     operatingHours: { type: String, default: '' },

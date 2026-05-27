@@ -64,6 +64,8 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   const [convenienceFeeConfig, setConvenienceFeeConfig] = useState({ enabled: true, amount: 49 });
   const [activeCategories, setActiveCategories] = useState([]);
   const [livePricing, setLivePricing] = useState({ prices: {}, fastTrackAvailable: true });
+  // Dynamic visitor counts keyed by category id (supports any admin-defined category)
+  const [visitorCounts, setVisitorCounts] = useState({});
 
   const fileInputRef = useRef(null);
   const successRef = useRef(null);
@@ -109,31 +111,27 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   };
 
   const updateVisitorCount = (catId, delta) => {
-    setFormData(prev => {
-      const counts = {
-        adult: prev.adultCount || prev.adultTickets || 0,
-        child: prev.childCount || prev.kidsTickets || 0,
-        senior: prev.seniorCount || prev.seniorTickets || 0,
-        student: prev.studentCount || prev.studentTickets || 0,
-        infant: prev.infantCount || 0
-      };
-      
-      counts[catId] = Math.max(0, (counts[catId] || 0) + delta);
-      
-      return {
-        ...prev,
-        adultCount: counts.adult,
-        adultTickets: counts.adult,
-        childCount: counts.child,
-        kidsTickets: counts.child,
-        seniorCount: counts.senior,
-        seniorTickets: counts.senior,
-        studentCount: counts.student,
-        studentTickets: counts.student,
-        infantCount: counts.infant
-      };
+    setVisitorCounts(prev => {
+      const newCount = Math.max(0, (prev[catId] || 0) + delta);
+      const updated = { ...prev, [catId]: newCount };
+      // Keep formData in sync for legacy fields used in order submission
+      setFormData(fd => ({
+        ...fd,
+        adultCount:   updated.adult   ?? fd.adultCount,
+        adultTickets: updated.adult   ?? fd.adultTickets,
+        childCount:   updated.child   ?? fd.childCount,
+        kidsTickets:  updated.child   ?? fd.kidsTickets,
+        seniorCount:  updated.senior  ?? fd.seniorCount,
+        seniorTickets:updated.senior  ?? fd.seniorTickets,
+        studentCount: updated.student ?? fd.studentCount,
+        studentTickets:updated.student ?? fd.studentTickets,
+        infantCount:  updated.infant  ?? fd.infantCount,
+      }));
+      return updated;
     });
   };
+
+  const getVisitorCount = (catId) => visitorCounts[catId] || 0;
 
   // Fetch convenience fee on mount
   useEffect(() => {
@@ -143,22 +141,62 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     }).catch(() => {});
   }, []);
 
-  // Fetch active categories when modal opens
+  // Fetch active categories when modal opens or park changes
+  const selectedParkId = selectedPark?._id || selectedPark?.id;
   useEffect(() => {
     if (isOpen && selectedPark) {
       const parkId = selectedPark._id || selectedPark.id;
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
       axios.get(`${API_URL}/parks/${parkId}/categories`).then(res => {
-        if (res.data && res.data.length > 0) {
-          setActiveCategories(res.data);
-        } else {
-          setActiveCategories(getDefaultCategories(selectedPark.name));
-        }
+        const cats = (res.data && res.data.length > 0) ? res.data : getDefaultCategories(selectedPark.name);
+        setActiveCategories(cats);
+        
+        // Initialize visitor counts with default value: 1 for adults, 0 for others
+        const initialCounts = {};
+        cats.forEach(c => {
+          initialCounts[c.id] = c.id === 'adult' ? 1 : 0;
+        });
+        setVisitorCounts(initialCounts);
+        
+        // Synchronize legacy formData state so that totals and forms submit correctly
+        setFormData(fd => ({
+          ...fd,
+          adultCount:   initialCounts.adult   ?? 0,
+          adultTickets: initialCounts.adult   ?? 0,
+          childCount:   initialCounts.child   ?? 0,
+          kidsTickets:  initialCounts.child   ?? 0,
+          seniorCount:  initialCounts.senior  ?? 0,
+          seniorTickets:initialCounts.senior  ?? 0,
+          studentCount: initialCounts.student ?? 0,
+          studentTickets:initialCounts.student ?? 0,
+          infantCount:  initialCounts.infant  ?? 0,
+        }));
       }).catch(() => {
-        setActiveCategories(getDefaultCategories(selectedPark.name));
+        const cats = getDefaultCategories(selectedPark.name);
+        setActiveCategories(cats);
+        
+        // Same initialization for default categories on failure
+        const initialCounts = {};
+        cats.forEach(c => {
+          initialCounts[c.id] = c.id === 'adult' ? 1 : 0;
+        });
+        setVisitorCounts(initialCounts);
+        
+        setFormData(fd => ({
+          ...fd,
+          adultCount:   initialCounts.adult   ?? 0,
+          adultTickets: initialCounts.adult   ?? 0,
+          childCount:   initialCounts.child   ?? 0,
+          kidsTickets:  initialCounts.child   ?? 0,
+          seniorCount:  initialCounts.senior  ?? 0,
+          seniorTickets:initialCounts.senior  ?? 0,
+          studentCount: initialCounts.student ?? 0,
+          studentTickets:initialCounts.student ?? 0,
+          infantCount:  initialCounts.infant  ?? 0,
+        }));
       });
     }
-  }, [isOpen, selectedPark]);
+  }, [isOpen, selectedParkId]);
 
   // Fetch pricing when park, location, or ticket type changes
   useEffect(() => {
@@ -200,6 +238,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
       setAppliedCoupon(null);
       setCouponError('');
       setCopied(false);
+      setVisitorCounts({});
     }
   }, [user, isOpen]);
 
@@ -598,11 +637,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     {activeCategories.map((cat, idx) => {
                       const price = getCategoryPrice(cat.id);
-                      const count = cat.id === 'adult' ? (formData.adultCount || 0) :
-                                    cat.id === 'child' ? (formData.childCount || 0) :
-                                    cat.id === 'senior' ? (formData.seniorCount || 0) :
-                                    cat.id === 'student' ? (formData.studentCount || 0) :
-                                    cat.id === 'infant' ? (formData.infantCount || 0) : 0;
+                      const count = getVisitorCount(cat.id);
                                     
                       return (
                         <div key={cat.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < activeCategories.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
@@ -671,11 +706,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     {activeCategories.map((cat, idx) => {
                       const price = getCategoryPrice(cat.id);
-                      const count = cat.id === 'adult' ? (formData.adultTickets || 0) :
-                                    cat.id === 'child' ? (formData.kidsTickets || 0) :
-                                    cat.id === 'senior' ? (formData.seniorTickets || 0) :
-                                    cat.id === 'student' ? (formData.studentTickets || 0) :
-                                    cat.id === 'infant' ? (formData.infantCount || 0) : 0;
+                      const count = getVisitorCount(cat.id);
                                     
                       return (
                         <div key={cat.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < activeCategories.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
