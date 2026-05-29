@@ -522,4 +522,33 @@
     width: 100%;
     gap: 10px;
   }
+  .glitch-red {
+    font-size: 2.5rem;
+  }
+  .carnival-text {
+    font-size: 2rem;
+  }
+  .gold-text {
+    font-size: 1.5rem;
+  }
+  .countdown-text {
+    font-size: 3rem;
+  }
+  .win-content-card {
+    padding: 15px;
+  }
+  .bounce-container {
+    gap: 12px !important;
+    margin-top: 12px !important;
+  }
+  .highlight-box {
+    font-size: 0.7rem !important;
+    padding: 8px 12px !important;
+  }
+  .game-canvas-wrapper,
+  .game-canvas-wrapper canvas {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: auto !important;
+  }
 }

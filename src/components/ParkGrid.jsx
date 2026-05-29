@@ -776,7 +776,7 @@ const ParkGrid = ({ onBook }) => {
         return (
           <div className="about-modal-overlay animate-fade-in" onClick={() => setSelectedAboutPark(null)}>
             <motion.div 
-              className={`about-modal-content glass-morphism ${isDetailed ? 'wonderla-modal-wide' : ''}`}
+              className={`about-modal-content ${isDetailed ? 'wonderla-modal-wide' : ''}`}
               onClick={(e) => e.stopPropagation()}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

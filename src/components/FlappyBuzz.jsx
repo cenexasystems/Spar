@@ -505,7 +505,7 @@ const FlappyBuzz = () => {
               </div>
 
               <div className="bounce-container relative z-10 flex flex-col items-center justify-center gap-6 w-full mt-8">
-                <h2 className="text-white-shimmer-navy-ltr" style={{fontSize: '2.8rem', textAlign: 'center', lineHeight: '1.1'}}>ENGAGE ENGINES!</h2>
+                <h2 className="text-white-shimmer-ltr" style={{fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', textAlign: 'center', lineHeight: '1.1', fontFamily: "'Luckiest Guy', cursive", letterSpacing: '0.1em'}}>ENGAGE ENGINES!</h2>
                 {attemptsToday >= 3 ? (
                   <div className="start-hint highlight-box" style={{backgroundColor: '#e11d48', color: '#fff', border: 'none', fontSize: '0.9rem'}}>DAILY LIMIT REACHED. COME BACK TOMORROW!</div>
                 ) : (

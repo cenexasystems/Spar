@@ -497,7 +497,10 @@ a.footer-contact-row:hover .footer-contact-text {
   }
   .footer-grid {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 24px;
+  }
+  .main-footer {
+    padding: 30px 16px 16px;
   }
   .footer-brand-col {
     text-align: center;
@@ -506,7 +509,7 @@ a.footer-contact-row:hover .footer-contact-text {
   .footer-bottom {
     flex-direction: column;
     text-align: center;
-    gap: 25px;
+    gap: 15px;
   }
 }
 
