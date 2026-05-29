@@ -170,12 +170,53 @@
 @media (max-width: 768px) {
   .admin-dashboard-container { padding: 80px 15px; }
   .admin-header { flex-direction: column; gap: 15px; text-align: center; }
-  .admin-tabs { justify-content: center; }
+  .admin-tabs { 
+    justify-content: flex-start;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-tab {
+    font-size: 11px;
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+  .stat-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .charts-container {
+    width: 100%;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .admin-table-container {
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-action-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .edit-park-modal, .edit-panel {
+    width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .pricing-grid, .category-grid {
+    overflow-x: auto;
+    display: block;
+  }
+  .admin-search-input {
+    width: 100%;
+  }
   .stats-grid { grid-template-columns: 1fr; }
   .charts-row { grid-template-columns: 1fr; }
   .parks-list-grid { grid-template-columns: 1fr; }
 }
-
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.1); transition: .4s; }

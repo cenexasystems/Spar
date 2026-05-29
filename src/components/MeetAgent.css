@@ -196,3 +196,48 @@
     align-items: center;
   }
 }
+
+@media (max-width: 768px) {
+  .meet-agent-section {
+    padding: 40px 16px;
+  }
+  .meet-agent-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  .agent-image-wrapper {
+    width: 200px;
+    height: 240px;
+    margin: 0 auto 20px;
+  }
+  .agent-trust-badges {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .agent-name {
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
+    text-align: center;
+  }
+  .agent-bio {
+    text-align: center;
+    font-size: 13px;
+  }
+  .agent-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+  .agent-contact-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .agent-wa-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

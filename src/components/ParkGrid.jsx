@@ -150,7 +150,7 @@ const ParkGrid = ({ onBook }) => {
                   {park.location}
                 </div>
                 <h3 className="park-name" onClick={() => onBook(park)} style={{ cursor: 'pointer' }}>{park.name}</h3>
-                <p className="park-desc">{park.desc}</p>
+                <p className="park-desc">{park.desc || fallbackParks.find(p => p.name.toLowerCase() === park.name.toLowerCase())?.desc || park.about}</p>
                 
                 <button className="about-park-btn" onClick={() => setSelectedAboutPark(park)}>
                   <Info size={14} style={{ marginRight: '6px' }} />

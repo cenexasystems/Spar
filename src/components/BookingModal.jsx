@@ -328,9 +328,9 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     
     const ticketSubtotal = Math.max(0, baseAmount - coinsDiscount);
     
-    const buffetCount = formData.buffetSelected ? (adultTickets + childTickets + seniorTickets + studentTickets) : 0;
-    const buffetTotal = buffetCount * 470;
-    const lockerTotal = formData.lockerSelected ? 100 : 0;
+    const buffetCount = 0;
+    const buffetTotal = 0;
+    const lockerTotal = 0;
     
     const subtotal = ticketSubtotal + buffetTotal + lockerTotal;
     
@@ -400,12 +400,34 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
-  // Validate Step 1
+  // Helper for inline phone validation (10 digits starting with 6-9)
+  const isPhoneValid = (number) => {
+    if (!number || number.length < 3) return null; // Don't show error immediately on typing first digit
+    const cleanPhone = number.replace(/[\s+\-(). ]/g, '');
+    return /^[6-9]\d{9}$/.test(cleanPhone);
+  };
+
+  // Validate Step 1 (on submit)
   const validateStep1 = (e) => {
     e.preventDefault();
+
+    // Indian mobile number validation: 10 digits starting with 6-9
+    const phoneRegex = /^[6-9]\d{9}$/;
+    const cleanPhone = (formData.phone || '').replace(/[\s+\-(). ]/g, '');
+    if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
+      alert('Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9)');
+      return;
+    }
+
     if (isWonderla) {
       if (!formData.whatsapp) {
         alert('Please enter a WhatsApp number');
+        return;
+      }
+      // Validate WhatsApp number too
+      const cleanWA = (formData.whatsapp || '').replace(/[\s+\-(). ]/g, '');
+      if (!phoneRegex.test(cleanWA)) {
+        alert('Please enter a valid 10-digit WhatsApp number (starting with 6, 7, 8, or 9)');
         return;
       }
       if (!formData.wonderlaLocation) {
@@ -430,6 +452,12 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
 
   // Step 2 → 3: Create order
   const handleCreateOrder = async () => {
+    // Guard: ensure user is logged in before calling protected API
+    if (!user) {
+      alert('Please log in to complete your booking. Your ticket details are saved — just sign in and try again.');
+      onClose();
+      return;
+    }
     setIsProcessing(true);
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     try {
@@ -552,7 +580,17 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
               <div className="form-group-row">
                 <div className="form-input-wrapper">
                   <label><Phone size={14}/> PHONE NUMBER</label>
-                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+91 9876543210" required />
+                  <input 
+                    type="tel" 
+                    value={formData.phone} 
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                    placeholder="+91 9876543210" 
+                    required 
+                    className={
+                      isPhoneValid(formData.phone) === true ? 'valid-input' : 
+                      isPhoneValid(formData.phone) === false ? 'invalid-input' : ''
+                    }
+                  />
                 </div>
                 <div className="form-input-wrapper">
                   <label><Calendar size={14}/> VISIT DATE</label>
@@ -565,7 +603,17 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                 <div className="form-group-row" style={{ marginTop: '4px' }}>
                   <div className="form-input-wrapper">
                     <label>📱 WHATSAPP NUMBER</label>
-                    <input type="tel" value={formData.whatsapp} onChange={(e) => setFormData({...formData, whatsapp: e.target.value})} placeholder="Enter WhatsApp number" required />
+                    <input 
+                      type="tel" 
+                      value={formData.whatsapp} 
+                      onChange={(e) => setFormData({...formData, whatsapp: e.target.value})} 
+                      placeholder="Enter WhatsApp number" 
+                      required 
+                      className={
+                        isPhoneValid(formData.whatsapp) === true ? 'valid-input' : 
+                        isPhoneValid(formData.whatsapp) === false ? 'invalid-input' : ''
+                      }
+                    />
                     <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>Your ticket will be delivered to this number</span>
                   </div>
                 </div>
@@ -673,28 +721,6 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                     <span style={{ fontSize: '18px', fontWeight: 900, color: '#C7FF00' }}>₹{getWonderlaSubtotal().toLocaleString('en-IN')}</span>
                   </div>
 
-                  {/* Add-ons Section moved here */}
-                  <div className="addons-section" style={{ marginTop: '8px', borderRadius: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <h4 style={{ fontSize: '11px', fontWeight: 900, color: '#C7FF00', letterSpacing: '1.5px', marginBottom: '10px' }}>⚡ CHOOSE OPTIONAL ADD-ONS</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <button type="button"
-                        className={`wonderla-loc-card ${formData.buffetSelected ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, buffetSelected: !prev.buffetSelected }))}
-                        style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer', border: formData.buffetSelected ? '1.5px solid #C7FF00' : '1.5px solid rgba(255,255,255,0.1)', background: formData.buffetSelected ? 'rgba(199,255,0,0.1)' : 'rgba(0,0,0,0.3)', borderRadius: '8px' }}
-                      >
-                        <span className="loc-name" style={{ fontSize: '12px', fontWeight: '800', color: '#fff' }}>🍔 Buffet Combo</span>
-                        <span className="loc-desc" style={{ fontSize: '10px', color: '#94A3B8' }}>₹470 per person</span>
-                      </button>
-                      <button type="button"
-                        className={`wonderla-loc-card ${formData.lockerSelected ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, lockerSelected: !prev.lockerSelected }))}
-                        style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer', border: formData.lockerSelected ? '1.5px solid #C7FF00' : '1.5px solid rgba(255,255,255,0.1)', background: formData.lockerSelected ? 'rgba(199,255,0,0.1)' : 'rgba(0,0,0,0.3)', borderRadius: '8px' }}
-                      >
-                        <span className="loc-name" style={{ fontSize: '12px', fontWeight: '800', color: '#fff' }}>🔑 Locker Rental</span>
-                        <span className="loc-desc" style={{ fontSize: '10px', color: '#94A3B8' }}>₹100 flat rate</span>
-                      </button>
-                    </div>
-                  </div>
                 </div>
                 </>
               )}

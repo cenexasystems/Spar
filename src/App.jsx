@@ -22,7 +22,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './index.css';
 
 function App() {
-  const { shouldOpenProfile, setShouldOpenProfile } = useAuth();
+  const { shouldOpenProfile, setShouldOpenProfile, interceptAuth } = useAuth();
   const [isRewardModalOpen, setIsRewardModalOpen] = React.useState(false);
   const [isPageLoaded, setIsPageLoaded] = React.useState(false);
   const [isSupportOpen, setIsSupportOpen] = React.useState(false);
@@ -37,8 +37,10 @@ function App() {
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   const handleOpenBooking = (park) => {
-    setSelectedPark(park);
-    setIsBookingOpen(true);
+    interceptAuth(() => {
+      setSelectedPark(park);
+      setIsBookingOpen(true);
+    });
   };
   
   React.useEffect(() => {
@@ -139,9 +141,16 @@ function App() {
                   </div>
                 </div>
                 
-                <div className="footer-bottom">
-                  <p>© {new Date().getFullYear()} SPAR Amusements. All rights reserved. Operated by SPAR Amusements, Chennai.</p>
-                  <div className="footer-legal">
+                <div className="footer-bottom" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', width: '100%' }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ margin: 0 }}>© {new Date().getFullYear()} SPAR Amusements. All rights reserved.</p>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#94A3B8', fontSize: '11px', fontWeight: '400', opacity: 0.8, margin: 0 }}>
+                      Powered by <a href="https://cenexasystems.com" target="_blank" rel="noopener noreferrer" style={{ color: '#C7FF00', fontWeight: '800', letterSpacing: '0.5px', textDecoration: 'none' }}>Cenexa Systems</a> © 2026
+                    </p>
+                  </div>
+                  <div className="footer-legal" style={{ justifyContent: 'flex-end' }}>
                     <a href="#" onClick={(e) => { e.preventDefault(); setActivePolicy('privacy'); }}>Privacy Policy</a>
                     <span className="divider">•</span>
                     <a href="#" onClick={(e) => { e.preventDefault(); setActivePolicy('terms'); }}>Terms of Use</a>

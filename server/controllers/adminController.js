@@ -93,16 +93,25 @@ const updateBookingStatus = async (req, res) => {
 
     if (status === 'verified' && previousStatus !== 'verified') {
       booking.verifiedAt = new Date();
-      
-      // Auto-add revenue entry when verifying
-      await Revenue.create({
-        source: 'booking',
-        bookingId: booking.bookingId,
-        description: `Booking ${booking.bookingId} verified — ${booking.parkName}`,
-        amount: booking.totalAmount,
-        parkName: booking.parkName,
-        addedBy: req.user.name || 'Admin'
-      });
+
+      // Auto-add revenue entry when verifying — wrapped so booking save never fails if this errors
+      try {
+        // Guard: skip if a revenue entry already exists for this booking
+        const existing = await Revenue.findOne({ bookingId: booking.bookingId, source: 'booking' });
+        if (!existing) {
+          await Revenue.create({
+            source: 'booking',
+            bookingId: booking.bookingId,
+            description: `Booking ${booking.bookingId} verified — ${booking.parkName}`,
+            amount: booking.totalAmount,
+            parkName: booking.parkName,
+            addedBy: req.user?.name || 'Admin'
+          });
+        }
+      } catch (revErr) {
+        console.error('[Revenue] Failed to create revenue entry for booking', booking.bookingId, revErr.message);
+        // Do NOT re-throw — booking status must still be saved
+      }
     }
 
     if (status === 'rejected' && previousStatus !== 'rejected') {

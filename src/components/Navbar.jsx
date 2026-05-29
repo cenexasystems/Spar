@@ -67,10 +67,10 @@ const Navbar = ({ onOpenSupport, onOpenProfile, onOpenGame, isAdmin }) => {
           )}
         </div>
 
-        <div className="nav-actions desktop-only">
+        <div className="nav-actions">
           {isAdmin ? null : (
             <>
-              <button className="btn-refresh" onClick={onOpenGame}>
+              <button className="btn-refresh desktop-only" onClick={onOpenGame}>
                 <svg viewBox="0 0 100 100" className="mini-ferris-wheel">
                   <path d="M50 50 L35 90 M50 50 L65 90 M30 90 L70 90" stroke="currentColor" strokeWidth="4" fill="none" />
                   <g className="wheel-spin-fast">
@@ -103,15 +103,15 @@ const Navbar = ({ onOpenSupport, onOpenProfile, onOpenGame, isAdmin }) => {
               ) : (
                 <button className="btn-book" onClick={() => interceptAuth(() => {})}>
                   <UserIcon size={16} />
-                  <span>LOG IN / SIGN UP</span>
+                  <span className="desktop-only">LOG IN / SIGN UP</span>
+                  <span className="mobile-only">LOGIN</span>
                 </button>
               )}
             </>
           )}
-        </div>
-
-        <div className="mobile-menu-toggle mobile-only" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          <div className="mobile-menu-toggle mobile-only" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </div>
         </div>
       </div>
 

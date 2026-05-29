@@ -364,24 +364,90 @@
 .sticky-book-btn {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #C7FF00, #00D1FF);
-  color: #000;
-  border: none;
-  border-radius: 14px;
+  background: linear-gradient(90deg, #C7FF00, #00D1FF);
+  color: #111;
+  border: 3px solid #111;
+  border-radius: 8px;
+  font-family: 'Luckiest Guy', cursive;
   font-weight: 900;
-  font-size: 1.1rem;
-  letter-spacing: 1px;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 8px 32px rgba(199, 255, 0, 0.2);
+  transition: all 0.2s ease;
+  box-shadow: 6px 6px 0px #111;
 }
 .sticky-book-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(199, 255, 0, 0.35);
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px #111;
   filter: brightness(1.1);
 }
+.sticky-book-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 2px 2px 0px #111;
+}
 
+@media (max-width: 768px) {
+  .parks-section {
+    padding: 40px 16px 20px;
+  }
+  .parks-section h2.section-heading {
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
+  }
+  .parks-section .section-subheading {
+    font-size: 13px;
+  }
+  .parks-scroll-container {
+    -webkit-mask-image: linear-gradient(to right, black 80%, transparent);
+    mask-image: linear-gradient(to right, black 80%, transparent);
+  }
+  .park-card {
+    min-width: 260px;
+    max-width: 260px;
+    padding: 0;
+  }
+  .park-info {
+    padding: 14px;
+  }
+  .park-image-wrapper {
+    height: 160px;
+  }
+  .park-name {
+    font-size: 16px;
+  }
+  .park-desc {
+    font-size: 12px;
+  }
+  .ticket-label {
+    font-size: 10px;
+  }
+  .ticket-price {
+    font-size: 20px;
+  }
+  .btn-icon-round {
+    width: 40px;
+    height: 40px;
+  }
+  .about-park-modal {
+    width: 95vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 20px 16px;
+  }
+  .wonderla-pricing-table {
+    font-size: 11px;
+    overflow-x: auto;
+    display: block;
+  }
+  .park-tags .badge {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  .sticky-book-btn {
+    width: 100%;
+  }
+}

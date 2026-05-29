@@ -247,23 +247,25 @@ button {
 
 /* Footer layouts */
 .main-footer {
-  padding: 80px 20px 30px;
+  padding: 60px 20px 20px;
   background-color: #0F111A;
   position: relative;
   overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .footer-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1.5fr;
-  gap: 50px;
-  margin-bottom: 60px;
+  gap: 120px;
+  margin-bottom: 30px;
 }
 
 .footer-brand-col {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 320px;
 }
 
 .footer-logo {
@@ -278,7 +280,7 @@ button {
 }
 
 .footer-description {
-  color: var(--text-muted);
+  color: #9CA3AF;
   font-size: 0.95rem;
   line-height: 1.6;
 }
@@ -326,16 +328,17 @@ button {
 }
 
 .footer-links-col a {
-  color: var(--text-muted);
+  color: #9CA3AF;
   font-weight: 500;
   font-size: 0.95rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
+  display: inline-block;
 }
 
 .footer-links-col a:hover {
-  color: var(--primary-light-green);
-  padding-left: 5px;
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 .footer-contact-col {
@@ -410,12 +413,12 @@ button {
 
 .footer-contact-text {
   font-size: 13px;
-  color: #bbb;
+  color: #9CA3AF;
   line-height: 1.5;
 }
 
 a.footer-contact-row:hover .footer-contact-text {
-  color: var(--primary-light-green);
+  color: #fff;
 }
 
 .footer-address-row .footer-contact-text {
@@ -448,26 +451,30 @@ a.footer-contact-row:hover .footer-contact-text {
 
 .footer-bottom {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 20%;
   align-items: center;
-  padding-top: 30px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-muted);
+  padding-top: 25px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  color: #9CA3AF;
   font-size: 0.85rem;
 }
 
 .footer-legal {
   display: flex;
-  gap: 15px;
+  gap: 30px;
   align-items: center;
 }
 
 .footer-legal a {
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  display: inline-block;
+  color: #9CA3AF;
 }
 
 .footer-legal a:hover {
-  color: white;
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 .divider {
@@ -484,7 +491,7 @@ a.footer-contact-row:hover .footer-contact-text {
   }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 768px) {
   .highlights-grid {
     grid-template-columns: 1fr;
   }
@@ -499,7 +506,7 @@ a.footer-contact-row:hover .footer-contact-text {
   .footer-bottom {
     flex-direction: column;
     text-align: center;
-    gap: 15px;
+    gap: 25px;
   }
 }
 

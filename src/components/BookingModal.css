@@ -124,6 +124,16 @@
 .form-input-wrapper select option { background: #1a1a2e; color: white; }
 .form-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 
+/* Real-time Inline Validation Styles */
+.form-input-wrapper input.valid-input {
+  border-color: #00d37f;
+  box-shadow: 0 0 15px rgba(0, 211, 127, 0.15), inset 0 0 10px rgba(0, 211, 127, 0.05);
+}
+.form-input-wrapper input.invalid-input {
+  border-color: #FF4646;
+  box-shadow: 0 0 15px rgba(255, 70, 70, 0.15), inset 0 0 10px rgba(255, 70, 70, 0.05);
+}
+
 /* Wonderla Location */
 .wonderla-location-section { margin-top: 8px; }
 .wonderla-loc-label {
@@ -346,15 +356,72 @@
 @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .booking-modal-flow { padding: 25px 18px; }
-  .form-group-row { grid-template-columns: 1fr; }
-  .wonderla-locations-grid { grid-template-columns: 1fr; }
-  .step-title { font-size: 1.4rem; }
-  .celebration-title { font-size: 1.3rem !important; }
-  .step-actions { grid-template-columns: 1fr; }
-  .gpay-qr-image { width: 220px; }
+@media (max-width: 768px) {
+  .booking-modal-flow {
+    max-width: 100%;
+    padding: 20px 16px 80px;
+    border-radius: 0;
+    min-height: 100vh;
+  }
+  .form-group-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .wonderla-locations-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .mini-options {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .mini-card {
+    width: 100%;
+  }
+  .bill-row {
+    font-size: 13px;
+    padding: 10px 0;
+  }
+  .btn-secondary, .next-btn {
+    width: 100% !important;
+    height: 52px;
+  }
+  .step-actions {
+    grid-template-columns: 1fr;
+  }
+  .summary-park-info {
+    padding: 10px 16px;
+    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .progress-dot {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+  .progress-line {
+    flex: 1;
+    min-width: 20px;
+  }
+  .gpay-qr-image {
+    max-width: 220px;
+    margin: 0 auto;
+    display: block;
+  }
+  .screenshot-upload-area {
+    width: 100%;
+  }
+  .success-ticket-card {
+    width: 100%;
+    padding: 16px;
+  }
+  .celebration-title {
+    font-size: 1.3rem !important;
+  }
+  .step-title {
+    font-size: 1.4rem;
+  }
 }
 
 /* Success Screen Roamers */

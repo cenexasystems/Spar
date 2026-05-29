@@ -5,7 +5,7 @@ const revenueSchema = mongoose.Schema(
     entryId: {
       type: String,
       unique: true,
-      default: () => 'REV-' + Date.now().toString(36).toUpperCase()
+      default: () => 'REV-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase()
     },
     source: { 
       type: String, 

@@ -198,18 +198,34 @@
 }
 
 @media (max-width: 768px) {
-  .hero-cta-group {
-    flex-direction: column;
-  }
   .hero-content {
-    padding: 0 24px;
+    padding: 24px 16px;
     text-align: center;
   }
   .hero-text-block {
     margin: 0 auto;
   }
+  .hero-title {
+    font-size: 1.8rem;
+  }
   .hero-description {
+    font-size: 13px;
     margin-left: auto;
     margin-right: auto;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .hero-cta-group > * {
+    width: 100%;
+  }
+  .btn-large {
+    width: 100%;
+  }
+  .hero-scroll-indicator {
+    /* Keep centered at bottom */
+    left: 50%;
+    transform: translateX(-50%);
   }
 }
