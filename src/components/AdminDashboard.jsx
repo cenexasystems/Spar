@@ -125,7 +125,20 @@ const AdminDashboard = ({ onBack }) => {
     const token = getToken();
     try {
       await axios.put(`${API_URL}/admin/bookings/${bookingId}/status`, { status: newStatus }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchData();
+      
+      // Update local state bookings directly
+      setBookings(prevBookings =>
+        prevBookings.map(b => (b._id === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b)
+      );
+      
+      // Update search results directly if search is active
+      if (searchResults) {
+        setSearchResults(prevResults =>
+          prevResults.map(b => (b._id === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b)
+        );
+      }
+      
+      fetchData(); // Background refresh for stats
     } catch (err) { alert("Status update failed: " + (err.response?.data?.message || err.message)); }
   };
 
@@ -503,13 +516,15 @@ const AdminDashboard = ({ onBack }) => {
       </div>
 
       {/* Search Bar */}
-      <div className="admin-search-bar">
-        <Search size={18} className="search-icon" />
-        <input type="text" placeholder="Search by Name, SPAR ID, Ticket ID, Booking ID, Phone, Park..." value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value) setSearchResults(null); }}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-        <button onClick={handleSearch} className="search-go-btn">SEARCH</button>
-      </div>
+      {activeTab === 'bookings' && (
+        <div className="admin-search-bar">
+          <Search size={18} className="search-icon" />
+          <input type="text" placeholder="Search by Name, SPAR ID, Ticket ID, Booking ID, Phone, Park..." value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value) setSearchResults(null); }}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+          <button onClick={handleSearch} className="search-go-btn">SEARCH</button>
+        </div>
+      )}
 
       <div className="admin-content">
         {/* OVERVIEW TAB */}
