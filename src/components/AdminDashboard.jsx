@@ -46,30 +46,11 @@ const AdminDashboard = ({ onBack }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [parkFilter, setParkFilter] = useState('all');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [bookingDateFilter, setBookingDateFilter] = useState('');
   const [proofImageModal, setProofImageModal] = useState(null);
 
-  // Portal root state — using useState so React re-renders after el is appended to body
-  const [portalRoot, setPortalRoot] = useState(null);
   useEffect(() => {
     if (proofImageModal) {
-      // Create a dedicated fixed overlay div and inject directly into document.body
-      const el = document.createElement('div');
-      el.id = 'proof-modal-portal';
-      el.style.position = 'fixed';
-      el.style.top = '0';
-      el.style.left = '0';
-      el.style.width = '100vw';
-      el.style.height = '100vh';
-      el.style.zIndex = '999999';
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.justifyContent = 'center';
-      el.style.background = 'rgba(10,12,22,0.85)';
-      el.style.backdropFilter = 'blur(16px)';
-      el.style.webkitBackdropFilter = 'blur(16px)';
-      document.body.appendChild(el);
-      setPortalRoot(el);
-      // Lock body scroll so page doesn't scroll behind the modal
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
@@ -85,7 +66,7 @@ const AdminDashboard = ({ onBack }) => {
         document.body.style.overflowY = '';
         window.scrollTo(0, scrollY);
         if (el.parentNode) el.parentNode.removeChild(el);
-        setPortalRoot(null);
+        // removed setPortalRoot
       };
     }
   }, [proofImageModal]);
@@ -191,80 +172,44 @@ const AdminDashboard = ({ onBack }) => {
   };
 
   const handleEditParkClick = async (p) => {
-    const token = getToken();
-    const parkId = p._id || p.id;
-    
     // Set basic editingPark first so modal opens immediately
     setEditingPark(p);
     setEditParkTab('basic');
 
-    try {
-      // Fetch categories
-      const catRes = await axios.get(`${API_URL}/parks/${parkId}/categories?all=true`, { headers: { Authorization: `Bearer ${token}` } });
-      let categories = catRes.data;
-      if (!categories || categories.length === 0) {
-        categories = getDefaultCategories(p.name);
-      }
-
-      // Fetch pricing
-      const pricingRes = await axios.get(`${API_URL}/parks/${parkId}/pricing?all=true`, { headers: { Authorization: `Bearer ${token}` } });
-      const pricingArray = pricingRes.data;
-      
-      let wPricing = {};
-      let singlePrices = {};
-      if (p.name === 'Wonderla') {
-        if (pricingArray && pricingArray.length > 0) {
-          pricingArray.forEach(record => {
-            const loc = record.location || 'chennai';
-            if (!wPricing[loc]) {
-              wPricing[loc] = {
-                normal: { adult: 0, child: 0, senior: 0, student: 0 },
-                fasttrack: { adult: 0, child: 0 },
-                fastTrackAvailable: false,
-                parkHours: '',
-                waterHours: ''
-              };
-            }
-            wPricing[loc].fastTrackAvailable = record.fastTrackAvailable;
-            if (record.ticketType === 'normal') {
-              wPricing[loc].normal = record.prices;
-            } else if (record.ticketType === 'fasttrack') {
-              wPricing[loc].fasttrack = record.prices;
-            }
-          });
-        }
-      } else {
-        if (pricingArray && pricingArray.length > 0) {
-          const normalRecord = pricingArray.find(r => r.ticketType === 'normal');
-          if (normalRecord && normalRecord.prices) {
-            singlePrices = {
-              price: normalRecord.prices.adult || normalRecord.prices.price || p.price,
-              customPricing: normalRecord.prices
-            };
-          }
-        }
-      }
-
-      setEditingPark(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          visitorCategories: categories,
-          wonderlaPricing: p.name === 'Wonderla' ? (Object.keys(wPricing).length > 0 ? wPricing : prev.wonderlaPricing || {}) : undefined,
-          ...singlePrices
-        };
-      });
-
-    } catch (error) {
-      console.error("Error loading park details:", error);
-      setEditingPark(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          visitorCategories: prev.visitorCategories || getDefaultCategories(p.name)
-        };
-      });
+    let categories = p.visitorCategories;
+    if (!categories || categories.length === 0) {
+      categories = getDefaultCategories(p.name);
     }
+
+    let wPricing = {};
+    let singlePrices = {};
+
+    if (p.name === 'Wonderla') {
+      wPricing = p.wonderlaPricing || {};
+    } else {
+      singlePrices = {
+        price: p.price,
+        customPricing: p.ticketPricing && p.ticketPricing.normal ? p.ticketPricing.normal : {}
+      };
+      // Fallback mapping
+      if (p.visitorCategories) {
+         p.visitorCategories.forEach(c => {
+             if (p.customPricing && p.customPricing[c.id]) {
+                 singlePrices.customPricing[c.id] = p.customPricing[c.id];
+             }
+         });
+      }
+    }
+
+    setEditingPark(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        visitorCategories: categories,
+        wonderlaPricing: p.name === 'Wonderla' ? (Object.keys(wPricing).length > 0 ? wPricing : prev.wonderlaPricing || {}) : undefined,
+        ...singlePrices
+      };
+    });
   };
 
   const handleSaveCategories = async () => {
@@ -283,7 +228,7 @@ const AdminDashboard = ({ onBack }) => {
     }));
 
     try {
-      await axios.post(`${API_URL}/parks/${parkId}/categories`, { categories: cleanCategories }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${API_URL}/admin/parks/${parkId}/categories`, { categories: cleanCategories }, { headers: { Authorization: `Bearer ${token}` } });
       alert('Visitor categories saved successfully!');
       setEditingPark({ ...editingPark, visitorCategories: cleanCategories });
     } catch (err) {
@@ -296,51 +241,25 @@ const AdminDashboard = ({ onBack }) => {
     const token = getToken();
     const parkId = editingPark._id || editingPark.id;
     
-    let pricingData = [];
+    let payload = {};
     if (editingPark.name === 'Wonderla') {
-      const wPricing = editingPark.wonderlaPricing || {};
-      pricingData = Object.entries(wPricing).flatMap(([loc, data]) => {
-        const records = [];
-        if (data.normal) {
-          records.push({
-            location: loc,
-            ticketType: 'normal',
-            prices: data.normal,
-            fastTrackAvailable: !!data.fastTrackAvailable
-          });
-        }
-        if (data.fasttrack && data.fastTrackAvailable) {
-          records.push({
-            location: loc,
-            ticketType: 'fasttrack',
-            prices: data.fasttrack,
-            fastTrackAvailable: !!data.fastTrackAvailable
-          });
-        }
-        return records;
-      });
+      payload.wonderlaPricing = editingPark.wonderlaPricing || {};
     } else {
-      pricingData = [
-        {
-          location: null,
-          ticketType: 'normal',
-          prices: (() => {
-            const result = {};
-            const cats = editingPark.visitorCategories || [];
-            cats.forEach(c => {
-               result[c.id] = Number((editingPark.customPricing && editingPark.customPricing[c.id]) || 0);
-            });
-            // Fallback for legacy
-            if (!result['adult'] && editingPark.price) result['adult'] = Number(editingPark.price);
-            return result;
-          })(),
-          fastTrackAvailable: false
-        }
-      ];
+      const normalPrices = {};
+      const cats = editingPark.visitorCategories || [];
+      cats.forEach(c => {
+         normalPrices[c.id] = Number((editingPark.customPricing && editingPark.customPricing[c.id]) || 0);
+      });
+      // Fallback
+      if (!normalPrices['adult'] && editingPark.price) normalPrices['adult'] = Number(editingPark.price);
+      
+      payload.ticketPricing = {
+        normal: normalPrices
+      };
     }
 
     try {
-      await axios.post(`${API_URL}/parks/${parkId}/pricing`, { pricingData }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${API_URL}/admin/parks/${parkId}/pricing`, payload, { headers: { Authorization: `Bearer ${token}` } });
       alert('Ticket pricing saved successfully!');
     } catch (err) {
       alert("Failed to save pricing: " + (err.response?.data?.message || err.message));
@@ -433,6 +352,16 @@ const AdminDashboard = ({ onBack }) => {
   let filteredBookings = searchResults || bookings;
   if (statusFilter !== 'all') filteredBookings = filteredBookings.filter(b => b.status === statusFilter);
   if (parkFilter !== 'all') filteredBookings = filteredBookings.filter(b => (b.parkName || '').toLowerCase().trim() === parkFilter.toLowerCase().trim());
+  if (bookingDateFilter) {
+    filteredBookings = filteredBookings.filter(b => {
+      const bDate = new Date(b.createdAt || b.date);
+      const year = bDate.getFullYear();
+      const month = String(bDate.getMonth() + 1).padStart(2, '0');
+      const day = String(bDate.getDate()).padStart(2, '0');
+      const formattedBDate = `${year}-${month}-${day}`;
+      return formattedBDate === bookingDateFilter;
+    });
+  }
 
   const pendingCount = bookings.filter(b => b.status === 'pending').length;
   const verifiedCount = bookings.filter(b => b.status === 'verified').length;
@@ -655,8 +584,8 @@ const AdminDashboard = ({ onBack }) => {
                 <option value="ticketsent">Ticket Sent</option>
                 <option value="rejected">Rejected</option>
               </select>
-              <input type="date" className="filter-select" style={{color:'#fff'}} />
-              <button className="btn-cancel" style={{padding:'8px 16px', fontSize:'12px'}} onClick={()=>{setParkFilter('all'); setStatusFilter('all');}}>CLEAR FILTERS</button>
+              <input type="date" className="filter-select" style={{color:'#fff'}} value={bookingDateFilter} onChange={e=>setBookingDateFilter(e.target.value)} />
+              <button className="btn-cancel" style={{padding:'8px 16px', fontSize:'12px'}} onClick={()=>{setParkFilter('all'); setStatusFilter('all'); setBookingDateFilter('');}}>CLEAR FILTERS</button>
             </div>
 
             <div className="admin-table-wrapper">
@@ -1040,110 +969,160 @@ const AdminDashboard = ({ onBack }) => {
                     </div>
                   </form>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
-            
-            {/* Coupon Management Panel */}
-            {managingCouponsFor && (
-              <div className="coupon-panel-overlay" onClick={() => { setManagingCouponsFor(null); setViewingCouponUsage(null); }}>
-                <div className="coupon-side-panel" onClick={e=>e.stopPropagation()}>
-                  <div className="coupon-header">
-                    <h3>COUPONS — {managingCouponsFor.name}</h3>
-                    <button className="coupon-close-btn" onClick={() => { setManagingCouponsFor(null); setViewingCouponUsage(null); }}><XCircle size={24}/></button>
+            {/* Coupon Management Panel - Clean UI Match */}
+            {managingCouponsFor && createPortal(
+              <div
+                onClick={() => { setManagingCouponsFor(null); setViewingCouponUsage(null); }}
+                style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(8, 10, 15, 0.85)', backdropFilter: 'blur(16px)', zIndex: 100000, cursor: 'zoom-out' }}
+              >
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  style={{ 
+                    position: 'relative',
+                    width: '95%', 
+                    maxWidth: '550px', 
+                    height: '85vh', 
+                    maxHeight: '750px',
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    background: 'rgba(15, 17, 26, 0.95)', 
+                    borderRadius: '24px', 
+                    border: '1px solid rgba(0, 209, 255, 0.3)', 
+                    boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8)',
+                    overflow: 'hidden',
+                    cursor: 'default'
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '20px 24px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    background: 'rgba(255, 255, 255, 0.02)'
+                  }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#00D1FF', letterSpacing: '0.05em' }}>COUPONS</h4>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#888' }}>{managingCouponsFor.name}</p>
+                    </div>
+                    <button 
+                      onClick={() => { setManagingCouponsFor(null); setViewingCouponUsage(null); }} 
+                      style={{ 
+                        cursor: 'pointer', padding: '6px', borderRadius: '50%', background: 'rgba(255, 61, 61, 0.15)', border: '1px solid rgba(255, 61, 61, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', flexShrink: 0
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255, 61, 61, 0.4)'; e.currentTarget.style.borderColor = 'rgba(255, 61, 61, 0.8)'; e.currentTarget.style.transform = 'scale(1.15)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255, 61, 61, 0.15)'; e.currentTarget.style.borderColor = 'rgba(255, 61, 61, 0.3)'; e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <XCircle size={20} color="#FF3D3D" />
+                    </button>
                   </div>
                   
-                  {viewingCouponUsage ? (
-                    <div style={{flex: 1, overflowY:'auto'}}>
-                      <div className="section-heading" style={{fontSize:'12px', marginBottom:'15px', color:'#888'}}>
-                        <button style={{background:'none', border:'none', color:'#00D1FF', cursor:'pointer', marginRight:'10px'}} onClick={() => setViewingCouponUsage(null)}>← BACK</button>
-                        USAGE HISTORY: {viewingCouponUsage.code}
-                      </div>
-                      {couponUsageData.length === 0 ? (
-                        <p className="text-xs" style={{color:'#888'}}>No usage history for this coupon.</p>
-                      ) : (
-                        <table className="admin-table" style={{marginTop:0}}>
-                          <thead><tr><th>BOOKING ID</th><th>VISITOR</th><th>DATE</th><th>DISCOUNT</th><th>PAID</th></tr></thead>
-                          <tbody>
-                            {couponUsageData.map(b => (
-                              <tr key={b._id}>
-                                <td>{b.bookingId}</td>
-                                <td>{b.userName || 'Unknown'}</td>
-                                <td>{new Date(b.createdAt).toLocaleDateString()}</td>
-                                <td style={{color:'#6BCB77'}}>₹{b.discountAmount || 0}</td>
-                                <td>₹{b.totalAmount}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{flex: 1, overflowY:'auto', display:'flex', flexDirection:'column'}}>
-                      <div style={{flex: 1, overflowY:'auto'}}>
-                        <div className="section-heading" style={{fontSize:'12px', marginBottom:'15px', color:'#888'}}>EXISTING COUPONS</div>
-                        {coupons.map((c) => (
-                          <div key={c._id} className="coupon-list-item">
-                            <div className="coupon-code">{c.code}</div>
-                            <div className="coupon-details">
-                              <span>{c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}</span>
-                              <span>Expires: {new Date(c.expiryDate).toLocaleDateString()}</span>
-                            </div>
-                            <div className="coupon-details" style={{marginBottom: 0}}>
-                              <span>Used: {c.usedCount}/{c.usageLimit}</span>
-                              <span style={{color: c.isActive ? '#00C853' : '#FF3D3D'}}>{c.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
-                            </div>
-                            <div className="coupon-actions" style={{marginTop:'10px', display:'flex', gap:'10px'}}>
-                              <button className="action-btn" style={{background:'rgba(0,209,255,0.1)', color:'#00D1FF', border:'1px solid rgba(0,209,255,0.2)'}} onClick={() => handleViewUsage(c)}>📊 VIEW USAGE</button>
-                              <button className="action-btn" style={{background:'none', border:'none', color:'#FF3D3D', cursor:'pointer'}} onClick={() => handleDeleteCoupon(c._id)}><Trash2 size={14}/> DELETE</button>
-                            </div>
+                  <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+                    {viewingCouponUsage ? (
+                      <div className="usage-view">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                          <button style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', padding:'6px 12px', borderRadius:'8px', fontSize:'11px', fontWeight:'600', cursor:'pointer'}} onClick={() => setViewingCouponUsage(null)}>← BACK</button>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#C7FF00', letterSpacing: '0.05em' }}>USAGE: {viewingCouponUsage.code}</span>
+                        </div>
+                        {couponUsageData.length === 0 ? (
+                          <p className="text-xs" style={{color:'#888', textAlign: 'center', marginTop: '40px'}}>No usage history for this coupon.</p>
+                        ) : (
+                          <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <table className="admin-table" style={{marginTop:0}}>
+                              <thead><tr><th>BOOKING ID</th><th>VISITOR</th><th>DATE</th><th>DISCOUNT</th><th>PAID</th></tr></thead>
+                              <tbody>
+                                {couponUsageData.map(b => (
+                                  <tr key={b._id}>
+                                    <td>{b.bookingId}</td>
+                                    <td>{b.userName || 'Unknown'}</td>
+                                    <td>{new Date(b.createdAt).toLocaleDateString()}</td>
+                                    <td style={{color:'#6BCB77'}}>₹{b.discountAmount || 0}</td>
+                                    <td>₹{b.totalAmount}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                        ))}
-                        {coupons.length === 0 && <p className="text-xs">No coupons found.</p>}
+                        )}
                       </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                        <div>
+                          <div style={{fontSize:'11px', fontWeight:'700', letterSpacing:'0.1em', marginBottom:'15px', color:'#888'}}>EXISTING COUPONS</div>
+                          {coupons.map((c) => (
+                            <div key={c._id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '16px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ fontFamily: "'Courier New', monospace", fontSize: '20px', fontWeight: '800', color: '#C7FF00', letterSpacing: '2px' }}>{c.code}</div>
+                                <span style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', background: c.isActive ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 61, 61, 0.1)', color: c.isActive ? '#00C853' : '#FF3D3D', fontWeight: 'bold' }}>{c.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', color: '#aaa' }}>
+                                <div><span style={{ color: '#888' }}>Value:</span> {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}</div>
+                                <div><span style={{ color: '#888' }}>Expires:</span> {new Date(c.expiryDate).toLocaleDateString()}</div>
+                                <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#888' }}>Used:</span> {c.usedCount} / {c.usageLimit}</div>
+                              </div>
+                              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                                <button style={{ flex: 1, background: 'rgba(0,209,255,0.1)', color: '#00D1FF', border: '1px solid rgba(0,209,255,0.2)', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }} onClick={() => handleViewUsage(c)}><TrendingUp size={12}/> USAGE</button>
+                                <button style={{ flex: 1, background: 'rgba(255,61,61,0.1)', color: '#FF3D3D', border: '1px solid rgba(255,61,61,0.2)', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }} onClick={() => handleDeleteCoupon(c._id)}><Trash2 size={12}/> DELETE</button>
+                              </div>
+                            </div>
+                          ))}
+                          {coupons.length === 0 && <div style={{ textAlign: 'center', padding: '30px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', color: '#888', fontSize: '13px' }}>No active coupons found for this park.</div>}
+                        </div>
 
-                      <div className="generate-coupon-form">
-                        <h4>GENERATE NEW COUPON</h4>
-                        <form onSubmit={handleCreateCoupon}>
-                          <div className="input-group">
-                            <label>COUPON CODE</label>
-                            <div style={{display:'flex', gap:'10px'}}>
-                              <input type="text" value={newCoupon.code} onChange={e=>setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})} required style={{flex: 1}} />
-                              <button type="button" className="btn-cancel" style={{fontSize:'11px', padding:'0 15px'}} onClick={()=>setNewCoupon({...newCoupon, code: 'SPAR' + Math.floor(Math.random()*9000+1000)})}>AUTO</button>
+                        <div style={{ background: 'rgba(0, 209, 255, 0.03)', border: '1px dashed rgba(0, 209, 255, 0.2)', padding: '24px', borderRadius: '20px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '20px', color: '#00D1FF', letterSpacing: '0.05em' }}><Plus size={14} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '4px' }}/> GENERATE NEW COUPON</h4>
+                          <form onSubmit={handleCreateCoupon} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                              <label>COUPON CODE</label>
+                              <div style={{ display: 'flex', gap: '10px' }}>
+                                <input type="text" value={newCoupon.code} onChange={e=>setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})} required style={{ flex: 1 }} />
+                                <button type="button" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }} onClick={()=>setNewCoupon({...newCoupon, code: 'SPAR' + Math.floor(Math.random()*9000+1000)})}>AUTO</button>
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                            <div className="input-group">
-                              <label>TYPE</label>
-                              <select value={newCoupon.discountType} onChange={e=>setNewCoupon({...newCoupon, discountType: e.target.value})} style={{ backgroundColor: '#1e293b', color: '#fff' }}>
-                                <option value="percentage">% Percentage</option>
-                                <option value="fixed">₹ Fixed Amount</option>
-                              </select>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label>TYPE</label>
+                                <select value={newCoupon.discountType} onChange={e=>setNewCoupon({...newCoupon, discountType: e.target.value})} style={{ backgroundColor: '#1a1a2e' }}>
+                                  <option value="percentage">% Percentage</option>
+                                  <option value="fixed">₹ Fixed Amount</option>
+                                </select>
+                              </div>
+                              <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label>VALUE</label>
+                                <input type="number" value={newCoupon.discountValue} onChange={e=>setNewCoupon({...newCoupon, discountValue: e.target.value})} required min="1" max={newCoupon.discountType==='percentage'?80:9999} />
+                              </div>
                             </div>
-                            <div className="input-group">
-                              <label>VALUE</label>
-                              <input type="number" value={newCoupon.discountValue} onChange={e=>setNewCoupon({...newCoupon, discountValue: e.target.value})} required min="1" max={newCoupon.discountType==='percentage'?80:9999} />
-                            </div>
-                          </div>
 
-                          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                            <div className="input-group">
-                              <label>EXPIRY DATE</label>
-                              <input type="date" value={newCoupon.expiryDate} onChange={e=>setNewCoupon({...newCoupon, expiryDate: e.target.value})} required />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label>EXPIRY DATE</label>
+                                <input type="date" value={newCoupon.expiryDate} onChange={e=>setNewCoupon({...newCoupon, expiryDate: e.target.value})} required />
+                              </div>
+                              <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label>USAGE LIMIT</label>
+                                <input type="number" value={newCoupon.usageLimit} onChange={e=>setNewCoupon({...newCoupon, usageLimit: e.target.value})} required min="1" />
+                              </div>
                             </div>
-                            <div className="input-group">
-                              <label>USAGE LIMIT</label>
-                              <input type="number" value={newCoupon.usageLimit} onChange={e=>setNewCoupon({...newCoupon, usageLimit: e.target.value})} required min="1" />
-                            </div>
-                          </div>
-                          
-                          <button type="submit" className="btn-save" style={{width:'100%', marginTop:'10px'}}>CREATE COUPON</button>
-                        </form>
+                            
+                            <button type="submit" style={{ background: '#00D1FF', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '13px', fontWeight: '800', letterSpacing: '0.05em', cursor: 'pointer', marginTop: '10px', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.filter='brightness(1.1)'} onMouseLeave={e=>e.currentTarget.style.filter='none'}>
+                              CREATE COUPON
+                            </button>
+                          </form>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         )}
@@ -1211,7 +1190,7 @@ const AdminDashboard = ({ onBack }) => {
         )}
       </div>
 
-      {proofImageModal && portalRoot && createPortal(
+      {proofImageModal && createPortal(
         <div
           onClick={() => setProofImageModal(null)}
           style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
@@ -1325,7 +1304,7 @@ const AdminDashboard = ({ onBack }) => {
             </div>
           </div>
         </div>,
-        portalRoot
+        document.body
       )}
     </div>
   );
