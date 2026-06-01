@@ -4,13 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 import './AuthModal.css';
 
-// ── Avatar builder options (DiceBear Avataaars v7 exact API values) ──────────
+// ── Avatar builder options (DiceBear Avataaars v7 confirmed working API values) ─
 const SKIN_COLORS   = ['edb98a', 'd08b5b', '614335', 'ffeacb'];
 const SKIN_LABELS   = ['Light', 'Tan', 'Dark', 'Pale'];
-const HAIR_COLORS_LIST  = ['black', 'brown', 'blonde', 'red', 'auburn'];
+const HAIR_COLORS_LIST  = ['2c1b18', '724133', 'b58143', 'c93305', 'a55728']; // hex only!
 const HAIR_COLOR_LABELS = ['Black', 'Brown', 'Blonde', 'Red', 'Auburn'];
-const HAIR_BOY      = ['shortHairShortFlat', 'shortHairShortRound', 'shortHairShortWaved'];
-const HAIR_GIRL     = ['longHairStraight', 'longHairCurly', 'longHairBun'];
+const HAIR_BOY      = ['shortFlat', 'shortRound', 'shortWaved'];   // confirmed ✅
+const HAIR_GIRL     = ['straight01', 'curvy', 'bun'];               // confirmed ✅
 const HAIR_LABELS   = ['Style 1', 'Style 2', 'Style 3'];
 const EYES          = ['default', 'happy', 'wink'];
 const EYE_LABELS    = ['Default', 'Happy', 'Wink'];
@@ -79,16 +79,14 @@ const AuthModal = () => {
 
   const getAvatarUrl = () => {
     const hairArr = gender === 'boy' ? HAIR_BOY : HAIR_GIRL;
-    // Use a fixed seed so only our explicit params affect the look — no random surprise attributes
+    // Fixed seed = no random surprise attributes; only our explicit params change the look
     let url = `https://api.dicebear.com/7.x/avataaars/svg?seed=spar-avatar`;
     url += `&skinColor=${SKIN_COLORS[skinIdx]}`;
     url += `&top=${hairArr[hairIdx]}`;
     url += `&hairColor=${HAIR_COLORS_LIST[hairColorIdx]}`;
     url += `&eyes=${EYES[eyeIdx]}&mouth=${MOUTHS[mouthIdx]}`;
     url += `&eyebrow=defaultNatural`;
-    url += `&accessoriesProbability=0`;
-    url += `&facialHairProbability=0`;
-    url += `&clothe=blazerShirt`;
+    url += `&accessoriesProbability=0&facialHairProbability=0`;
     return url;
   };
 
