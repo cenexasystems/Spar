@@ -85,7 +85,7 @@ const AuthModal = () => {
     url += `&top=${hairArr[hairIdx]}`;
     url += `&hairColor=${HAIR_COLORS_LIST[hairColorIdx]}`;
     url += `&eyes=${EYES[eyeIdx]}&mouth=${MOUTHS[mouthIdx]}`;
-    url += `&eyebrow=defaultNatural`;
+    url += `&eyebrow=default`;
     url += `&accessoriesProbability=0&facialHairProbability=0`;
     return url;
   };
