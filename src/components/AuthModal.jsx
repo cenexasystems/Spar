@@ -4,13 +4,18 @@ import { useAuth } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 import './AuthModal.css';
 
-const SKIN_COLORS = ['edb98a', 'd08b5b', '614335', 'ffeacb', 'f8d25c', 'fd9841'];
-const HAIR_BOY = ['shortFlat', 'shortRound', 'shortWaved', 'sides', 'theCaesar'];
-const HAIR_GIRL = ['straight01', 'curly', 'miaWallace', 'bob', 'bun'];
-const GLASSES = ['none', 'prescription01', 'prescription02', 'round', 'sunglasses'];
-const BEARDS = ['none', 'beardLight', 'beardMedium', 'beardMajestic', 'moustacheFancy', 'moustacheMagnum'];
-const EYES = ['default', 'happy', 'hearts', 'wink', 'surprised', 'cry'];
-const MOUTHS = ['default', 'smile', 'serious', 'sad', 'grimace'];
+// ── Avatar builder options (DiceBear Avataaars v7 exact API values) ──────────
+const SKIN_COLORS   = ['edb98a', 'd08b5b', '614335', 'ffeacb'];
+const SKIN_LABELS   = ['Light', 'Tan', 'Dark', 'Pale'];
+const HAIR_COLORS_LIST  = ['black', 'brown', 'blonde', 'red', 'auburn'];
+const HAIR_COLOR_LABELS = ['Black', 'Brown', 'Blonde', 'Red', 'Auburn'];
+const HAIR_BOY      = ['shortHairShortFlat', 'shortHairShortRound', 'shortHairShortWaved'];
+const HAIR_GIRL     = ['longHairStraight', 'longHairCurly', 'longHairBun'];
+const HAIR_LABELS   = ['Style 1', 'Style 2', 'Style 3'];
+const EYES          = ['default', 'happy', 'wink'];
+const EYE_LABELS    = ['Default', 'Happy', 'Wink'];
+const MOUTHS        = ['default', 'smile', 'serious'];
+const MOUTH_LABELS  = ['Default', 'Smile', 'Serious'];
 
 const AuthModal = () => {
   const { isAuthModalOpen, closeAuthModal, loginUser, registerUser, loginGoogle, updateAvatar, setShouldOpenProfile, forgotPassword, resetPassword, resetToken, setResetToken } = useAuth();
@@ -31,8 +36,7 @@ const AuthModal = () => {
   const [gender, setGender] = useState('boy');
   const [skinIdx, setSkinIdx] = useState(0);
   const [hairIdx, setHairIdx] = useState(0);
-  const [glassIdx, setGlassIdx] = useState(0);
-  const [beardIdx, setBeardIdx] = useState(0);
+  const [hairColorIdx, setHairColorIdx] = useState(0);
   const [eyeIdx, setEyeIdx] = useState(0);
   const [mouthIdx, setMouthIdx] = useState(0);
 
@@ -75,20 +79,16 @@ const AuthModal = () => {
 
   const getAvatarUrl = () => {
     const hairArr = gender === 'boy' ? HAIR_BOY : HAIR_GIRL;
-    let url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${email || 'Cadet'}`;
+    // Use a fixed seed so only our explicit params affect the look — no random surprise attributes
+    let url = `https://api.dicebear.com/7.x/avataaars/svg?seed=spar-avatar`;
     url += `&skinColor=${SKIN_COLORS[skinIdx]}`;
     url += `&top=${hairArr[hairIdx]}`;
+    url += `&hairColor=${HAIR_COLORS_LIST[hairColorIdx]}`;
     url += `&eyes=${EYES[eyeIdx]}&mouth=${MOUTHS[mouthIdx]}`;
-    if (GLASSES[glassIdx] !== 'none') {
-      url += `&accessoriesProbability=100&accessories=${GLASSES[glassIdx]}`;
-    } else {
-      url += `&accessoriesProbability=0`;
-    }
-    if (gender === 'boy' && BEARDS[beardIdx] !== 'none') {
-      url += `&facialHairProbability=100&facialHair=${BEARDS[beardIdx]}`;
-    } else {
-      url += `&facialHairProbability=0`;
-    }
+    url += `&eyebrow=defaultNatural`;
+    url += `&accessoriesProbability=0`;
+    url += `&facialHairProbability=0`;
+    url += `&clothe=blazerShirt`;
     return url;
   };
 
@@ -186,7 +186,7 @@ const AuthModal = () => {
     setFirstName(''); setEmail(''); setPhone(''); setPassword('');
     setNewPassword(''); setConfirmPassword('');
     setErrorMsg(''); setSuccessMsg('');
-    setSkinIdx(0); setHairIdx(0); setGlassIdx(0); setBeardIdx(0); setEyeIdx(0); setMouthIdx(0);
+    setSkinIdx(0); setHairIdx(0); setHairColorIdx(0); setEyeIdx(0); setMouthIdx(0);
     setGender('boy');
     setResetToken(null);
   };
@@ -298,77 +298,81 @@ const AuthModal = () => {
           </form>
         )}
 
-        {/* AVATAR BUILDER */}
+        {/* AVATAR BUILDER — compact, no-scroll */}
         {authStep === 'avatar' && (
-           <div className="avatar-builder fade-in">
-              <div className="avatar-preview-box">
-                <img src={getAvatarUrl()} alt="Avatar Preview" className="avatar-preview-img" />
+          <div className="avatar-builder fade-in" style={{ padding: '0 2px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+            {/* Preview */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <img src={getAvatarUrl()} alt="Avatar Preview"
+                style={{ width: '90px', height: '90px', borderRadius: '50%', border: '2px solid #00D1FF', background: '#1a1a2e' }} />
+            </div>
+
+            {/* Gender toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.05)', padding: '7px 12px', borderRadius: '10px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.1em' }}>GENDER</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button className={`builder-gender-btn ${gender === 'boy' ? 'active' : ''}`} onClick={() => { setGender('boy'); setHairIdx(0); }} style={{ padding: '3px 14px', fontSize: '11px' }}>BOY</button>
+                <button className={`builder-gender-btn ${gender === 'girl' ? 'active' : ''}`} onClick={() => { setGender('girl'); setHairIdx(0); }} style={{ padding: '3px 14px', fontSize: '11px' }}>GIRL</button>
               </div>
-              
-              <div className="avatar-controls">
-                <div className="builder-row">
-                  <span className="builder-label">GENDER</span>
-                  <div className="gender-toggles flex gap-2">
-                     <button className={`builder-gender-btn ${gender === 'boy' ? 'active' : ''}`} onClick={() => { setGender('boy'); setHairIdx(0); }}>BOY</button>
-                     <button className={`builder-gender-btn ${gender === 'girl' ? 'active' : ''}`} onClick={() => { setGender('girl'); setHairIdx(0); }}>GIRL</button>
+            </div>
+
+            {/* 2-column options grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+              {[
+                { label: 'SKIN',       val: skinIdx,      setVal: setSkinIdx,      max: SKIN_LABELS.length - 1,        display: SKIN_LABELS[skinIdx] },
+                { label: 'HAIR STYLE', val: hairIdx,      setVal: setHairIdx,      max: HAIR_LABELS.length - 1,        display: HAIR_LABELS[hairIdx] },
+                { label: 'HAIR COLOR', val: hairColorIdx, setVal: setHairColorIdx, max: HAIR_COLOR_LABELS.length - 1,  display: HAIR_COLOR_LABELS[hairColorIdx] },
+                { label: 'EYES',       val: eyeIdx,       setVal: setEyeIdx,       max: EYE_LABELS.length - 1,         display: EYE_LABELS[eyeIdx] },
+              ].map(({ label, val, setVal, max, display }) => (
+                <div key={label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '7px 8px' }}>
+                  <div style={{ fontSize: '9px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.08em', marginBottom: '5px' }}>{label}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button onClick={() => setVal(v => v === 0 ? max : v - 1)} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', fontSize: '15px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#fff', textAlign: 'center', flex: 1 }}>{display}</span>
+                    <button onClick={() => setVal(v => v === max ? 0 : v + 1)} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', fontSize: '15px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
                   </div>
                 </div>
+              ))}
 
-                {[
-                  { label: 'SKIN COLOR', val: skinIdx, setVal: setSkinIdx, arr: SKIN_COLORS, display: `Variant ${skinIdx + 1}` },
-                  { label: 'HAIR', val: hairIdx, setVal: setHairIdx, arr: gender === 'boy' ? HAIR_BOY : HAIR_GIRL, display: `Style ${hairIdx + 1}` },
-                  { label: 'GLASSES', val: glassIdx, setVal: setGlassIdx, arr: GLASSES, display: GLASSES[glassIdx].toUpperCase() },
-                  { label: 'EYES', val: eyeIdx, setVal: setEyeIdx, arr: EYES, display: EYES[eyeIdx].toUpperCase() },
-                  { label: 'MOUTH', val: mouthIdx, setVal: setMouthIdx, arr: MOUTHS, display: MOUTHS[mouthIdx].toUpperCase() },
-                ].map(({ label, val, setVal, arr, display }) => (
-                  <div className="builder-row" key={label}>
-                    <span className="builder-label">{label}</span>
-                    <div className="builder-toggles">
-                      <button onClick={() => cycleArrBack(val, setVal, arr, arr.length - 1)}><ChevronLeft size={16}/></button>
-                      <span className="builder-val">{display}</span>
-                      <button onClick={() => cycleArr(val, setVal, arr, arr.length - 1)}><ChevronRight size={16}/></button>
-                    </div>
-                  </div>
-                ))}
-
-                {gender === 'boy' && (
-                  <div className="builder-row">
-                    <span className="builder-label">BEARD</span>
-                    <div className="builder-toggles">
-                      <button onClick={() => cycleArrBack(beardIdx, setBeardIdx, BEARDS, BEARDS.length - 1)}><ChevronLeft size={16}/></button>
-                      <span className="builder-val">{beardIdx === 0 ? 'NONE' : `STYLE ${beardIdx}`}</span>
-                      <button onClick={() => cycleArr(beardIdx, setBeardIdx, BEARDS, BEARDS.length - 1)}><ChevronRight size={16}/></button>
-                    </div>
-                  </div>
-                )}
-
-                {isGoogleSignupFlow && (
-                  <div className="builder-row google-extra-fields" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
-                    <span className="builder-label" style={{ textAlign: 'left', opacity: 0.8 }}>Phone Number (Required for Bookings)</span>
-                    <input type="tel" className="modern-input" placeholder="e.g. 9876543210"
-                      value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={15}
-                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px' }} />
-                    {phone && !validatePhone(phone) && (
-                      <span style={{ color: '#FF0055', fontSize: '0.75rem', fontWeight: 700 }}>⚠ Enter a valid 10-digit Indian phone number</span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {errorMsg && (
-                <div className="auth-error glass-morphism mt-3 flex items-center gap-2 text-red-400 p-3 rounded-lg border border-red-500/30 w-full">
-                  <AlertCircle size={18} /><span className="text-sm font-bold">{errorMsg}</span>
+              {/* Mouth — spans full width */}
+              <div style={{ gridColumn: '1 / -1', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '7px 10px' }}>
+                <div style={{ fontSize: '9px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.08em', marginBottom: '5px' }}>MOUTH</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <button onClick={() => setMouthIdx(v => v === 0 ? MOUTH_LABELS.length - 1 : v - 1)} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', fontSize: '15px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#fff', textAlign: 'center', flex: 1 }}>{MOUTH_LABELS[mouthIdx]}</span>
+                  <button onClick={() => setMouthIdx(v => v === MOUTH_LABELS.length - 1 ? 0 : v + 1)} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', fontSize: '15px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
                 </div>
-              )}
-
-              <div className="flex gap-2 mt-6 builder-actions">
-                <button className="builder-nav-btn glass-morphism" onClick={() => setAuthStep('form')}>BACK</button>
-                <button className="builder-nav-btn glass-morphism" style={{opacity: 0.7}} onClick={handleFinalizeRegistration} disabled={isLoading}>SKIP</button>
-                <button className="btn-primary builder-finish-btn flex-1 shrink-0" onClick={handleFinalizeRegistration} disabled={isLoading}>
-                  {isLoading ? <div className="spinner"></div> : <><CheckCircle2 size={18}/> FINALIZE</>}
-                </button>
               </div>
-           </div>
+            </div>
+
+            {/* Google flow — phone field */}
+            {isGoogleSignupFlow && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <input type="tel" className="modern-input" placeholder="Phone Number"
+                  value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={15}
+                  style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '8px' }} />
+                {phone && !validatePhone(phone) && (
+                  <span style={{ color: '#FF0055', fontSize: '0.7rem', fontWeight: 700 }}>⚠ Enter a valid 10-digit Indian phone number</span>
+                )}
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="auth-error glass-morphism flex items-center gap-2 text-red-400 p-2 rounded-lg border border-red-500/30 w-full">
+                <AlertCircle size={14} /><span style={{ fontSize: '12px', fontWeight: 700 }}>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
+              <button className="builder-nav-btn glass-morphism" onClick={() => setAuthStep('form')} style={{ fontSize: '11px', padding: '9px 14px' }}>BACK</button>
+              <button className="builder-nav-btn glass-morphism" style={{ opacity: 0.7, fontSize: '11px', padding: '9px 14px' }} onClick={handleFinalizeRegistration} disabled={isLoading}>SKIP</button>
+              <button className="btn-primary builder-finish-btn flex-1 shrink-0" onClick={handleFinalizeRegistration} disabled={isLoading} style={{ fontSize: '12px' }}>
+                {isLoading ? <div className="spinner"></div> : <><CheckCircle2 size={15}/> FINALIZE</>}
+              </button>
+            </div>
+          </div>
         )}
 
         {/* MAIN LOGIN / SIGNUP FORM */}
@@ -395,7 +399,7 @@ const AuthModal = () => {
                   </div>
                   <div className="input-group">
                     <Phone size={18} className="input-icon" color="#94A3B8" />
-                    <input type="tel" className="modern-input with-icon" placeholder="Indian Phone Number"
+                    <input type="tel" className="modern-input with-icon" placeholder="Phone Number"
                       value={phone} onChange={(e) => setPhone(e.target.value)} required maxLength={15} />
                     {phone && !validatePhone(phone) && (
                       <span style={{ color: '#FF0055', fontSize: '0.72rem', fontWeight: 700, marginTop: '4px', display: 'block', paddingLeft: '4px' }}>
