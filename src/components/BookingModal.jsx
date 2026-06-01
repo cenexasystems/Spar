@@ -403,19 +403,19 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
   // Helper for inline phone validation (10 digits starting with 6-9)
   const isPhoneValid = (number) => {
     if (!number || number.length < 3) return null; // Don't show error immediately on typing first digit
-    const cleanPhone = number.replace(/[\s+\-(). ]/g, '');
-    return /^[6-9]\d{9}$/.test(cleanPhone);
+    const cleanPhone = number.replace(/[\s\-(). ]/g, '');
+    return /^(?:\+91|91|0)?[6-9]\d{9}$/.test(cleanPhone);
   };
 
   // Validate Step 1 (on submit)
   const validateStep1 = (e) => {
     e.preventDefault();
 
-    // Indian mobile number validation: 10 digits starting with 6-9
-    const phoneRegex = /^[6-9]\d{9}$/;
-    const cleanPhone = (formData.phone || '').replace(/[\s+\-(). ]/g, '');
+    // Indian mobile number validation: 10 digits starting with 6-9, optional prefix
+    const phoneRegex = /^(?:\+91|91|0)?[6-9]\d{9}$/;
+    const cleanPhone = (formData.phone || '').replace(/[\s\-(). ]/g, '');
     if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
-      alert('Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9)');
+      alert('Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9, optional +91 prefix)');
       return;
     }
 
@@ -425,9 +425,9 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
         return;
       }
       // Validate WhatsApp number too
-      const cleanWA = (formData.whatsapp || '').replace(/[\s+\-(). ]/g, '');
+      const cleanWA = (formData.whatsapp || '').replace(/[\s\-(). ]/g, '');
       if (!phoneRegex.test(cleanWA)) {
-        alert('Please enter a valid 10-digit WhatsApp number (starting with 6, 7, 8, or 9)');
+        alert('Please enter a valid 10-digit WhatsApp number (starting with 6, 7, 8, or 9, optional +91 prefix)');
         return;
       }
       if (!formData.wonderlaLocation) {
@@ -586,6 +586,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                     onChange={(e) => setFormData({...formData, phone: e.target.value})} 
                     placeholder="+91 9876543210" 
                     required 
+                    maxLength={15}
                     className={
                       isPhoneValid(formData.phone) === true ? 'valid-input' : 
                       isPhoneValid(formData.phone) === false ? 'invalid-input' : ''
@@ -609,6 +610,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                       onChange={(e) => setFormData({...formData, whatsapp: e.target.value})} 
                       placeholder="Enter WhatsApp number" 
                       required 
+                      maxLength={15}
                       className={
                         isPhoneValid(formData.whatsapp) === true ? 'valid-input' : 
                         isPhoneValid(formData.whatsapp) === false ? 'invalid-input' : ''

@@ -11,11 +11,11 @@ const userSchema = mongoose.Schema(
       default: '',
       validate: {
         validator: function (v) {
-          // Allow empty string (optional field), but if provided must be >= 10 digits
           if (!v || v.trim() === '') return true;
-          return /^\+?[\d\s\-().]{10,}$/.test(v);
+          const clean = v.replace(/\s+/g, '');
+          return /^(?:\+91|91|0)?[6-9]\d{9}$/.test(clean);
         },
-        message: 'Phone number must be at least 10 digits.'
+        message: 'Please enter a valid 10-digit Indian phone number.'
       }
     },
     avatar: { type: String, default: '' },

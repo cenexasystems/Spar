@@ -67,8 +67,8 @@ const AuthModal = () => {
   // --- Validation helpers ---
   const validatePhone = (p) => {
     if (!p || p.trim() === '') return true; // optional
-    const digits = p.replace(/\D/g, '');
-    return digits.length >= 10;
+    const clean = p.replace(/\s+/g, '');
+    return /^(?:\+91|91|0)?[6-9]\d{9}$/.test(clean);
   };
 
   const validatePassword = (p) => p && p.length >= 6;
@@ -98,7 +98,7 @@ const AuthModal = () => {
 
     if (tab === 'signup') {
       if (!validatePhone(phone)) {
-        setErrorMsg('Phone number must contain at least 10 digits.');
+        setErrorMsg('Please enter a valid 10-digit Indian phone number (starting with 6-9, optional +91 prefix).');
         return;
       }
       if (!validatePassword(password)) {
@@ -346,10 +346,10 @@ const AuthModal = () => {
                   <div className="builder-row google-extra-fields" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
                     <span className="builder-label" style={{ textAlign: 'left', opacity: 0.8 }}>Phone Number (Required for Bookings)</span>
                     <input type="tel" className="modern-input" placeholder="e.g. 9876543210"
-                      value={phone} onChange={(e) => setPhone(e.target.value)}
+                      value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={15}
                       style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px' }} />
                     {phone && !validatePhone(phone) && (
-                      <span style={{ color: '#FF0055', fontSize: '0.75rem', fontWeight: 700 }}>⚠ Must be at least 10 digits</span>
+                      <span style={{ color: '#FF0055', fontSize: '0.75rem', fontWeight: 700 }}>⚠ Enter a valid 10-digit Indian phone number</span>
                     )}
                   </div>
                 )}
@@ -395,11 +395,11 @@ const AuthModal = () => {
                   </div>
                   <div className="input-group">
                     <Phone size={18} className="input-icon" color="#94A3B8" />
-                    <input type="tel" className="modern-input with-icon" placeholder="Phone Number (min 10 digits)"
-                      value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                    <input type="tel" className="modern-input with-icon" placeholder="Indian Phone Number"
+                      value={phone} onChange={(e) => setPhone(e.target.value)} required maxLength={15} />
                     {phone && !validatePhone(phone) && (
                       <span style={{ color: '#FF0055', fontSize: '0.72rem', fontWeight: 700, marginTop: '4px', display: 'block', paddingLeft: '4px' }}>
-                        ⚠ Must be at least 10 digits
+                        ⚠ Enter a valid 10-digit Indian phone number (starts with 6-9)
                       </span>
                     )}
                   </div>

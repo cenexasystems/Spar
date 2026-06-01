@@ -21,11 +21,12 @@ const registerUser = async (req, res) => {
   const { name, email, phone, password, avatar } = req.body;
 
   try {
-    // Phone validation: must have at least 10 digits if provided
+    // Phone validation: must be a valid 10-digit Indian phone number
     if (phone) {
-      const digits = phone.replace(/\D/g, '');
-      if (digits.length < 10) {
-        return res.status(400).json({ message: 'Phone number must contain at least 10 digits.' });
+      const clean = phone.replace(/\s+/g, '');
+      const indianPhoneRegex = /^(?:\+91|91|0)?[6-9]\d{9}$/;
+      if (!indianPhoneRegex.test(clean)) {
+        return res.status(400).json({ message: 'Please enter a valid 10-digit Indian phone number (starting with 6-9, optional +91 prefix).' });
       }
     }
 
@@ -158,25 +159,36 @@ const getUserProfile = async (req, res) => {
 
 
 const updateUserAvatar = async (req, res) => {
-  const user = await User.findById(req.user._id);
+  try {
+    const user = await User.findById(req.user._id);
 
-  if (user) {
-    user.avatar = req.body.avatar || user.avatar;
-    if (req.body.phone) user.phone = req.body.phone;
-    const updatedUser = await user.save();
+    if (user) {
+      user.avatar = req.body.avatar || user.avatar;
+      if (req.body.phone) {
+        const clean = req.body.phone.replace(/\s+/g, '');
+        const indianPhoneRegex = /^(?:\+91|91|0)?[6-9]\d{9}$/;
+        if (!indianPhoneRegex.test(clean)) {
+          return res.status(400).json({ message: 'Please enter a valid 10-digit Indian phone number (starting with 6-9, optional +91 prefix).' });
+        }
+        user.phone = req.body.phone;
+      }
+      const updatedUser = await user.save();
 
-    res.json({
-      _id: updatedUser._id,
-      sparId: updatedUser.sparId,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      phone: updatedUser.phone,
-      avatar: updatedUser.avatar,
-      sparCoins: updatedUser.sparCoins,
-      token: req.headers.authorization.split(' ')[1],
-    });
-  } else {
-    res.status(404).json({ message: 'User not found' });
+      res.json({
+        _id: updatedUser._id,
+        sparId: updatedUser.sparId,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        avatar: updatedUser.avatar,
+        sparCoins: updatedUser.sparCoins,
+        token: req.headers.authorization.split(' ')[1],
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
