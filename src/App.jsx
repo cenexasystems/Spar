@@ -22,7 +22,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './index.css';
 
 function App() {
-  const { shouldOpenProfile, setShouldOpenProfile, interceptAuth } = useAuth();
+  const { shouldOpenProfile, setShouldOpenProfile, interceptAuth, verifyToken, setVerifyToken, verifyEmailRequest } = useAuth();
   const [isRewardModalOpen, setIsRewardModalOpen] = React.useState(false);
   const [isPageLoaded, setIsPageLoaded] = React.useState(false);
   const [isSupportOpen, setIsSupportOpen] = React.useState(false);
@@ -49,6 +49,18 @@ function App() {
       setShouldOpenProfile(false); // Reset flag
     }
   }, [shouldOpenProfile, setShouldOpenProfile]);
+
+  React.useEffect(() => {
+    if (verifyToken) {
+      verifyEmailRequest(verifyToken).then((res) => {
+        alert(res.message);
+      }).catch((err) => {
+        alert(err.message);
+      }).finally(() => {
+        setVerifyToken(null);
+      });
+    }
+  }, [verifyToken, verifyEmailRequest, setVerifyToken]);
 
   return (
       <div className="app-container">

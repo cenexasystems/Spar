@@ -22,10 +22,13 @@ const userSchema = mongoose.Schema(
     sparCoins: { type: Number, default: 0 },
     isAdmin: { type: Boolean, default: false },
     lastSpunAt: { type: Date },
+    dailySpinCount: { type: Number, default: 0 },
     dailyGameAttempts: { type: Number, default: 0 },
     lastGamePlayedAt: { type: Date },
     resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date }
+    resetPasswordExpires: { type: Date },
+    emailVerificationToken: { type: String },
+    isEmailVerified: { type: Boolean, default: false }
   },
   {
     timestamps: true,

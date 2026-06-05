@@ -32,6 +32,7 @@ const SpinWheel = ({ isOpen, onClose }) => {
   const [step, setStep] = useState('spin'); // spin, select-park, select-date, success
   const [selectedPark, setSelectedPark] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
+  const [spinsLeft, setSpinsLeft] = useState(3);
   
   if (!isOpen) return null;
 
@@ -52,7 +53,7 @@ const SpinWheel = ({ isOpen, onClose }) => {
         setPrize(null);
         setErrorMsg('');
         
-        const { prizeCoins, updatedUser } = await spinWheelRequest();
+        const { prizeCoins, spinsLeft: remaining, updatedUser } = await spinWheelRequest();
         
         const possibleIndices = SECTIONS.map((s, i) => s.value === prizeCoins ? i : -1).filter(i => i !== -1);
         const targetIndex = possibleIndices[Math.floor(Math.random() * possibleIndices.length)];
@@ -73,6 +74,7 @@ const SpinWheel = ({ isOpen, onClose }) => {
         setTimeout(() => {
           setIsSpinning(false);
           setPrize(SECTIONS[targetIndex]);
+          setSpinsLeft(remaining ?? 0);
           syncUser(updatedUser);
           
           if (prizeCoins > 0) {
@@ -98,6 +100,11 @@ const SpinWheel = ({ isOpen, onClose }) => {
     setStep('spin');
     setSelectedPark(null);
     setSelectedDate('');
+  };
+
+  const handleSpinAgain = () => {
+    setPrize(null);
+    setErrorMsg('');
   };
 
   const handleClaim = () => {
@@ -234,7 +241,7 @@ const SpinWheel = ({ isOpen, onClose }) => {
                   <div className="win-text">
                     {prize.value > 0 ? `+${prize.value} COINS!` : 'BETTER LUCK NEXT TIME!'}
                   </div>
-                  {prize.value > 0 && <div className="win-subtext" style={{color: 'white', fontWeight: 900, textShadow: '0 2px 4px black', fontSize: '1.2rem', marginTop: '10px'}}>COLLECT 10K COINS FOR 10% DISCOUNT!</div>}
+
                 </div>
               )}
             </div>
@@ -248,13 +255,43 @@ const SpinWheel = ({ isOpen, onClose }) => {
                 <span className="coins-label">SPAR COINS</span>
               </div>
 
-              <button 
-                className="btn-spin-start" 
-                onClick={handleSpin}
-                disabled={isSpinning || prize !== null}
-              >
-                {isSpinning ? 'SPINNING...' : prize ? 'COME BACK TOMORROW!' : 'TAP TO SPIN'}
-              </button>
+              {/* Spin counter badges */}
+              {!prize && !isSpinning && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '8px' }}>
+                  {[1,2,3].map(i => (
+                    <span key={i} style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: i <= spinsLeft ? '#C7FF00' : 'rgba(255,255,255,0.1)',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '11px', fontWeight: 900,
+                      color: i <= spinsLeft ? '#0f172a' : 'rgba(255,255,255,0.3)',
+                      border: i <= spinsLeft ? 'none' : '1px solid rgba(255,255,255,0.15)'
+                    }}>{i <= spinsLeft ? '✦' : '✕'}</span>
+                  ))}
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', alignSelf: 'center', marginLeft: 4 }}>
+                    {spinsLeft}/3 spins left today
+                  </span>
+                </div>
+              )}
+
+              {/* Spin / Result buttons */}
+              {!prize ? (
+                <button
+                  className="btn-spin-start"
+                  onClick={handleSpin}
+                  disabled={isSpinning || spinsLeft === 0}
+                >
+                  {isSpinning ? 'SPINNING...' : spinsLeft === 0 ? 'COME BACK TOMORROW! 🌅' : 'TAP TO SPIN'}
+                </button>
+              ) : spinsLeft > 0 ? (
+                <button className="btn-spin-start" onClick={handleSpinAgain}>
+                  SPIN AGAIN ({spinsLeft} LEFT)
+                </button>
+              ) : (
+                <button className="btn-spin-start" disabled style={{ opacity: 0.5 }}>
+                  COME BACK TOMORROW! 🌅
+                </button>
+              )}
             </div>
           </>
         )}

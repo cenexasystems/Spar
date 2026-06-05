@@ -530,6 +530,11 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
 
   // Step 4 → 5: Confirm booking
   const handleConfirmBooking = async () => {
+    if (!screenshotUploaded) {
+      alert('Please upload your payment screenshot before confirming the booking.');
+      return;
+    }
+    
     setIsProcessing(true);
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     try {
@@ -1092,7 +1097,7 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
 
             <div className="step-actions" style={{ marginTop: '16px' }}>
               <button className="btn-secondary py-3" onClick={() => setStep(3)}><ArrowLeft size={16}/> BACK</button>
-              <button className="btn-primary py-3" onClick={handleConfirmBooking} disabled={isProcessing || !screenshotUploaded}>
+              <button className="btn-primary py-3" onClick={handleConfirmBooking} disabled={isProcessing}>
                 {isProcessing ? <><div className="spinner"></div> CONFIRMING...</> : <>CONFIRM BOOKING <ArrowRight size={16}/></>}
               </button>
             </div>

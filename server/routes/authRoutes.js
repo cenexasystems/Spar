@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, googleLogin, getUserProfile, updateUserAvatar, spinWheel, recordGameScore, deductCoins, promoteToAdmin, forgotPassword, resetPassword } = require('../controllers/authController');
+const { registerUser, loginUser, googleLogin, getUserProfile, updateUserAvatar, spinWheel, recordGameScore, deductCoins, promoteToAdmin, forgotPassword, resetPassword, verifyEmail } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.post('/register', registerUser);
@@ -14,5 +14,6 @@ router.post('/deduct-coins', protect, deductCoins);
 router.post('/promote-admin', protect, promoteToAdmin);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.post('/verify-email', verifyEmail);
 
 module.exports = router;

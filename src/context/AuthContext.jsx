@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [shouldOpenProfile, setShouldOpenProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [resetToken, setResetToken] = useState(null); // from URL param
+  const [verifyToken, setVerifyToken] = useState(null); // from URL param
 
   useEffect(() => {
     if (user?.token) {
@@ -23,13 +24,18 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  // Check URL for reset token (from password reset email)
+  // Check URL for reset token or verify token
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('resetToken');
-    if (token) {
-      setResetToken(token);
+    const rToken = params.get('resetToken');
+    const vToken = params.get('verifyToken');
+    if (rToken) {
+      setResetToken(rToken);
       setIsAuthModalOpen(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    if (vToken) {
+      setVerifyToken(vToken);
       // Clean URL without reload
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -70,7 +76,6 @@ export const AuthProvider = ({ children }) => {
   const _finalizeAuth = (userData) => {
     setUser(userData);
     localStorage.setItem('spar_session', JSON.stringify(userData));
-    setIsAuthModalOpen(false);
 
     if (pendingAction) {
       pendingAction();
@@ -87,8 +92,6 @@ export const AuthProvider = ({ children }) => {
         password,
         avatar: avatarUrl
       });
-      data.bookings = [];
-      _finalizeAuth(data);
       return data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Registration failed');
@@ -200,6 +203,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const verifyEmailRequest = async (token) => {
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/verify-email`, { token });
+      if (data.updatedUser && data.updatedUser.token) {
+        data.updatedUser.bookings = [];
+        setUser(data.updatedUser);
+        localStorage.setItem('spar_session', JSON.stringify(data.updatedUser));
+      } else if (user && data.updatedUser) {
+        syncUser({ ...user, isEmailVerified: data.updatedUser.isEmailVerified });
+      }
+      return data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Email verification failed.');
+    }
+  };
+
   const addBooking = async (ticketData) => {
     if (!user) return;
 
@@ -263,6 +282,9 @@ export const AuthProvider = ({ children }) => {
       resetPassword,
       resetToken,
       setResetToken,
+      verifyToken,
+      setVerifyToken,
+      verifyEmailRequest,
     }}>
       {!isLoading && children}
     </AuthContext.Provider>

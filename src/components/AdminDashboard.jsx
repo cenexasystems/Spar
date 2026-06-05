@@ -65,7 +65,6 @@ const AdminDashboard = ({ onBack }) => {
         document.body.style.right = '';
         document.body.style.overflowY = '';
         window.scrollTo(0, scrollY);
-        if (el.parentNode) el.parentNode.removeChild(el);
         // removed setPortalRoot
       };
     }
@@ -1208,7 +1207,11 @@ const AdminDashboard = ({ onBack }) => {
       {proofImageModal && createPortal(
         <div
           onClick={() => setProofImageModal(null)}
-          style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
+          style={{ 
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+            zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', cursor: 'zoom-out' 
+          }}
         >
           {/* Main Modal Container */}
           <div 

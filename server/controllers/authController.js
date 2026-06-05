@@ -43,24 +43,61 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
     const user = await User.create({
       sparId: generateSparId(),
       name,
       email,
       phone: phone || '',
       password: hashedPassword,
-      avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
+      avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+      emailVerificationToken: hashedToken,
+      isEmailVerified: false
     });
 
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const verifyUrl = `${frontendUrl}?verifyToken=${rawToken}`;
+
+    if (!process.env.BREVO_API_KEY) {
+      console.error('BREVO_API_KEY not set in environment variables.');
+      return res.status(500).json({ message: 'Email service not configured. Contact support.' });
+    }
+
+    const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: 'SPAR Amusements', email: process.env.BREVO_SENDER_EMAIL || 'cenexasystems@gmail.com' },
+        to: [{ email: user.email, name: user.name }],
+        subject: '🎡 SPAR — Verify Your Email',
+        htmlContent: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0f172a;color:#fff;border-radius:16px;padding:32px;">
+            <h2 style="font-size:2rem;background:linear-gradient(90deg,#BF00FF,#00D1FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SPAR AMUSEMENTS</h2>
+            <h3 style="color:#C7FF00;margin-bottom:8px;">Welcome to the Crew!</h3>
+            <p style="color:#94A3B8;">Hi <strong style="color:#fff">${user.name}</strong>, please verify your email address to secure your account.</p>
+            <a href="${verifyUrl}" style="display:inline-block;margin:24px 0;padding:14px 32px;background:linear-gradient(135deg,#BF00FF,#00D1FF);color:#fff;font-weight:800;text-decoration:none;border-radius:12px;font-size:1rem;">VERIFY EMAIL</a>
+          </div>
+        `
+      })
+    });
+
+    if (!emailResponse.ok) {
+      const errorData = await emailResponse.json();
+      console.error('Brevo email API error:', errorData);
+      return res.status(500).json({ message: 'Failed to send verification email. Please try again.' });
+    }
+
+    console.log('Brevo verification email sent successfully via API.');
+
     res.status(201).json({
-      _id: user._id,
-      sparId: user.sparId,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      avatar: user.avatar,
-      sparCoins: user.sparCoins,
-      token: generateToken(user._id),
+      message: 'Registration successful. Please verify your email to continue.',
+      isNewUser: true
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -74,6 +111,9 @@ const loginUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && user.password && (await bcrypt.compare(password, user.password))) {
+      if (!user.isEmailVerified) {
+        return res.status(403).json({ message: 'Please verify your email address before logging in.' });
+      }
       res.json({
         _id: user._id,
         sparId: user.sparId,
@@ -199,14 +239,22 @@ const spinWheel = async (req, res) => {
     return res.status(404).json({ message: 'User not found' });
   }
 
-  // Check 24 hour limit
-  if (user.lastSpunAt) {
-    const timeSinceLastSpin = Date.now() - user.lastSpunAt.getTime();
-    if (timeSinceLastSpin < 24 * 60 * 60 * 1000) {
-      const remainingMs = (24 * 60 * 60 * 1000) - timeSinceLastSpin;
-      const remainingHrs = Math.ceil(remainingMs / (1000 * 60 * 60));
-      return res.status(400).json({ message: `You can spin again in ${remainingHrs} hours!` });
-    }
+  const MAX_SPINS_PER_DAY = 3;
+
+  const todayStr = new Date().toDateString();
+  const lastSpinDayStr = user.lastSpunAt ? new Date(user.lastSpunAt).toDateString() : null;
+
+  console.log(`[SPIN] user=${user.email} | dailySpinCount=${user.dailySpinCount} | lastSpunAt=${user.lastSpunAt} | todayStr=${todayStr} | lastSpinDayStr=${lastSpinDayStr}`);
+
+  // Reset daily count if it's a new calendar day
+  if (lastSpinDayStr !== todayStr) {
+    user.dailySpinCount = 0;
+    console.log(`[SPIN] New day detected — resetting dailySpinCount to 0`);
+  }
+
+  if (user.dailySpinCount >= MAX_SPINS_PER_DAY) {
+    console.log(`[SPIN] Blocked — already used ${user.dailySpinCount} spins today`);
+    return res.status(400).json({ message: `You've used all 3 spins for today! Come back tomorrow! 🌅` });
   }
 
   // Rigged probabilities favoring the house
@@ -220,11 +268,23 @@ const spinWheel = async (req, res) => {
   else winningValue = 50;
 
   user.sparCoins += winningValue;
-  user.lastSpunAt = Date.now();
-  const updatedUser = await user.save();
+  const newSpinCount = (user.dailySpinCount || 0) + 1;
+
+  console.log(`[SPIN] winningValue=${winningValue} | newSpinCount=${newSpinCount}`);
+
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { sparCoins: user.sparCoins, lastSpunAt: new Date(), dailySpinCount: newSpinCount },
+    { new: true, runValidators: false }
+  );
+
+  const spinsLeft = MAX_SPINS_PER_DAY - updatedUser.dailySpinCount;
+
+  console.log(`[SPIN] updatedUser.dailySpinCount=${updatedUser.dailySpinCount} | spinsLeft=${spinsLeft}`);
 
   res.json({
     prizeCoins: winningValue,
+    spinsLeft,
     updatedUser: {
       _id: updatedUser._id,
       sparId: updatedUser.sparId,
@@ -234,6 +294,7 @@ const spinWheel = async (req, res) => {
       avatar: updatedUser.avatar,
       sparCoins: updatedUser.sparCoins,
       lastSpunAt: updatedUser.lastSpunAt,
+      dailySpinCount: updatedUser.dailySpinCount,
       token: req.headers.authorization.split(' ')[1]
     }
   });
@@ -247,20 +308,16 @@ const recordGameScore = async (req, res) => {
     return res.status(404).json({ message: 'User not found' });
   }
 
-  const now = new Date();
-  
-  // Update last played time but ignore attempt counts for infinity play
-  user.lastGamePlayedAt = now;
-
-  // No coins earned from this game anymore as per new spec
-  let coinsEarned = 0;
   let reward = null;
-
   if (score >= 100) {
     reward = 'FREE_TICKET';
   }
-  
-  const updatedUser = await user.save();
+
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { lastGamePlayedAt: new Date() },
+    { new: true, runValidators: false }
+  );
 
   res.json({
     reward,
@@ -291,8 +348,11 @@ const deductCoins = async (req, res) => {
     return res.status(400).json({ message: 'Insufficient SPAR Coins' });
   }
 
-  user.sparCoins -= amount;
-  const updatedUser = await user.save();
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { sparCoins: user.sparCoins - amount },
+    { new: true, runValidators: false }
+  );
 
   res.json({
     updatedUser: {
@@ -428,4 +488,39 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, googleLogin, getUserProfile, updateUserAvatar, spinWheel, recordGameScore, deductCoins, promoteToAdmin, forgotPassword, resetPassword };
+// ── Verify Email ─────────────────────────────────────────────────────────────
+const verifyEmail = async (req, res) => {
+  const { token } = req.body;
+  try {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({ emailVerificationToken: hashedToken });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification link.' });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    
+    // Also return updated user so the frontend can update session if logged in
+    const updatedUser = await user.save();
+    res.json({ 
+      message: 'Email verified successfully!',
+      updatedUser: {
+        _id: updatedUser._id,
+        sparId: updatedUser.sparId,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        avatar: updatedUser.avatar,
+        sparCoins: updatedUser.sparCoins,
+        isEmailVerified: updatedUser.isEmailVerified,
+        token: generateToken(updatedUser._id)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, googleLogin, getUserProfile, updateUserAvatar, spinWheel, recordGameScore, deductCoins, promoteToAdmin, forgotPassword, resetPassword, verifyEmail };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, Phone, User as UserIcon, ArrowRight, ShieldCheck, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, KeyRound, Send } from 'lucide-react';
+import { X, Mail, Lock, Phone, User as UserIcon, ArrowRight, ShieldCheck, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, KeyRound, Send, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 import './AuthModal.css';
@@ -32,6 +32,7 @@ const AuthModal = () => {
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const [gender, setGender] = useState('boy');
   const [skinIdx, setSkinIdx] = useState(0);
@@ -55,7 +56,7 @@ const AuthModal = () => {
         } else {
            setAuthStep('success');
            setShouldOpenProfile(true); 
-           setTimeout(() => resetState(), 1500);
+           setTimeout(() => { resetState(); closeAuthModal(); }, 1500);
         }
       } catch (err) {
         setErrorMsg(err.message);
@@ -71,8 +72,8 @@ const AuthModal = () => {
   // --- Validation helpers ---
   const validatePhone = (p) => {
     if (!p || p.trim() === '') return true; // optional
-    const clean = p.replace(/\s+/g, '');
-    return /^(?:\+91|91|0)?[6-9]\d{9}$/.test(clean);
+    const clean = p.replace(/\D/g, '');
+    return clean.length === 10 && /^[6-9]\d{9}$/.test(clean);
   };
 
   const validatePassword = (p) => p && p.length >= 6;
@@ -113,7 +114,7 @@ const AuthModal = () => {
       await loginUser(email, password);
       setAuthStep('success');
       setShouldOpenProfile(true); 
-      setTimeout(() => resetState(), 1500);
+      setTimeout(() => { resetState(); closeAuthModal(); }, 1500);
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -126,12 +127,15 @@ const AuthModal = () => {
     try {
       if (isGoogleSignupFlow) {
          await updateAvatar(getAvatarUrl(), phone);
+         setAuthStep('success');
+         setTimeout(() => {
+           window.location.href = '/';
+         }, 1500);
       } else {
-         await registerUser(firstName, email, phone, password, getAvatarUrl());
+         const data = await registerUser(firstName, email, phone, password, getAvatarUrl());
+         setSuccessMsg(data.message);
+         setAuthStep('verify-sent');
       }
-      setAuthStep('success');
-      setShouldOpenProfile(true); 
-      setTimeout(() => resetState(), 1500);
     } catch (err) {
       setErrorMsg(err.message);
       setAuthStep('form');
@@ -197,6 +201,7 @@ const AuthModal = () => {
     if (authStep === 'avatar') return 'DESIGN YOUR AVATAR';
     if (authStep === 'forgot') return 'FORGOT PASSWORD';
     if (authStep === 'forgot-sent') return 'CHECK YOUR EMAIL';
+    if (authStep === 'verify-sent') return 'VERIFY YOUR ACCOUNT';
     if (authStep === 'reset-password') return 'RESET PASSWORD';
     return tab === 'login' ? 'WELCOME BACK' : 'JOIN THE CREW';
   };
@@ -206,6 +211,7 @@ const AuthModal = () => {
     if (authStep === 'avatar') return 'Stand out in the SPAR network!';
     if (authStep === 'forgot') return 'Enter your email to receive a reset link.';
     if (authStep === 'forgot-sent') return 'A password reset link has been sent if that email is registered.';
+    if (authStep === 'verify-sent') return 'A verification link has been sent to your email address.';
     if (authStep === 'reset-password') return 'Enter your new password below.';
     return tab === 'login' ? 'Sign in to access your digital tickets.' : 'Sign up to lock in your arcade rewards!';
   };
@@ -239,14 +245,19 @@ const AuthModal = () => {
            </div>
         )}
 
-        {/* FORGOT-SENT CONFIRMATION */}
-        {authStep === 'forgot-sent' && (
-          <div className="auth-success-view flex-center flex-col gap-4">
-            <div style={{ fontSize: '4rem' }}>📧</div>
-            <p style={{ color: '#C7FF00', fontWeight: 800, textAlign: 'center' }}>Link sent! Check your inbox.</p>
-            <button className="btn-primary auth-submit mt-2" onClick={() => { setAuthStep('form'); setTab('login'); }}>
-              BACK TO LOGIN
-            </button>
+        {/* FORGOT-SENT / VERIFY-SENT CONFIRMATION */}
+        {(authStep === 'forgot-sent' || authStep === 'verify-sent') && (
+          <div className="auth-form flex flex-col items-center justify-center text-center gap-4 py-8">
+             <div className="flex items-center justify-center w-16 h-16 rounded-full" style={{ background: 'rgba(0, 209, 255, 0.1)' }}>
+               <Mail size={32} color="#00D1FF" />
+             </div>
+             <p className="text-[#94A3B8] text-sm">
+               {authStep === 'verify-sent' ? 'Please check your inbox and click the secure link to verify your account.' : 'Please check your inbox and click the secure link to reset your password.'}
+             </p>
+             <button type="button" className="modern-input" style={{ width: 'auto', padding: '0 32px', marginTop: '16px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                     onClick={() => setAuthStep('form')}>
+                Back to {authStep === 'verify-sent' ? 'Registration' : 'Login'}
+             </button>
           </div>
         )}
 
@@ -348,7 +359,10 @@ const AuthModal = () => {
             {isGoogleSignupFlow && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <input type="tel" className="modern-input" placeholder="Phone Number"
-                  value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={15}
+                  value={phone} onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    if (val.length <= 10) setPhone(val);
+                  }} maxLength={10}
                   style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '8px' }} />
                 {phone && !validatePhone(phone) && (
                   <span style={{ color: '#FF0055', fontSize: '0.7rem', fontWeight: 700 }}>⚠ Enter a valid 10-digit Indian phone number</span>
@@ -398,7 +412,10 @@ const AuthModal = () => {
                   <div className="input-group">
                     <Phone size={18} className="input-icon" color="#94A3B8" />
                     <input type="tel" className="modern-input with-icon" placeholder="Phone Number"
-                      value={phone} onChange={(e) => setPhone(e.target.value)} required maxLength={15} />
+                      value={phone} onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        if (val.length <= 10) setPhone(val);
+                      }} required maxLength={10} />
                     {phone && !validatePhone(phone) && (
                       <span style={{ color: '#FF0055', fontSize: '0.72rem', fontWeight: 700, marginTop: '4px', display: 'block', paddingLeft: '4px' }}>
                         ⚠ Enter a valid 10-digit Indian phone number (starts with 6-9)
@@ -414,11 +431,14 @@ const AuthModal = () => {
                   value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
 
-              <div className="input-group">
+              <div className="input-group" style={{ position: 'relative' }}>
                 <Lock size={18} className="input-icon" color="#94A3B8" />
-                <input type="password" className="modern-input with-icon"
+                <input type={showPassword ? "text" : "password"} className="modern-input with-icon"
                   placeholder={tab === 'signup' ? 'Password (min 6 chars)' : 'Password'}
                   value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="on" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
                 {tab === 'signup' && password && !validatePassword(password) && (
                   <span style={{ color: '#FF0055', fontSize: '0.72rem', fontWeight: 700, marginTop: '4px', display: 'block', paddingLeft: '4px' }}>
                     ⚠ Password must be at least 6 characters

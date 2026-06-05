@@ -25,6 +25,14 @@ const parkRates = {
   wonderla: 1500
 };
 
+const QUICK_REPLIES = [
+  { label: '🪙 SPAR Coins', query: 'spar coins' },
+  { label: '🎟️ Free Pass', query: 'free ticket' },
+  { label: '💸 Discounts', query: 'discount' },
+  { label: '🎫 Book Ticket', query: 'book' },
+  { label: '📞 Support', query: 'human' },
+];
+
 const ChatBot = () => {
   const { user, interceptAuth, addBooking } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -70,39 +78,138 @@ const ChatBot = () => {
     }
   }, [isOpen, hasSpokenGreeting, messages]);
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = (directText) => {
+    const text = typeof directText === 'string' ? directText : inputValue.trim();
+    if (!text) return;
 
-    const userMsg = { id: Date.now(), text: inputValue.trim(), sender: 'user' };
+    const userMsg = { id: Date.now(), text, sender: 'user' };
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
-    const inputForBot = inputValue;
     setInputValue('');
 
     setTimeout(() => {
-      const lower = inputForBot.toLowerCase();
+      const lower = text.toLowerCase();
       let reply = '';
 
       if (/^(hi|hello|hey)$/.test(lower) || lower.includes('how are you')) {
         reply = "Hello there! 👋 I'm Buzz Lightyear, your Park Assistant. I can help you with SPAR Coins, Ticket Discounts, the FlappyBuzz Game, or general booking support. What would you like to know?";
       }
-      else if (lower.includes('coin') || lower.includes('spar coin') || lower.includes('earn')) {
-        reply = "SPAR Coins are our park's loyalty currency! 💰 You can earn them by playing our Spin Wheel on the website. Your coins accumulate directly in your account and you can save them up for huge discounts!";
-      } 
-      else if (lower.includes('claim') || lower.includes('discount') || lower.includes('redeem')) {
-        reply = "You can redeem your SPAR Coins during online booking! Every 10,000 coins gives you a 10% discount (up to 90%). ❗ Important Rule: The discount applies to ONLY ONE ticket in your entire booking. The remaining tickets are charged at full price.";
+      else if (lower.includes('discount') || lower.includes('claim') || lower.includes('redeem')) {
+        const newBotMessage = {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: 'Here are all the ways you can get discounts at SPAR Amusements! 🎟️',
+          cards: [
+            {
+              icon: '🪙',
+              title: 'SPAR COINS',
+              badge: 'COINS',
+              badgeColor: '#C7FF00',
+              desc: 'Every 10,000 SPAR Coins = 10% discount (up to 90%).',
+              sub: 'Earn coins daily via the Spin Wheel!'
+            },
+            {
+              icon: '🕹️',
+              title: 'SPACE RANGER FLIGHT',
+              badge: 'GAME',
+              badgeColor: '#BF00FF',
+              desc: 'Score 100 points to win a 100% FREE pass instantly!',
+              sub: 'Play 3 times daily.'
+            },
+            {
+              icon: '🎟️',
+              title: 'PROMO COUPONS',
+              badge: 'COUPON',
+              badgeColor: '#00D1FF',
+              desc: 'Have a promo code? Enter it at checkout for instant savings.',
+              sub: 'Follow our socials for drops!'
+            },
+            {
+              icon: '⚠️',
+              title: 'IMPORTANT RULE',
+              badge: 'NOTE',
+              badgeColor: '#FF6B00',
+              desc: 'All discounts apply to EXACTLY 1 TICKET ONLY.',
+              sub: 'Even for large groups, only one ticket is discounted.'
+            }
+          ]
+        };
+        setMessages(prev => [...prev, newBotMessage]);
+        setIsTyping(false);
+        return;
       }
-      else if (lower.includes('free ticket') || lower.includes('game') || lower.includes('flappy') || lower.includes('play')) {
-        reply = "There are two ways to get a FREE pass! 🎟️\n\n1. Play 'SPACE RANGER FLIGHT'. Score 100 points to win instantly! (You get 3 attempts per day, and difficulty scales wildly every 10 points!).\n2. Redeem 100,000 SPAR Coins at checkout. ❗ Remember: The free pass applies to exactly 1 ticket, even if you are booking for a large group.";
+      else if (lower.includes('coin') || lower.includes('spar coin') || lower.includes('earn')) {
+        const newBotMessage = {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: 'SPAR Coins are our loyalty currency! Here is how they work: 💰',
+          cards: [
+            {
+              icon: '🪙',
+              title: 'EARN & REDEEM',
+              badge: 'COINS',
+              badgeColor: '#C7FF00',
+              desc: 'Earn daily on the Spin Wheel. Every 10,000 Coins = 10% discount on a ticket.',
+              sub: 'Discounts cap at 90% off.'
+            },
+            {
+              icon: '⚠️',
+              title: 'IMPORTANT RULE',
+              badge: 'NOTE',
+              badgeColor: '#FF6B00',
+              desc: 'Coin discounts apply to EXACTLY 1 TICKET ONLY.',
+              sub: 'The remaining tickets in a group booking are charged full price.'
+            }
+          ]
+        };
+        setMessages(prev => [...prev, newBotMessage]);
+        setIsTyping(false);
+        return;
+      }
+      else if (lower.includes('game') || lower.includes('space') || lower.includes('free ticket') || lower.includes('flappy') || lower.includes('play')) {
+        const newBotMessage = {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: 'Get ready for Space Ranger Flight! 🚀 Here is how to play and win:',
+          cards: [
+            {
+              icon: '🕹️',
+              title: 'HOW TO WIN',
+              badge: 'GAME',
+              badgeColor: '#BF00FF',
+              desc: 'Score exactly 100 points by dodging obstacles to win a FREE PASS.',
+              sub: 'Difficulty increases wildly every 10 points.'
+            },
+            {
+              icon: '⏰',
+              title: 'DAILY LIMITS',
+              badge: 'INFO',
+              badgeColor: '#00D1FF',
+              desc: 'You get 3 attempts per day to beat the high score.',
+              sub: 'Attempts reset at midnight.'
+            },
+            {
+              icon: '⚠️',
+              title: 'IMPORTANT RULE',
+              badge: 'NOTE',
+              badgeColor: '#FF6B00',
+              desc: 'The Free Pass applies to EXACTLY 1 TICKET ONLY.',
+              sub: 'Cannot be combined with other discounts.'
+            }
+          ]
+        };
+        setMessages(prev => [...prev, newBotMessage]);
+        setIsTyping(false);
+        return;
       }
       else if (lower.includes('book') || lower.includes('pay') || lower.includes('ticket') || lower.includes('qr') || lower.includes('upi')) {
-        reply = "Booking a ticket is super fast:\n1. Choose your park & date.\n2. Review your bill & add SPAR Coin discounts.\n3. Scan the secure GPay/UPI QR code & pay.\n4. Enter the 12-digit UTR.\n\nYour confirmed ticket will be sent securely via WhatsApp!";
+        reply = "Booking a ticket is super fast:\n1. Choose your park & date.\n2. Review your bill & add SPAR Coin/Coupon discounts.\n3. Scan the secure GPay/UPI QR code & pay.\n4. Enter the 12-digit UTR.\n\nYour confirmed ticket will be sent securely via WhatsApp!";
       }
-      else if (lower.includes('whatsapp') || lower.includes('human') || lower.includes('agent') || lower.includes('failed') || lower.includes('issue')) {
-         reply = "For account specific issues, failed payments, or speaking to a human agent, please securely message our dedicated WhatsApp Customer Support: +91 9876543210. They can resolve complex issues instantly!";
+      else if (lower.includes('support') || lower.includes('whatsapp') || lower.includes('human') || lower.includes('agent') || lower.includes('failed') || lower.includes('issue')) {
+         reply = "Need help? Securely message our dedicated WhatsApp Customer Support: +91 9876543210 📱 They can help you with failed payments, booking issues, and more!";
       }
       else {
-        reply = "I'm just a space ranger and that query is a little too complex for me! 😅 For account issues or advanced questions, please contact our human team directly via WhatsApp support.";
+        reply = "I'm just a space ranger and that query is a little too complex for me! 😅 For account issues or advanced questions, please contact our human team directly via WhatsApp support at +91 9876543210.";
       }
 
       const newBotMessage = { id: Date.now() + 1, text: reply, sender: 'bot' };
@@ -191,6 +298,36 @@ const ChatBot = () => {
               <div key={msg.id} className={`message-row ${msg.sender}`}>
                 <div className={`message-bubble ${msg.sender === 'bot' ? 'glass-morphism' : ''}`}>
                   {msg.text}
+                  {msg.cards && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                      {msg.cards.map((card, idx) => (
+                        <div key={idx} style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '10px'
+                        }}>
+                          <span style={{ fontSize: '20px', lineHeight: 1, flexShrink: 0, marginTop: '2px' }}>{card.icon}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 900, color: '#fff', letterSpacing: '0.5px' }}>{card.title}</span>
+                              <span style={{
+                                fontSize: '9px', fontWeight: 800, padding: '1px 5px',
+                                borderRadius: '4px', background: card.badgeColor,
+                                color: card.badgeColor === '#C7FF00' ? '#0f172a' : '#fff',
+                                letterSpacing: '0.5px', flexShrink: 0
+                              }}>{card.badge}</span>
+                            </div>
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 2px', fontWeight: 600 }}>{card.desc}</p>
+                            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.45)', margin: 0 }}>{card.sub}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -203,6 +340,39 @@ const ChatBot = () => {
             )}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Quick-reply suggestion chips — always visible before typing */}
+          {!isTyping && (
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: '8px',
+              padding: '10px 12px 0',
+              background: 'rgba(0,0,0,0.3)'
+            }}>
+              {QUICK_REPLIES.map((qr) => (
+                <button
+                  key={qr.label}
+                  onClick={() => handleSendMessage(qr.query)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(199,255,0,0.4)',
+                    background: 'rgba(199,255,0,0.08)',
+                    color: '#C7FF00',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    letterSpacing: '0.3px',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(199,255,0,0.2)'; e.currentTarget.style.borderColor = '#C7FF00'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(199,255,0,0.08)'; e.currentTarget.style.borderColor = 'rgba(199,255,0,0.4)'; }}
+                >
+                  {qr.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div style={{borderTop: '1px solid rgba(255,255,255,0.1)'}}>
             {step === 'COMPLETE' && !hasRated ? (
