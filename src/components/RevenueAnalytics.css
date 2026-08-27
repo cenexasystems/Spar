@@ -1,0 +1,779 @@
+/* ==========================================================================
+   REVENUE ANALYTICS DASHBOARD - MODERN SAAS STYLING
+   ========================================================================== */
+
+.revenue-analytics-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Top Header ────────────────────────────────────────────────────────── */
+.ra-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: static; /* Normal page document flow */
+}
+
+.ra-admin-breadcrumb {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  position: static;
+}
+
+.highlight-text-lime {
+  color: #C7FF00;
+}
+
+.ra-header-left h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  margin: 0 0 4px 0;
+}
+
+.ra-header-left p {
+  font-size: 13px;
+  color: #8E95A5;
+  margin: 0;
+}
+
+.ra-download-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #E2E8F0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ra-download-report-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+/* ── Filters Bar ────────────────────────────────────────────────────────── */
+.ra-filters-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ra-quick-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ra-pill-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.ra-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+}
+
+.ra-pill-btn.active {
+  background: rgba(199, 255, 0, 0.06);
+  border-color: #C7FF00;
+  color: #C7FF00;
+  font-weight: 600;
+}
+
+.ra-date-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ra-date-range-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #CBD5E1;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+}
+
+.ra-custom-inputs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ra-date-input {
+  background: rgba(15, 19, 31, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+  color-scheme: dark;
+}
+
+.ra-date-input:focus {
+  border-color: #C7FF00;
+}
+
+.ra-apply-btn {
+  background: #C7FF00;
+  color: #000000;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ra-apply-btn:hover {
+  background: #d8ff33;
+  box-shadow: 0 0 16px rgba(199, 255, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.ra-reset-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94A3B8;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ra-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+/* ── 5 KPI Cards Grid ─────────────────────────────────────────────────── */
+.ra-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ra-kpi-card {
+  background: #0f131f;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 125px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.ra-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.ra-kpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.ra-kpi-label-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.ra-kpi-label {
+  display: inline;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94A3B8;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.ra-info-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-left: 8px;
+  color: #475569;
+  cursor: help;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ra-info-icon:hover {
+  color: #94A3B8;
+}
+
+.ra-kpi-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ra-icon-yellow {
+  background: rgba(199, 255, 0, 0.08);
+  border: 1px solid rgba(199, 255, 0, 0.25);
+  color: #C7FF00;
+}
+
+.ra-icon-blue {
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38BDF8;
+}
+
+.ra-icon-purple {
+  background: rgba(192, 132, 252, 0.08);
+  border: 1px solid rgba(192, 132, 252, 0.25);
+  color: #C084FC;
+}
+
+.ra-icon-green {
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  color: #4ADE80;
+}
+
+.ra-icon-gold {
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.25);
+  color: #FACC15;
+}
+
+.ra-kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px 0;
+  line-height: 1.1;
+}
+
+.ra-val-yellow { color: #C7FF00; }
+.ra-val-blue { color: #38BDF8; }
+.ra-val-purple { color: #C084FC; }
+.ra-val-green { color: #4ADE80; }
+.ra-val-gold { color: #FACC15; }
+
+.ra-kpi-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.ra-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+}
+
+.ra-trend-up { color: #22C55E; }
+.ra-trend-down { color: #EF4444; }
+.ra-trend-neutral { color: #94A3B8; }
+
+.ra-trend-period {
+  color: #64748B;
+  font-size: 11px;
+}
+
+.ra-top-park-sub {
+  color: #4ADE80;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Middle Row: Charts ───────────────────────────────────────────────── */
+.ra-charts-row {
+  display: grid;
+  grid-template-columns: 58% calc(42% - 16px);
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ra-chart-card {
+  background: #0f131f;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 380px;
+  box-sizing: border-box;
+}
+
+.ra-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ra-card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ra-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.ra-timeframe-select {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #CBD5E1;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ra-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 12px;
+  color: #94A3B8;
+  margin-bottom: 14px;
+}
+
+.ra-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ra-legend-dot-yellow {
+  width: 10px;
+  height: 10px;
+  background: #C7FF00;
+  border-radius: 2px;
+}
+
+.ra-legend-dot-blue {
+  width: 10px;
+  height: 10px;
+  background: #38BDF8;
+  border-radius: 50%;
+}
+
+.ra-chart-container {
+  width: 100%;
+  height: 230px;
+  min-height: 230px;
+}
+
+.ra-chart-bottom-summary {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding-top: 14px;
+  margin-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ra-summary-item p {
+  font-size: 11px;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 2px 0;
+}
+
+.ra-summary-item h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* Custom Tooltip */
+.ra-custom-tooltip {
+  background: #151928;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 150px;
+}
+
+.ra-tooltip-date {
+  font-size: 12px;
+  font-weight: 700;
+  color: #E2E8F0;
+  margin: 0 0 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 4px;
+}
+
+.ra-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #CBD5E1;
+  margin-bottom: 3px;
+}
+
+.ra-tooltip-sub {
+  font-size: 11px;
+  color: #94A3B8;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+/* ── Revenue by Park — Horizontal Bar Section ────────────────────────────── */
+
+.ra-chart-card.ra-park-chart-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ra-park-card-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 4-column responsive grid: [park name] [bar zone] [revenue] [bookings] */
+.ra-hbc-header,
+.ra-hbc-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.4fr) minmax(90px, 1.8fr) minmax(80px, 1fr) minmax(55px, 0.6fr);
+  align-items: center;
+  gap: 0 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ra-hbc-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 4px;
+}
+
+.ra-hbc-col-park,
+.ra-hbc-col-bar,
+.ra-hbc-col-rev,
+.ra-hbc-col-bk {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748B;
+}
+.ra-hbc-col-rev { text-align: right; }
+.ra-hbc-col-bk  { text-align: right; }
+
+.ra-hbc-chart-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+  padding: 8px 0 0 0;
+}
+
+.ra-hbc-row {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  min-height: 46px;
+  box-sizing: border-box;
+}
+
+.ra-hbc-row:last-of-type {
+  border-bottom: none;
+}
+
+.ra-hbc-park-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #CBD5E1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 4px;
+}
+
+.ra-hbc-bar-zone {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.ra-hbc-bar {
+  height: 18px;
+  background: #C7FF00;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  min-width: 4px;
+  max-width: 100%;
+}
+
+.ra-hbc-bar-zero {
+  height: 18px;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.ra-hbc-rev-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ra-hbc-bk-val {
+  font-size: 13px;
+  color: #94A3B8;
+  text-align: right;
+}
+
+/* ── Bottom Section: Daily Revenue Summary Table ───────────────────────── */
+.ra-table-card {
+  background: #0f131f;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.ra-table-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ra-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ra-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 600px;
+}
+
+.ra-table th {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8E95A5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ra-table th:hover {
+  color: #FFFFFF;
+}
+
+.ra-table td {
+  padding: 13px 18px;
+  font-size: 13px;
+  color: #CBD5E1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.ra-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ra-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ra-td-date {
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.ra-td-revenue {
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.ra-td-discounts {
+  color: #4ADE80;
+}
+
+.ra-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748B;
+  font-size: 13px;
+}
+
+/* ── Full Responsive Design ───────────────────────────────────────────── */
+
+/* Laptops & Small Desktops (1024px - 1439px) */
+@media (max-width: 1400px) {
+  .ra-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Tablets & Small Laptops (768px - 1099px) */
+@media (max-width: 1100px) {
+  .ra-charts-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .ra-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 850px) {
+  .ra-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile Devices (320px - 767px) */
+@media (max-width: 650px) {
+  .ra-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .ra-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .ra-quick-filters {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  .ra-date-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .ra-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ra-download-report-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .ra-hbc-header,
+  .ra-hbc-row {
+    grid-template-columns: minmax(100px, 1.2fr) minmax(70px, 1.2fr) minmax(65px, 0.9fr) minmax(40px, 0.5fr);
+    gap: 0 6px;
+  }
+  .ra-hbc-park-name {
+    font-size: 12px;
+  }
+  .ra-hbc-rev-val,
+  .ra-hbc-bk-val {
+    font-size: 12px;
+  }
+  .ra-chart-card {
+    padding: 16px;
+  }
+}

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Users, BarChart3, Ticket, MapPin, Edit3, TrendingUp, ArrowLeft, Search, Save, RotateCcw, Trash2, CheckCircle, Clock, DollarSign, XCircle, Plus, Image, Download, Filter, Tag, Phone } from 'lucide-react';
+import { Users, BarChart3, Ticket, MapPin, Edit3, TrendingUp, ArrowLeft, Search, Save, RotateCcw, Trash2, CheckCircle, Clock, DollarSign, XCircle, Plus, Image, Download, Filter, Tag, Phone, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
+import { useAuth } from '../context/AuthContext';
+import RevenueAnalytics from './RevenueAnalytics';
+import AdminOverview from './AdminOverview';
 import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -19,6 +22,16 @@ const fallbackParks = [
 ];
 
 const AdminDashboard = ({ onBack }) => {
+  const { user } = useAuth();
+  const userName = user?.name || 'Aak Gemini';
+  const initials = userName
+    .split(' ')
+    .filter(Boolean)
+    .map(n => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'AG';
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('stats');
@@ -378,24 +391,6 @@ const AdminDashboard = ({ onBack }) => {
   const pendingCount = bookings.filter(b => b.status === 'pending').length;
   const verifiedCount = bookings.filter(b => b.status === 'verified').length;
 
-  // Build real chart data from actual bookings & revenue entries
-  const chartData = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const dayStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-    const dayStart = new Date(d); dayStart.setHours(0,0,0,0);
-    const dayEnd   = new Date(d); dayEnd.setHours(23,59,59,999);
-    const dayBookings = bookings.filter(b => {
-      const c = new Date(b.createdAt);
-      return c >= dayStart && c <= dayEnd;
-    }).length;
-    const dayRevenue = revenueEntries.filter(r => {
-      const c = new Date(r.createdAt);
-      return c >= dayStart && c <= dayEnd;
-    }).reduce((s, r) => s + (r.amount || 0), 0);
-    chartData.push({ date: dayStr, bookings: dayBookings, revenue: dayRevenue });
-  }
-
   const filteredRevenue = revenueEntries.filter(r => {
     if (!dateRange.from && !dateRange.to) return true;
     const d = new Date(r.createdAt);
@@ -494,226 +489,226 @@ const AdminDashboard = ({ onBack }) => {
   }
 
   return (
-    <div className="admin-dashboard-container animate-fade-in">
-      <div className="admin-header">
-        <button className="back-btn-neon" onClick={onBack}><ArrowLeft size={18} /> <span style={{fontSize:'12px', fontWeight:700, letterSpacing:'0.08em'}}>BACK TO HOME</span></button>
-        <div className="admin-title-wrap" style={{textAlign:'right'}}>
-          <h1 className="admin-title">ADMIN DASHBOARD <span className="title-version">v3.0</span></h1>
-          <p className="admin-subtitle">Booking Verification & Revenue Center</p>
-        </div>
-      </div>
-
-      <div className="admin-tabs">
-        <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setActiveTab('stats')}><TrendingUp size={16} /> OVERVIEW</button>
-        <button className={`tab-btn ${activeTab === 'bookings' ? 'active' : ''}`} onClick={() => setActiveTab('bookings')}>
-          <Ticket size={16} /> BOOKINGS {pendingCount > 0 && <span className="tab-badge">{pendingCount}</span>}
-        </button>
-        <button className={`tab-btn ${activeTab === 'revenue' ? 'active' : ''}`} onClick={() => setActiveTab('revenue')}><DollarSign size={16} /> REVENUE</button>
-        <button className={`tab-btn ${activeTab === 'parks' ? 'active' : ''}`} onClick={() => setActiveTab('parks')}><MapPin size={16} /> PARKS</button>
-        <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}><Users size={16} /> USERS</button>
-        <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}><Clock size={16} /> SETTINGS</button>
-      </div>
-
-      {/* Search Bar */}
-      {activeTab === 'bookings' && (
-        <div className="admin-search-bar">
-          <Search size={18} className="search-icon" />
-          <input type="text" placeholder="Search by Name, SPAR ID, Ticket ID, Booking ID, Phone, Park..." value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value) setSearchResults(null); }}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-          <button onClick={handleSearch} className="search-go-btn">SEARCH</button>
-        </div>
-      )}
-
-      <div className="admin-content">
-        {/* OVERVIEW TAB */}
-        {activeTab === 'stats' && (
-          <div>
-            <div className="stats-grid">
-              <div className="stat-card revenue-glow"><BarChart3 className="stat-icon" /><div className="stat-info"><p>TOTAL REVENUE</p><h3>₹{totalRevenue.toLocaleString()}</h3></div></div>
-              <div className="stat-card users-glow"><Users className="stat-icon" /><div className="stat-info"><p>TOTAL USERS</p><h3>{users.length}</h3></div></div>
-              <div className="stat-card flight-glow"><Ticket className="stat-icon" /><div className="stat-info"><p>TOTAL BOOKINGS</p><h3>{bookings.length}</h3></div></div>
-              <div className="stat-card" style={{ borderColor: 'rgba(255,193,7,0.3)' }}><Clock className="stat-icon" style={{ color: '#FFC107' }} /><div className="stat-info"><p>PENDING VERIFICATION</p><h3 style={{ color: '#FFC107' }}>{pendingCount}</h3></div></div>
-              <div className="stat-card" style={{ borderColor: 'rgba(0,200,83,0.3)' }}><CheckCircle className="stat-icon" style={{ color: '#00C853' }} /><div className="stat-info"><p>VERIFIED</p><h3 style={{ color: '#00C853' }}>{verifiedCount}</h3></div></div>
-            </div>
-
-            {/* Row 1: Charts */}
-            <div className="charts-row">
-              <div className="chart-card">
-                <h4 className="chart-title">BOOKINGS OVER TIME</h4>
-                <div style={{height: '250px'}}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                      <YAxis stroke="#64748b" fontSize={11} />
-                      <Tooltip contentStyle={{backgroundColor:'#1a1a2e', border:'none', borderRadius:'8px'}} />
-                      <Line type="monotone" dataKey="bookings" stroke="#CCFF00" strokeWidth={3} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+    <div className="admin-saas-layout animate-fade-in">
+      {/* ── Left Sidebar ──────────────────────────────────────────────── */}
+      <aside className="admin-saas-sidebar">
+        <div>
+          {/* Sidebar Brand Header */}
+          <div className="admin-sidebar-brand" onClick={onBack} title="SPAR Operations Center">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div className="logo-icon-wrapper" style={{ width: '30px', height: '30px', flexShrink: 0 }}>
+                <svg viewBox="0 0 100 100" className="custom-ferris-wheel" style={{ width: '30px', height: '30px' }}>
+                  {/* Static Base */}
+                  <path d="M50 50 L35 90 M50 50 L65 90 M30 90 L70 90" stroke="white" strokeWidth="3" fill="none" />
+                  {/* Rotating Wheel Group */}
+                  <g className="wheel-rotate">
+                    <circle cx="50" cy="50" r="35" stroke="rgba(255,255,255,0.2)" strokeWidth="2" fill="none" />
+                    {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => {
+                      const x = 50 + 35 * Math.cos((angle * Math.PI) / 180);
+                      const y = 50 + 35 * Math.sin((angle * Math.PI) / 180);
+                      const colors = ['#FF00E6', '#FFB600', '#00FF88', '#00D4FF'];
+                      return (
+                        <g key={i}>
+                          <line x1="50" y1="50" x2={x} y2={y} stroke="white" strokeWidth="1" opacity="0.3" />
+                          <circle cx={x} cy={y} r="6" fill={colors[i % 4]} />
+                        </g>
+                      );
+                    })}
+                    <circle cx="50" cy="50" r="4" fill="white" />
+                  </g>
+                </svg>
               </div>
-              <div className="chart-card">
-                <h4 className="chart-title">REVENUE OVER TIME</h4>
-                <div style={{height: '250px'}}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                      <YAxis stroke="#64748b" fontSize={11} />
-                      <Tooltip contentStyle={{backgroundColor:'#1a1a2e', border:'none', borderRadius:'8px'}} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
-                      <Bar dataKey="revenue" fill="#00e5ff" radius={[4,4,0,0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: 1 }}>
+                  <span className="logo-spark-top" style={{ fontSize: '0.95rem', color: '#C7FF00' }}>SPAR</span>
+                  <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.75rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Amusements</span>
+                </div>
+                <div style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 700, letterSpacing: '0.08em', marginTop: '4px' }}>
+                  OPERATIONS CENTER
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Row 2: 3 Stat Cards */}
-            <div className="stats-grid" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
-              <div className="stat-card"><div className="stat-info"><p>TOP PARK THIS MONTH</p><h3>Wonderla — 42</h3></div></div>
-              <div className="stat-card"><div className="stat-info"><p>AVG TICKET VALUE</p><h3>₹1,340</h3></div></div>
-              <div className="stat-card"><div className="stat-info"><p>CONVERSION RATE</p><h3>67%</h3></div></div>
+          {/* Navigation Items */}
+          <nav className="admin-sidebar-nav">
+            <button 
+              className={`admin-nav-item ${activeTab === 'stats' ? 'active' : ''}`}
+              onClick={() => setActiveTab('stats')}
+            >
+              <TrendingUp size={16} />
+              <span>Overview</span>
+            </button>
+
+            <button 
+              className={`admin-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('bookings')}
+            >
+              <Ticket size={16} />
+              <span>Bookings</span>
+              {pendingCount > 0 && <span className="admin-nav-badge">{pendingCount}</span>}
+            </button>
+
+            <button 
+              className={`admin-nav-item ${activeTab === 'revenue' ? 'active' : ''}`}
+              onClick={() => setActiveTab('revenue')}
+            >
+              <DollarSign size={16} />
+              <span>Revenue</span>
+            </button>
+
+            <button 
+              className={`admin-nav-item ${activeTab === 'parks' ? 'active' : ''}`}
+              onClick={() => setActiveTab('parks')}
+            >
+              <MapPin size={16} />
+              <span>Parks</span>
+            </button>
+
+            <button 
+              className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
+              onClick={() => setActiveTab('users')}
+            >
+              <Users size={16} />
+              <span>Users</span>
+            </button>
+
+            <button 
+              className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              <Clock size={16} />
+              <span>Settings</span>
+            </button>
+          </nav>
+        </div>
+
+        {/* Sidebar Bottom: Export & Admin Profile */}
+        <div className="admin-sidebar-bottom">
+          {activeTab !== 'revenue' && (
+            <button className="admin-sidebar-excel-btn" onClick={exportRevenue} title="Download revenue excel report">
+              <Download size={14} />
+              <span>Download as Excel</span>
+            </button>
+          )}
+
+          <div className="admin-user-card" onClick={onBack} title="Click to exit to main website">
+            <div className="admin-user-avatar">{initials}</div>
+            <div className="admin-user-info">
+              <p className="admin-user-name">{userName}</p>
+              <p className="admin-user-role">Admin</p>
             </div>
+            <ChevronDown size={14} style={{ color: '#64748B' }} />
+          </div>
+        </div>
+      </aside>
 
-            {/* Row 3: Quick Actions */}
-            <div className="quick-actions-bar">
-              <button className="export-btn" onClick={exportRevenue}><Download size={14}/> DOWNLOAD REVENUE — EXCEL</button>
-              <button onClick={() => setActiveTab('revenue')}><Filter size={14} style={{marginRight:'8px', display:'inline'}}/> FILTER BY DATE</button>
-              <button onClick={() => {setActiveTab('bookings'); setStatusFilter('pending');}}><Search size={14} style={{marginRight:'8px', display:'inline'}}/> VIEW PENDING ({pendingCount})</button>
+      {/* ── Main Content Area ────────────────────────────────────────── */}
+      <main className="admin-saas-main">
+        {/* Top Header Bar for non-revenue and non-overview tabs */}
+        {activeTab !== 'revenue' && activeTab !== 'stats' && (
+          <div className="admin-header">
+            <button className="back-btn-neon" onClick={onBack}><ArrowLeft size={16} /> <span style={{fontSize:'12px', fontWeight:700, letterSpacing:'0.08em'}}>BACK TO HOME</span></button>
+            <div className="admin-title-wrap" style={{textAlign:'right'}}>
+              <h1 className="admin-title">ADMIN DASHBOARD <span className="title-version">v3.0</span></h1>
+              <p className="admin-subtitle">Booking Verification & Management Center</p>
             </div>
           </div>
         )}
 
-        {/* BOOKINGS TAB */}
+        {/* Search Bar */}
         {activeTab === 'bookings' && (
-          <div>
-            <div className="booking-filters">
-              <select className="filter-select" value={parkFilter} onChange={e=>setParkFilter(e.target.value)}>
-                <option value="all">All Parks</option>
-                {parks.map(p => <option key={p.id||p._id} value={p.name}>{p.name}</option>)}
-              </select>
-              <select className="filter-select" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="verified">Verified</option>
-                <option value="ticketsent">Ticket Sent</option>
-                <option value="rejected">Rejected</option>
-              </select>
-              <input type="date" className="filter-select" style={{color:'#fff'}} value={bookingDateFilter} onChange={e=>setBookingDateFilter(e.target.value)} />
-              <button className="btn-cancel" style={{padding:'8px 16px', fontSize:'12px'}} onClick={()=>{setParkFilter('all'); setStatusFilter('all'); setBookingDateFilter('');}}>CLEAR FILTERS</button>
-            </div>
-
-            <div className="admin-table-wrapper">
-              <table className="admin-table">
-                <thead><tr><th>DATE</th><th>BOOKING ID</th><th>USER</th><th>WHATSAPP</th><th>PARK</th><th>TICKETS</th><th>AMOUNT</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
-                <tbody>
-                  {filteredBookings.map(b => (
-                    <tr key={b._id || b.id}>
-                      <td className="text-xs">{new Date(b.createdAt || b.date).toLocaleDateString()}</td>
-                      <td><span className="booking-id-cell">{b.bookingId}</span></td>
-                      <td>{b.userName || 'Unknown'}</td>
-                      <td><a href={`https://wa.me/91${b.whatsappNumber || b.userPhone || '0000000000'}`} target="_blank" rel="noreferrer" className="whatsapp-btn"><Phone size={12}/> {b.whatsappNumber || b.userPhone || 'N/A'}</a></td>
-                      <td><span className="park-tag">{b.parkName}</span></td>
-                      <td>{b.tickets}</td>
-                      <td className="amount-text">₹{b.totalAmount}</td>
-                      <td><span className={`status-badge ${getStatusClass(b.status)}`}>{b.status}</span></td>
-                      <td>
-                        <div className="action-btns-row">
-                          {b.status === 'pending' && <>
-                            <button className="status-action-btn verify-btn" onClick={() => handleStatusUpdate(b._id, 'verified')}>✓ VERIFY</button>
-                            <button className="status-action-btn reject-btn" onClick={() => handleStatusUpdate(b._id, 'rejected')}>✕ REJECT</button>
-                          </>}
-                          {b.status === 'verified' && <button className="status-action-btn send-ticket-btn" onClick={() => handleStatusUpdate(b._id, 'ticketsent')}>📱 SEND TICKET</button>}
-                          <button className="status-action-btn" style={{background:'rgba(255,255,255,0.1)', color:'#fff', opacity: b.paymentScreenshot ? 1 : 0.5}} onClick={()=>{ if(b.paymentScreenshot) { const path = b.paymentScreenshot.replace(/\\/g, '/'); setProofImageModal(`${SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`); } else { alert('No payment proof uploaded for this booking.'); }}}>👁️ VIEW PROOF</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="admin-search-bar">
+            <Search size={18} className="search-icon" />
+            <input type="text" placeholder="Search by Name, SPAR ID, Ticket ID, Booking ID, Phone, Park..." value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value) setSearchResults(null); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+            <button onClick={handleSearch} className="search-go-btn">SEARCH</button>
           </div>
         )}
 
-        {/* REVENUE TAB */}
-        {activeTab === 'revenue' && (
-          <div>
-            <div className="revenue-header">
-              <div className="date-range-selector">
-                <div className="date-input-wrap"><label>FROM</label><input type="date" className="date-input" value={dateRange.from} onChange={e=>setDateRange({...dateRange, from: e.target.value})} /></div>
-                <div className="date-input-wrap"><label>TO</label><input type="date" className="date-input" value={dateRange.to} onChange={e=>setDateRange({...dateRange, to: e.target.value})} /></div>
-                <button 
-                  className="apply-filter-btn" 
-                  onClick={() => {
-                    if (dateRange.from && dateRange.to) {
-                      const fromDate = new Date(dateRange.from);
-                      const toDate = new Date(dateRange.to);
-                      if (fromDate > toDate) {
-                        alert("⚠️ Validation Error: 'FROM' date cannot be after 'TO' date.");
-                      } else {
-                        alert("📅 Date filter applied successfully!");
-                      }
-                    } else if (!dateRange.from && !dateRange.to) {
-                      alert("⚠️ Please select a date range first.");
-                    } else {
-                      alert("📅 Date filter applied successfully!");
-                    }
-                  }}
-                >
-                  APPLY FILTER
-                </button>
-                <button className="reset-btn" onClick={()=>setDateRange({from:'', to:''})}>RESET</button>
+        <div className="admin-content">
+          {/* OVERVIEW TAB */}
+          {activeTab === 'stats' && (
+            <AdminOverview
+              bookings={bookings}
+              revenueEntries={revenueEntries}
+              users={users}
+              parks={parks}
+              loading={loading}
+              userName={userName}
+              initials={initials}
+              onNavigateTab={(tab, filter) => {
+                setActiveTab(tab);
+                if (filter?.status) setStatusFilter(filter.status);
+              }}
+            />
+          )}
+
+          {/* BOOKINGS TAB */}
+          {activeTab === 'bookings' && (
+            <div>
+              <div className="booking-filters">
+                <select className="filter-select" value={parkFilter} onChange={e=>setParkFilter(e.target.value)}>
+                  <option value="all">All Parks</option>
+                  {parks.map(p => <option key={p.id||p._id} value={p.name}>{p.name}</option>)}
+                </select>
+                <select className="filter-select" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="verified">Verified</option>
+                  <option value="ticketsent">Ticket Sent</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <input type="date" className="filter-select" style={{color:'#fff'}} value={bookingDateFilter} onChange={e=>setBookingDateFilter(e.target.value)} />
+                <button className="btn-cancel" style={{padding:'8px 16px', fontSize:'12px'}} onClick={()=>{setParkFilter('all'); setStatusFilter('all'); setBookingDateFilter('');}}>CLEAR FILTERS</button>
               </div>
-              <button className="export-btn" onClick={exportRevenue}><Download size={16} /> DOWNLOAD AS EXCEL</button>
-            </div>
 
-            <div className="stats-grid" style={{gridTemplateColumns:'repeat(5, 1fr)'}}>
-              <div className="stat-card"><div className="stat-info"><p>TOTAL REVENUE</p><h3 style={{color:'#C7FF00'}}>₹{rangeTotalRev.toLocaleString()}</h3></div></div>
-              <div className="stat-card"><div className="stat-info"><p>BOOKINGS</p><h3>{rangeBookingsCount}</h3></div></div>
-              <div className="stat-card"><div className="stat-info"><p>AVG PER BOOKING</p><h3>₹{rangeBookingsCount ? Math.floor(rangeTotalRev/rangeBookingsCount) : 0}</h3></div></div>
-              <div className="stat-card"><div className="stat-info"><p>TOP PARK</p><h3>Wonderla</h3></div></div>
-              <div className="stat-card" style={{ borderColor: 'rgba(107,203,119,0.3)' }}><div className="stat-info"><p>DISCOUNTS GIVEN</p><h3 style={{color:'#6BCB77'}}>₹{rangeTotalDiscounts.toLocaleString()}</h3></div></div>
-            </div>
-
-            <div className="chart-card" style={{marginTop:'20px'}}>
-              <h4 className="chart-title">DAILY REVENUE</h4>
-              <div style={{height: '250px'}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData.slice(-15)}>
-                    <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                    <YAxis stroke="#64748b" fontSize={11} />
-                    <Tooltip contentStyle={{backgroundColor:'#1a1a2e', border:'none', borderRadius:'8px'}} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
-                    <Bar dataKey="revenue" fill="#CCFF00" radius={[4,4,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="admin-table-wrapper" style={{marginTop:'20px'}}>
-              <table className="admin-table">
-                <thead><tr><th>DATE</th><th>BOOKING ID</th><th>PARK</th><th>VISITOR</th><th>AMOUNT</th><th>COUPON</th><th>STATUS</th></tr></thead>
-                <tbody>
-                  {filteredRevenue.map(r => {
-                    const bookingDetails = bookings.find(b => b.bookingId === r.entryId);
-                    return (
-                      <tr key={r._id}>
-                        <td className="text-xs">{new Date(r.createdAt).toLocaleDateString()}</td>
-                        <td><span className="booking-id-cell">{r.entryId || 'N/A'}</span></td>
-                        <td><span className="park-tag">{r.parkName || '—'}</span></td>
-                        <td>{r.userName || 'Unknown'}</td>
-                        <td className="amount-text">₹{r.amount?.toLocaleString()}</td>
-                        <td><span className="text-xs" style={{color: bookingDetails?.couponApplied ? '#6BCB77' : '#888'}}>{bookingDetails?.couponApplied || 'None'}</span></td>
-                        <td><span className="status-badge status-verified">COMPLETED</span></td>
+              <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead><tr><th>DATE</th><th>BOOKING ID</th><th>USER</th><th>WHATSAPP</th><th>PARK</th><th>TICKETS</th><th>AMOUNT</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+                  <tbody>
+                    {filteredBookings.map(b => (
+                      <tr key={b._id || b.id}>
+                        <td className="text-xs">{new Date(b.createdAt || b.date).toLocaleDateString()}</td>
+                        <td><span className="booking-id-cell">{b.bookingId}</span></td>
+                        <td>{b.userName || 'Unknown'}</td>
+                        <td><a href={`https://wa.me/91${b.whatsappNumber || b.userPhone || '0000000000'}`} target="_blank" rel="noreferrer" className="whatsapp-btn"><Phone size={12}/> {b.whatsappNumber || b.userPhone || 'N/A'}</a></td>
+                        <td><span className="park-tag">{b.parkName}</span></td>
+                        <td>{b.tickets}</td>
+                        <td className="amount-text">₹{b.totalAmount}</td>
+                        <td><span className={`status-badge ${getStatusClass(b.status)}`}>{b.status}</span></td>
+                        <td>
+                          <div className="action-btns-row">
+                            {b.status === 'pending' && <>
+                              <button className="status-action-btn verify-btn" onClick={() => handleStatusUpdate(b._id, 'verified')}>✓ VERIFY</button>
+                              <button className="status-action-btn reject-btn" onClick={() => handleStatusUpdate(b._id, 'rejected')}>✕ REJECT</button>
+                            </>}
+                            {b.status === 'verified' && <button className="status-action-btn send-ticket-btn" onClick={() => handleStatusUpdate(b._id, 'ticketsent')}>📱 SEND TICKET</button>}
+                            <button className="status-action-btn" style={{background:'rgba(255,255,255,0.1)', color:'#fff', opacity: b.paymentScreenshot ? 1 : 0.5}} onClick={()=>{ if(b.paymentScreenshot) { const path = b.paymentScreenshot.replace(/\\/g, '/'); setProofImageModal(`${SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`); } else { alert('No payment proof uploaded for this booking.'); }}}>👁️ VIEW PROOF</button>
+                          </div>
+                        </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* PARKS TAB */}
-        {activeTab === 'parks' && (
+          {/* REVENUE TAB */}
+          {activeTab === 'revenue' && (
+            <RevenueAnalytics 
+              bookings={bookings} 
+              revenueEntries={revenueEntries} 
+              parks={parks}
+              loading={loading}
+              onRefresh={fetchData}
+            />
+          )}
+
+          {/* PARKS TAB */}
+          {activeTab === 'parks' && (
           <div className="park-mgmt-wrap animate-fade-in">
             <div className="park-mgmt-header">
               <div className="mgmt-title-block"><h3 className="section-heading text-white-shimmer-rtl">PARK OPERATIONS</h3></div>
@@ -1324,6 +1319,7 @@ const AdminDashboard = ({ onBack }) => {
         </div>,
         document.body
       )}
+      </main>
     </div>
   );
 };

@@ -1,0 +1,1018 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SPAR AMUSEMENTS — ADMIN OVERVIEW DASHBOARD (DARK ANALYTICS THEME)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.overview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  color: #FFFFFF;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+/* ── Top Header Section ──────────────────────────────────────────────────────── */
+.overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 4px;
+}
+
+.overview-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overview-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.overview-welcome {
+  font-size: 13px;
+  color: #94A3B8;
+  margin: 0;
+  font-weight: 400;
+}
+
+.overview-welcome-name {
+  color: #F8FAFC;
+  font-weight: 600;
+}
+
+.overview-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Header Date Range Pill */
+.overview-date-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #0E131F;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #E2E8F0;
+  letter-spacing: 0.2px;
+}
+
+.overview-date-pill .pill-calendar-icon {
+  color: #94A3B8;
+}
+
+/* Notification Bell */
+.overview-notification-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0E131F;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #CBD5E1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.overview-notification-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.overview-notification-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  background: #EF4444;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+}
+
+.overview-notification-badge.has-count {
+  width: 14px;
+  height: 14px;
+  top: -2px;
+  right: -2px;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+}
+
+/* Header User Profile Badge */
+.overview-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 6px;
+  background: #0E131F;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+.overview-profile-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #334155;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.overview-profile-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.overview-profile-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.overview-profile-role {
+  font-size: 10px;
+  color: #64748B;
+}
+
+/* ── Quick Date Filters Bar ─────────────────────────────────────────────────── */
+.overview-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.overview-filter-btn {
+  padding: 8px 18px;
+  background: #0B0F19;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94A3B8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.overview-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #F1F5F9;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Active Highlight with yellow border matching reference */
+.overview-filter-btn.active {
+  background: #0B0F19;
+  border: 1px solid #FFD000;
+  color: #FFD000;
+  box-shadow: 0 0 12px rgba(255, 208, 0, 0.12);
+}
+
+/* Custom Range Popover */
+.overview-custom-date-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: #0D121F;
+  border: 1px solid rgba(255, 208, 0, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 50;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  flex-wrap: wrap;
+}
+
+.custom-date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-date-input-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+}
+
+.custom-date-field {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #FFFFFF;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+}
+
+.custom-date-field:focus {
+  border-color: #FFD000;
+}
+
+.custom-date-apply-btn {
+  background: #FFD000;
+  color: #000000;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.custom-date-apply-btn:hover {
+  filter: brightness(1.1);
+}
+
+.custom-date-cancel-btn {
+  background: transparent;
+  color: #94A3B8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Top 5 KPI Cards Grid ───────────────────────────────────────────────────── */
+.overview-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.overview-kpi-card {
+  background: #0B0F19;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 110px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.overview-kpi-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.kpi-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-box.green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22C55E;
+}
+
+.kpi-icon-box.blue {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3B82F6;
+}
+
+.kpi-icon-box.purple {
+  background: rgba(168, 85, 247, 0.12);
+  color: #A855F7;
+}
+
+.kpi-icon-box.amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+}
+
+.kpi-icon-box.emerald {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+}
+
+.kpi-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94A3B8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.kpi-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.kpi-trend.up {
+  color: #22C55E;
+}
+
+.kpi-trend.down {
+  color: #EF4444;
+}
+
+.kpi-trend.neutral {
+  color: #94A3B8;
+}
+
+.kpi-period-label {
+  font-size: 10px;
+  color: #64748B;
+  font-weight: 400;
+  margin-left: 3px;
+}
+
+.kpi-action-link {
+  background: none;
+  border: none;
+  color: #FFD000;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.kpi-action-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.kpi-subtext {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+/* Sparkline canvas / SVG */
+.kpi-sparkline {
+  width: 60px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+/* ── Middle Row: Business Performance + Booking Status ──────────────────────── */
+.overview-middle-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.overview-card {
+  background: #0B0F19;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.overview-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.overview-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.overview-info-icon {
+  color: #64748B;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.overview-info-icon:hover {
+  color: #CBD5E1;
+}
+
+.chart-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.chart-legend-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.legend-square-yellow {
+  width: 9px;
+  height: 9px;
+  background: #FFD000;
+  border-radius: 2px;
+}
+
+.legend-circle-blue {
+  width: 9px;
+  height: 9px;
+  background: #3B82F6;
+  border-radius: 50%;
+}
+
+.overview-select {
+  background: #0E131F;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.overview-select option {
+  background: #0E131F;
+  color: #FFFFFF;
+}
+
+/* Business Performance Chart Container */
+.business-chart-wrapper {
+  width: 100%;
+  height: 260px;
+  position: relative;
+  flex: 1;
+  min-height: 220px;
+}
+
+/* Auto-grouping badge shown beneath card header */
+.chart-auto-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748B;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 2px 10px;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+/* Empty state for chart when no data in range */
+.chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* View selector group (label + select) */
+.chart-view-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-view-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+/* Custom Tooltip */
+.overview-chart-tooltip {
+  background: #0D121F;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #E2E8F0;
+  pointer-events: none;
+  min-width: 130px;
+}
+
+.tooltip-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 3px;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tooltip-row strong {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.tooltip-avg {
+  font-size: 10px;
+  color: #94A3B8;
+  margin-top: 2px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 3px;
+}
+
+/* ── Booking Status (Donut & Breakdown) ─────────────────────────────────────── */
+.booking-status-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.donut-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 180px;
+}
+
+.donut-chart-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-center-sub {
+  font-size: 9px;
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.donut-center-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.status-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.status-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  gap: 8px;
+}
+
+.status-name-with-dot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-count-pct {
+  color: #E2E8F0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Conversion Rate Section */
+.conversion-rate-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.conversion-rate-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.conversion-rate-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.conversion-rate-sub {
+  font-size: 10px;
+  color: #64748B;
+  margin: 0;
+}
+
+/* ── Bottom Row: Top Performing Parks + Recent Bookings ─────────────────────── */
+.overview-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.overview-table-card {
+  background: #0B0F19;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.card-action-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFD000;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  transition: opacity 0.2s ease;
+}
+
+.card-action-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Compact Dark Analytics Tables */
+.overview-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 440px;
+}
+
+.overview-table th {
+  text-align: left;
+  padding: 10px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748B;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.overview-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: #E2E8F0;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.overview-table tr:last-child td {
+  border-bottom: none;
+}
+
+.overview-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Park Cell */
+.park-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.park-icon-sparkle {
+  color: #FFD000;
+}
+
+.park-icon-globe {
+  color: #38BDF8;
+}
+
+.park-icon-castle {
+  color: #C084FC;
+}
+
+.park-icon-crown {
+  color: #F59E0B;
+}
+
+.park-icon-thunder {
+  color: #10B981;
+}
+
+/* Revenue with Progress bar */
+.revenue-bar-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.revenue-bar-track {
+  width: 45px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.revenue-bar-fill {
+  height: 100%;
+  background: #22C55E;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Table Status Badges */
+.overview-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.overview-status-pill.verified {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22C55E;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.overview-status-pill.confirmed {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.overview-status-pill.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.overview-status-pill.cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.overview-booking-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #94A3B8;
+  font-size: 11px;
+}
+
+.overview-customer-name {
+  font-weight: 500;
+  color: #F1F5F9;
+}
+
+.overview-card-footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.overview-empty-state {
+  text-align: center;
+  padding: 30px 10px;
+  color: #64748B;
+  font-size: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN BREAKPOINTS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Large Tablets / Small Desktops (max-width: 1200px) */
+@media (max-width: 1200px) {
+  .overview-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .overview-middle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablets (max-width: 900px) */
+@media (max-width: 900px) {
+  .overview-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .overview-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+  .overview-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .overview-header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Mobile Devices (max-width: 600px) */
+@media (max-width: 600px) {
+  .overview-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .overview-filter-bar {
+    overflow-x: auto;
+    padding-bottom: 6px;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+  .overview-filter-btn {
+    flex-shrink: 0;
+  }
+  .donut-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+  .status-legend-list {
+    width: 100%;
+  }
+  .chart-header-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

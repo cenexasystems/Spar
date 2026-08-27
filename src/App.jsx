@@ -77,12 +77,14 @@ function App() {
         />
         <SpinWheel isOpen={isSpinWheelOpen} onClose={() => setIsSpinWheelOpen(false)} />
         {!isPageLoaded && <PageLoader onComplete={() => setIsPageLoaded(true)} />}
-        <Navbar 
-          onOpenSupport={() => setIsSupportOpen(true)} 
-          onOpenProfile={() => setIsProfileOpen(true)} 
-          onOpenGame={() => setIsSpinWheelOpen(true)}
-          isAdmin={isAdminRoute}
-        />
+        {!isAdminRoute && (
+          <Navbar 
+            onOpenSupport={() => setIsSupportOpen(true)} 
+            onOpenProfile={() => setIsProfileOpen(true)} 
+            onOpenGame={() => setIsSpinWheelOpen(true)}
+            isAdmin={false}
+          />
+        )}
         
         <Routes>
           <Route path="/admin/*" element={<AdminDashboard onBack={() => navigate('/')} />} />
