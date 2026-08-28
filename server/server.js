@@ -40,13 +40,56 @@ app.use(cors({
 
 app.use(express.json());
 
-// Serve uploaded files statically
+const Booking = require('./models/Booking');
+
+// Serve uploaded files statically with MongoDB fallback for ephemeral cloud environments
 const fs = require('fs');
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.resolve(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(uploadsDir, {
+  maxAge: '1d',
+  fallthrough: true
+}));
+
+// Fallback for /uploads/:filename if the file was deleted due to cloud restart (e.g. Render)
+app.get('/uploads/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const booking = await Booking.findOne({
+      $or: [
+        { paymentScreenshot: new RegExp(filename, 'i') },
+        { paymentScreenshot: `/uploads/${filename}` },
+        { paymentScreenshot: `uploads/${filename}` },
+        { paymentScreenshot: filename }
+      ]
+    });
+    if (booking) {
+      if (booking.paymentScreenshotData && booking.paymentScreenshotData.startsWith('data:')) {
+        const parts = booking.paymentScreenshotData.split(',');
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : (booking.paymentScreenshotMime || 'image/jpeg');
+        const imgBuffer = Buffer.from(parts[1], 'base64');
+        res.set('Content-Type', mime);
+        res.set('Cache-Control', 'public, max-age=86400');
+        return res.send(imgBuffer);
+      }
+      if (booking.paymentScreenshot && booking.paymentScreenshot.startsWith('data:')) {
+        const parts = booking.paymentScreenshot.split(',');
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : (booking.paymentScreenshotMime || 'image/jpeg');
+        const imgBuffer = Buffer.from(parts[1], 'base64');
+        res.set('Content-Type', mime);
+        res.set('Cache-Control', 'public, max-age=86400');
+        return res.send(imgBuffer);
+      }
+    }
+    return res.status(404).send('Payment proof image not found');
+  } catch (err) {
+    return res.status(404).send('Payment proof image not found');
+  }
+});
 
 
 // Routes

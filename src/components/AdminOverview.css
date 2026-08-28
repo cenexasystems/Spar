@@ -642,29 +642,29 @@
 .booking-status-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   flex: 1;
   justify-content: space-between;
 }
 
+/* Row: donut on left, legend on right */
 .donut-layout {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 180px;
+  justify-content: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
 }
 
+/* The donut container must be position:relative so the centered text overlay works */
 .donut-chart-container {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 160px;
+  height: 160px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
+/* Center overlay — absolutely positioned inside the ring */
 .donut-center-label {
   position: absolute;
   top: 50%;
@@ -676,46 +676,54 @@
   justify-content: center;
   text-align: center;
   pointer-events: none;
-}
-
-.donut-center-sub {
-  font-size: 9px;
-  font-weight: 600;
-  color: #94A3B8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0;
+  width: 96px;           /* narrower than inner radius × 2 = 104px, stays inside ring */
+  gap: 2px;
 }
 
 .donut-center-val {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   color: #FFFFFF;
-  margin: 0;
   line-height: 1.1;
+  margin: 0;
 }
 
+.donut-center-sub {
+  font-size: 8px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Legend list — right of the donut */
 .status-legend-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
+  min-width: 130px;
 }
 
 .status-legend-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   gap: 8px;
+  min-width: 0;
 }
 
 .status-name-with-dot {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   color: #94A3B8;
   font-weight: 500;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .status-dot {
@@ -729,14 +737,15 @@
   color: #E2E8F0;
   font-weight: 600;
   white-space: nowrap;
+  margin-left: 4px;
 }
 
 /* Conversion Rate Section */
 .conversion-rate-box {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-top: 12px;
+  gap: 3px;
+  padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -750,7 +759,7 @@
 }
 
 .conversion-rate-value {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: #FFFFFF;
   margin: 0;
@@ -958,8 +967,119 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   RESPONSIVE DESIGN BREAKPOINTS
+   RESPONSIVE DESIGN BREAKPOINTS & MOBILE CARD VIEWS
    ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Default Desktop/Mobile visibility */
+.mobile-only-card-list {
+  display: none;
+}
+
+.desktop-only-table {
+  display: block;
+}
+
+.overview-mobile-park-card,
+.overview-mobile-booking-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.overview-mobile-park-card:hover,
+.overview-mobile-booking-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(0, 209, 255, 0.2);
+}
+
+.booking-mobile-top,
+.park-mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Custom Range Popover Mobile Fix */
+.custom-range-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: #0E131F;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 280px;
+  max-width: 90vw;
+}
+
+.custom-range-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.custom-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-range-field label {
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.custom-range-input {
+  background: #07090E;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #FFFFFF;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+}
+
+.custom-range-input:focus {
+  border-color: #00D1FF;
+}
+
+.custom-range-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.custom-range-cancel,
+.custom-range-apply {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+
+.custom-range-cancel {
+  background: transparent;
+  color: #94A3B8;
+}
+
+.custom-range-apply {
+  background: #00D1FF;
+  color: #000;
+}
 
 /* Large Tablets / Small Desktops (max-width: 1200px) */
 @media (max-width: 1200px) {
@@ -989,30 +1109,130 @@
   }
 }
 
+/* Mobile Devices (max-width: 768px) */
+@media (max-width: 768px) {
+  .desktop-only-table {
+    display: none !important;
+  }
+
+  .mobile-only-card-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
 /* Mobile Devices (max-width: 600px) */
 @media (max-width: 600px) {
-  .overview-kpi-grid {
-    grid-template-columns: 1fr;
+  .overview-container {
+    gap: 16px;
   }
+
+  .overview-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .overview-kpi-card {
+    padding: 12px 10px;
+  }
+
+  .kpi-icon-box {
+    width: 32px;
+    height: 32px;
+  }
+
+  .kpi-label {
+    font-size: 9px;
+  }
+
+  .kpi-value {
+    font-size: 16px;
+  }
+
+  .kpi-trend {
+    font-size: 10px;
+  }
+
+  .kpi-sparkline {
+    width: 44px;
+    height: 16px;
+  }
+
   .overview-filter-bar {
     overflow-x: auto;
     padding-bottom: 6px;
     flex-wrap: nowrap;
     width: 100%;
+    -webkit-overflow-scrolling: touch;
   }
+
   .overview-filter-btn {
     flex-shrink: 0;
+    padding: 7px 12px;
+    font-size: 11px;
   }
+
   .donut-layout {
     flex-direction: column;
     align-items: center;
+    gap: 16px;
   }
+
+  .donut-chart-container {
+    width: 150px;
+    height: 150px;
+  }
+
   .status-legend-list {
     width: 100%;
+    min-width: unset;
   }
+
   .chart-header-controls {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
+
+  .business-chart-wrapper {
+    height: 220px;
+    min-height: 180px;
+  }
+
+  .overview-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .overview-middle-grid,
+  .overview-bottom-grid {
+    grid-template-columns: 1fr;
+  }
 }
+
+@media (max-width: 400px) {
+  .overview-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .kpi-value {
+    font-size: 18px;
+  }
+
+  .overview-title {
+    font-size: 22px;
+  }
+
+  .overview-header-right {
+    gap: 8px;
+  }
+
+  .overview-date-pill span {
+    display: none; /* Hide date text on tiny screens, keep icon */
+  }
+}
+
+

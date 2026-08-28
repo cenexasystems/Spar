@@ -27,8 +27,8 @@ main, section, .hero-container, .parks-section, .reviews-section, .flappy-game-s
 }
 
 html, body {
-  background: transparent;
-  background-color: transparent;
+  background: #0F111A;
+  background-color: #0F111A;
   color: var(--text-main);
   font-family: 'Outfit', sans-serif;
   overflow-x: hidden;

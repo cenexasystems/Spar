@@ -75,8 +75,7 @@ function App() {
           onClose={() => setIsProfileOpen(false)} 
           onOpenClaim={() => setIsSpinWheelOpen(true)}
         />
-        <SpinWheel isOpen={isSpinWheelOpen} onClose={() => setIsSpinWheelOpen(false)} />
-        {!isPageLoaded && <PageLoader onComplete={() => setIsPageLoaded(true)} />}
+        {!isAdminRoute && !isPageLoaded && <PageLoader onComplete={() => setIsPageLoaded(true)} />}
         {!isAdminRoute && (
           <Navbar 
             onOpenSupport={() => setIsSupportOpen(true)} 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, Users, Ticket, Clock, CheckCircle, 
   TrendingUp, TrendingDown, Bell, Info, ArrowRight,
@@ -128,7 +128,17 @@ const cleanMax = (maxVal) => {
 };
 
 // Determine how many X-axis ticks to show to prevent overlap
-const calcTickInterval = (dataLength, granularity) => {
+const calcTickInterval = (dataLength, granularity, isMobile = false) => {
+  if (isMobile) {
+    if (granularity === 'monthly') return 0;
+    if (granularity === 'weekly') return Math.max(1, Math.ceil(dataLength / 4) - 1);
+    // daily on mobile (show max 4-5 ticks)
+    if (dataLength <= 4) return 0;
+    if (dataLength <= 7) return 1;
+    if (dataLength <= 14) return 2;
+    if (dataLength <= 31) return 5;
+    return Math.ceil(dataLength / 4) - 1;
+  }
   if (granularity === 'monthly') return 0; // always show all months
   if (granularity === 'weekly') {
     if (dataLength <= 12) return 0;
@@ -151,6 +161,17 @@ const AdminOverview = ({
   initials = 'AG',
   onNavigateTab = () => {}
 }) => {
+  // ── Mobile screen detection ───────────────────────────────────────────────
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // ── Filter State ──────────────────────────────────────────────────────────
   const [activeFilter, setActiveFilter] = useState('7days'); // 'today' | '7days' | '30days' | 'month' | 'custom'
   const [customFrom, setCustomFrom] = useState('');
@@ -418,7 +439,7 @@ const AdminOverview = ({
     const bookingsYMax = Math.max(cleanMax(maxBookings), 5); // At least 5 for readability
 
     // Step 5: Compute X-axis tick interval to prevent congestion
-    const xTickInterval = calcTickInterval(chartData.length, effectiveGranularity);
+    const xTickInterval = calcTickInterval(chartData.length, effectiveGranularity, isMobile);
 
     // Expose effective granularity & axis config for rendering
     const chartMeta = { effectiveGranularity, revenueYMax, bookingsYMax, xTickInterval };
@@ -562,7 +583,7 @@ const AdminOverview = ({
       maxParkRevenue,
       displayBookings
     };
-  }, [bookings, revenueEntries, users, parks, startDate, endDate, prevStartDate, prevEndDate, viewMode]);
+  }, [bookings, revenueEntries, users, parks, startDate, endDate, prevStartDate, prevEndDate, viewMode, isMobile]);
 
   // Handle custom date apply
   const handleApplyCustomDate = () => {
@@ -678,38 +699,49 @@ const AdminOverview = ({
           <span>Custom Range</span>
         </button>
 
-        {/* Custom Date Range Popover */}
+        {/* Custom Range Popover */}
         {showCustomPopover && (
-          <div className="overview-custom-date-popover">
-            <div className="custom-date-input-group">
-              <label>From</label>
-              <input
-                type="date"
-                className="custom-date-field"
-                value={customFrom}
-                onChange={e => setCustomFrom(e.target.value)}
-              />
+          <div className="custom-range-popover">
+            <div className="custom-range-inputs">
+              <div className="custom-range-field">
+                <label>From Date</label>
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="custom-range-input"
+                />
+              </div>
+              <div className="custom-range-field">
+                <label>To Date</label>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="custom-range-input"
+                />
+              </div>
             </div>
-            <div className="custom-date-input-group">
-              <label>To</label>
-              <input
-                type="date"
-                className="custom-date-field"
-                value={customTo}
-                onChange={e => setCustomTo(e.target.value)}
-              />
+            <div className="custom-range-actions">
+              <button
+                className="custom-range-cancel"
+                onClick={() => setShowCustomPopover(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="custom-range-apply"
+                onClick={handleApplyCustomDate}
+                disabled={!customFrom || !customTo}
+              >
+                Apply Range
+              </button>
             </div>
-            <button className="custom-date-apply-btn" onClick={handleApplyCustomDate}>
-              APPLY
-            </button>
-            <button className="custom-date-cancel-btn" onClick={() => setShowCustomPopover(false)}>
-              ✕
-            </button>
           </div>
         )}
       </div>
 
-      {/* ── 3. Top 5 KPI Cards ──────────────────────────────────────────────── */}
+      {/* ── 3. Top 5 KPI Cards (Ordered: Revenue, Bookings, Pending, Verified, Users) ── */}
       <div className="overview-kpi-grid">
         {/* Card 1: Total Revenue */}
         <div className="overview-kpi-card">
@@ -726,7 +758,7 @@ const AdminOverview = ({
             <div className={`kpi-trend ${dashboardData.revTrend.dir}`}>
               {dashboardData.revTrend.dir === 'up' ? '↑' : dashboardData.revTrend.dir === 'down' ? '↓' : '•'}
               <span>{dashboardData.revTrend.val}%</span>
-              <span className="kpi-period-label">vs previous {periodDays} days</span>
+              <span className="kpi-period-label">vs prev {periodDays}d</span>
             </div>
             <MiniSparkline data={dashboardData.revenueSparkline} color="#22C55E" />
           </div>
@@ -747,34 +779,13 @@ const AdminOverview = ({
             <div className={`kpi-trend ${dashboardData.bookTrend.dir}`}>
               {dashboardData.bookTrend.dir === 'up' ? '↑' : dashboardData.bookTrend.dir === 'down' ? '↓' : '•'}
               <span>{dashboardData.bookTrend.val}%</span>
-              <span className="kpi-period-label">vs previous {periodDays} days</span>
+              <span className="kpi-period-label">vs prev {periodDays}d</span>
             </div>
             <MiniSparkline data={dashboardData.bookingSparkline} color="#3B82F6" />
           </div>
         </div>
 
-        {/* Card 3: Total Users */}
-        <div className="overview-kpi-card">
-          <div className="kpi-card-header">
-            <div className="kpi-icon-box purple">
-              <Users size={18} />
-            </div>
-            <div className="kpi-header-text">
-              <p className="kpi-label">TOTAL USERS</p>
-              <h3 className="kpi-value">{dashboardData.currentUsers}</h3>
-            </div>
-          </div>
-          <div className="kpi-card-footer">
-            <div className={`kpi-trend ${dashboardData.userTrend.dir}`}>
-              {dashboardData.userTrend.dir === 'up' ? '↑' : dashboardData.userTrend.dir === 'down' ? '↓' : '•'}
-              <span>{dashboardData.userTrend.val}%</span>
-              <span className="kpi-period-label">vs previous {periodDays} days</span>
-            </div>
-            <MiniSparkline data={dashboardData.userSparkline} color="#A855F7" />
-          </div>
-        </div>
-
-        {/* Card 4: Pending Verification */}
+        {/* Card 3: Pending Verification */}
         <div className="overview-kpi-card">
           <div className="kpi-card-header">
             <div className="kpi-icon-box amber">
@@ -795,7 +806,7 @@ const AdminOverview = ({
           </div>
         </div>
 
-        {/* Card 5: Verified Bookings */}
+        {/* Card 4: Verified Bookings */}
         <div className="overview-kpi-card">
           <div className="kpi-card-header">
             <div className="kpi-icon-box emerald">
@@ -810,6 +821,27 @@ const AdminOverview = ({
             <span className="kpi-subtext">This period</span>
           </div>
         </div>
+
+        {/* Card 5: Total Users */}
+        <div className="overview-kpi-card">
+          <div className="kpi-card-header">
+            <div className="kpi-icon-box purple">
+              <Users size={18} />
+            </div>
+            <div className="kpi-header-text">
+              <p className="kpi-label">TOTAL USERS</p>
+              <h3 className="kpi-value">{dashboardData.currentUsers}</h3>
+            </div>
+          </div>
+          <div className="kpi-card-footer">
+            <div className={`kpi-trend ${dashboardData.userTrend.dir}`}>
+              {dashboardData.userTrend.dir === 'up' ? '↑' : dashboardData.userTrend.dir === 'down' ? '↓' : '•'}
+              <span>{dashboardData.userTrend.val}%</span>
+              <span className="kpi-period-label">vs prev {periodDays}d</span>
+            </div>
+            <MiniSparkline data={dashboardData.userSparkline} color="#A855F7" />
+          </div>
+        </div>
       </div>
 
       {/* ── 4. Middle Section: Business Performance & Booking Status ────────── */}
@@ -819,33 +851,28 @@ const AdminOverview = ({
           <div className="overview-card-header">
             <div className="card-title-group">
               <h3 className="overview-card-title">Business Performance</h3>
-              <Info
-                size={14}
-                className="overview-info-icon"
-                title={`Showing ${dashboardData.chartMeta?.effectiveGranularity ?? 'daily'} data. Revenue bars (left axis) and Booking line (right axis).`}
-              />
+              <Info size={14} className="overview-info-icon" title="Revenue (bars) and Bookings volume (line) over time" />
             </div>
 
             <div className="chart-header-controls">
-              <div className="chart-legend-inline">
+              {/* Legend */}
+              <div className="chart-legend-group">
                 <div className="legend-item">
-                  <span className="legend-square-yellow" />
+                  <span className="legend-square-yellow" style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: '#FFD000' }} />
                   <span>Revenue (₹)</span>
                 </div>
                 <div className="legend-item">
-                  <span className="legend-circle-blue" />
+                  <span className="legend-circle-blue" style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#3B82F6' }} />
                   <span>Bookings</span>
                 </div>
               </div>
 
-              {/* View selector: Auto + manual overrides */}
-              <div className="chart-view-selector">
-                <span className="chart-view-label">View</span>
+              {/* Granularity Selector */}
+              <div className="chart-granularity-selector">
                 <select
-                  className="overview-select"
                   value={viewMode}
-                  onChange={e => setViewMode(e.target.value)}
-                  title="Chart grouping mode"
+                  onChange={(e) => setViewMode(e.target.value)}
+                  className="granularity-select"
                 >
                   <option value="auto">Auto</option>
                   <option value="daily">Daily</option>
@@ -866,7 +893,7 @@ const AdminOverview = ({
           )}
 
           {/* Empty state */}
-          {dashboardData.chartData.length === 0 || dashboardData.currentBookings === 0 && dashboardData.currentRevenue === 0 ? (
+          {dashboardData.chartData.length === 0 || (dashboardData.currentBookings === 0 && dashboardData.currentRevenue === 0) ? (
             <div className="chart-empty-state">
               <span style={{ fontSize: 28, opacity: 0.25 }}>📊</span>
               <p>No data for this period</p>
@@ -953,7 +980,7 @@ const AdminOverview = ({
 
           <div className="booking-status-body">
             <div className="donut-layout">
-              {/* Donut Chart with Center Text */}
+              {/* Donut Chart with Centered Total */}
               <div className="donut-chart-container">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -961,11 +988,12 @@ const AdminOverview = ({
                       data={dashboardData.renderedDonut}
                       cx="50%"
                       cy="50%"
-                      innerRadius={48}
-                      outerRadius={68}
-                      paddingAngle={3}
+                      innerRadius={52}
+                      outerRadius={70}
+                      paddingAngle={dashboardData.totalDonutBookings > 0 ? 3 : 0}
                       dataKey="value"
                       stroke="none"
+                      isAnimationActive={true}
                     >
                       {dashboardData.renderedDonut.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -973,54 +1001,31 @@ const AdminOverview = ({
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
-
+                {/* Center overlay: TOTAL BOOKINGS + count only */}
                 <div className="donut-center-label">
-                  <span className="donut-center-sub">Total Bookings</span>
                   <span className="donut-center-val">{dashboardData.totalDonutBookings}</span>
+                  <span className="donut-center-sub">TOTAL BOOKINGS</span>
                 </div>
               </div>
 
-              {/* Status List & Percentages */}
+              {/* Status Legend — outside the chart */}
               <div className="status-legend-list">
-                <div className="status-legend-row">
-                  <div className="status-name-with-dot">
-                    <span className="status-dot" style={{ background: '#22C55E' }} />
-                    <span>Verified</span>
+                {[
+                  { label: 'Verified',  color: '#22C55E', count: dashboardData.statusCounts.verified },
+                  { label: 'Confirmed', color: '#3B82F6', count: dashboardData.statusCounts.confirmed },
+                  { label: 'Pending',   color: '#F97316', count: dashboardData.statusCounts.pending },
+                  { label: 'Cancelled', color: '#EF4444', count: dashboardData.statusCounts.cancelled },
+                ].map(({ label, color, count }) => (
+                  <div className="status-legend-row" key={label}>
+                    <div className="status-name-with-dot">
+                      <span className="status-dot" style={{ background: color }} />
+                      <span>{label}</span>
+                    </div>
+                    <span className="status-count-pct">
+                      {count} ({dashboardData.getStatusPct(count)})
+                    </span>
                   </div>
-                  <span className="status-count-pct">
-                    {dashboardData.statusCounts.verified} ({dashboardData.getStatusPct(dashboardData.statusCounts.verified)})
-                  </span>
-                </div>
-
-                <div className="status-legend-row">
-                  <div className="status-name-with-dot">
-                    <span className="status-dot" style={{ background: '#F97316' }} />
-                    <span>Pending</span>
-                  </div>
-                  <span className="status-count-pct">
-                    {dashboardData.statusCounts.pending} ({dashboardData.getStatusPct(dashboardData.statusCounts.pending)})
-                  </span>
-                </div>
-
-                <div className="status-legend-row">
-                  <div className="status-name-with-dot">
-                    <span className="status-dot" style={{ background: '#3B82F6' }} />
-                    <span>Confirmed</span>
-                  </div>
-                  <span className="status-count-pct">
-                    {dashboardData.statusCounts.confirmed} ({dashboardData.getStatusPct(dashboardData.statusCounts.confirmed)})
-                  </span>
-                </div>
-
-                <div className="status-legend-row">
-                  <div className="status-name-with-dot">
-                    <span className="status-dot" style={{ background: '#EF4444' }} />
-                    <span>Cancelled</span>
-                  </div>
-                  <span className="status-count-pct">
-                    {dashboardData.statusCounts.cancelled} ({dashboardData.getStatusPct(dashboardData.statusCounts.cancelled)})
-                  </span>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -1028,7 +1033,7 @@ const AdminOverview = ({
             <div className="conversion-rate-box">
               <p className="conversion-rate-title">Conversion Rate</p>
               <h4 className="conversion-rate-value">{dashboardData.conversionRate}%</h4>
-              <p className="conversion-rate-sub">(Verified ÷ Total Bookings)</p>
+              <p className="conversion-rate-sub">(Verified + Confirmed ÷ Total Bookings)</p>
             </div>
           </div>
         </div>
@@ -1045,7 +1050,8 @@ const AdminOverview = ({
             </div>
           </div>
 
-          <div className="overview-table-responsive">
+          {/* Desktop Table */}
+          <div className="overview-table-responsive desktop-only-table">
             <table className="overview-table">
               <thead>
                 <tr>
@@ -1086,10 +1092,34 @@ const AdminOverview = ({
             </table>
           </div>
 
-          <div className="overview-card-footer">
-            <button className="card-action-link" onClick={() => onNavigateTab('parks')}>
-              View All Parks →
-            </button>
+          {/* Mobile Stacked Park Cards */}
+          <div className="overview-mobile-park-cards mobile-only-card-list">
+            {dashboardData.sortedParks.map((park, idx) => {
+              const fillPct = dashboardData.maxParkRevenue > 0
+                ? Math.max(8, (park.revenue / dashboardData.maxParkRevenue) * 100)
+                : 0;
+
+              return (
+                <div key={idx} className="overview-mobile-park-card">
+                  <div className="park-mobile-header">
+                    <div className="park-name-cell">
+                      {getParkIcon(park.name)}
+                      <span style={{ fontWeight: '700', fontSize: '13px' }}>{park.name}</span>
+                    </div>
+                    <span className="park-mobile-rev" style={{ color: '#C7FF00', fontWeight: '800', fontSize: '13px' }}>
+                      {formatCurrency(park.revenue)}
+                    </span>
+                  </div>
+                  <div className="revenue-bar-track" style={{ marginTop: '6px', marginBottom: '8px' }}>
+                    <div className="revenue-bar-fill" style={{ width: `${fillPct}%` }} />
+                  </div>
+                  <div className="park-mobile-stats" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94A3B8' }}>
+                    <span>Bookings: <strong style={{ color: '#fff' }}>{park.bookings}</strong></span>
+                    <span>Avg Ticket: <strong style={{ color: '#fff' }}>{formatCurrency(park.avgTicket)}</strong></span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1106,40 +1136,66 @@ const AdminOverview = ({
             </button>
           </div>
 
-          <div className="overview-table-responsive">
-            {dashboardData.displayBookings.length === 0 ? (
-              <div className="overview-empty-state">No bookings found for this period.</div>
-            ) : (
-              <table className="overview-table">
-                <thead>
-                  <tr>
-                    <th>BOOKING ID</th>
-                    <th>CUSTOMER</th>
-                    <th>PARK</th>
-                    <th>DATE</th>
-                    <th>AMOUNT</th>
-                    <th>STATUS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboardData.displayBookings.map((b) => (
-                    <tr key={b.id}>
-                      <td className="overview-booking-id">{b.bookingId}</td>
-                      <td className="overview-customer-name">{b.customer}</td>
-                      <td>{b.park}</td>
-                      <td>{b.date}</td>
-                      <td>{b.amount}</td>
-                      <td>
-                        <span className={`overview-status-pill ${getStatusBadgeClass(b.status)}`}>
-                          {getStatusDisplayName(b.status)}
-                        </span>
-                      </td>
+          {dashboardData.displayBookings.length === 0 ? (
+            <div className="overview-empty-state">No bookings found for this period.</div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="overview-table-responsive desktop-only-table">
+                <table className="overview-table">
+                  <thead>
+                    <tr>
+                      <th>BOOKING ID</th>
+                      <th>CUSTOMER</th>
+                      <th>PARK</th>
+                      <th>DATE</th>
+                      <th>AMOUNT</th>
+                      <th>STATUS</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                  </thead>
+                  <tbody>
+                    {dashboardData.displayBookings.map((b) => (
+                      <tr key={b.id}>
+                        <td className="overview-booking-id">{b.bookingId}</td>
+                        <td className="overview-customer-name">{b.customer}</td>
+                        <td>{b.park}</td>
+                        <td>{b.date}</td>
+                        <td>{b.amount}</td>
+                        <td>
+                          <span className={`overview-status-pill ${getStatusBadgeClass(b.status)}`}>
+                            {getStatusDisplayName(b.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Stacked Bookings Cards */}
+              <div className="overview-mobile-booking-cards mobile-only-card-list">
+                {dashboardData.displayBookings.map((b) => (
+                  <div key={b.id} className="overview-mobile-booking-card">
+                    <div className="booking-mobile-top">
+                      <span className="overview-booking-id" style={{ color: '#00D1FF', fontWeight: 'bold' }}>{b.bookingId}</span>
+                      <span className={`overview-status-pill ${getStatusBadgeClass(b.status)}`}>
+                        {getStatusDisplayName(b.status)}
+                      </span>
+                    </div>
+                    <div className="booking-mobile-main" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#fff', fontSize: '13px' }}>{b.customer}</div>
+                        <div style={{ fontSize: '11px', color: '#94A3B8' }}>{b.park} • {b.date}</div>
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#C7FF00' }}>
+                        {b.amount}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

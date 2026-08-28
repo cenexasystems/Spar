@@ -375,9 +375,14 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
     setCouponError('');
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const branch = isWonderla ? (formData.wonderlaLocation || 'chennai') : (selectedPark?.location || 'main');
       const response = await axios.post(`${API_URL}/coupons/validate`, {
         code,
-        parkId: selectedPark?.name || 'all'
+        parkId: selectedPark?.name || 'all',
+        parkName: selectedPark?.name || '',
+        branchId: branch,
+        location: branch,
+        wonderlaLocation: formData.wonderlaLocation
       });
       
       const { valid, discountType, discountValue } = response.data;
@@ -865,67 +870,65 @@ const BookingModal = ({ isOpen, onClose, selectedPark }) => {
                 </div>
               </div>
 
-              {/* Wonderla Coupon Code Section */}
-              {isWonderla && (
-                <div className="coupon-code-section glass-morphism p-3 mb-4 border border-[#00D1FF]/20" style={{ borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 900, color: '#00D1FF', letterSpacing: '1.5px', display: 'block', marginBottom: '8px' }}>
-                    🏷️ HAVE A COUPON CODE?
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      value={couponInput}
-                      onChange={(e) => {
-                        setCouponInput(e.target.value);
-                        setCouponError('');
-                      }}
-                      placeholder="Enter coupon code (e.g. SPAR20, WDL10)"
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        background: 'rgba(0,0,0,0.3)',
-                        border: '1.5px solid rgba(255,255,255,0.1)',
-                        color: '#fff',
-                        fontSize: '13px',
-                        outline: 'none'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      style={{
-                        padding: '8px 16px',
-                        background: '#00D1FF',
-                        color: '#000',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: '800',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      APPLY
+              {/* Coupon Code Section - Available for all amusement parks */}
+              <div className="coupon-code-section glass-morphism p-3 mb-4 border border-[#00D1FF]/20" style={{ borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)' }}>
+                <label style={{ fontSize: '11px', fontWeight: 900, color: '#00D1FF', letterSpacing: '1.5px', display: 'block', marginBottom: '8px' }}>
+                  🏷️ HAVE A COUPON CODE?
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value);
+                      setCouponError('');
+                    }}
+                    placeholder={`Enter ${selectedPark?.name || ''} coupon code (e.g. SPAR20)`}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(0,0,0,0.3)',
+                      border: '1.5px solid rgba(255,255,255,0.1)',
+                      color: '#fff',
+                      fontSize: '13px',
+                      outline: 'none'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    style={{
+                      padding: '8px 16px',
+                      background: '#00D1FF',
+                      color: '#000',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    APPLY
+                  </button>
+                </div>
+                {appliedCoupon && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+                    <p style={{ color: '#6BCB77', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      ✅ {appliedCoupon.code} applied! You save ₹{isWonderla ? totals.couponDiscount : nonWonderlaCouponDiscount}
+                    </p>
+                    <button onClick={() => { setAppliedCoupon(null); setCouponInput(''); }} style={{ background: 'none', border: 'none', color: '#FF6B6B', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                      ✕ Remove
                     </button>
                   </div>
-                  {appliedCoupon && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-                      <p style={{ color: '#6BCB77', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        ✅ {appliedCoupon.code} applied! You save ₹{totals.couponDiscount}
-                      </p>
-                      <button onClick={() => { setAppliedCoupon(null); setCouponInput(''); }} style={{ background: 'none', border: 'none', color: '#FF6B6B', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                        ✕ Remove
-                      </button>
-                    </div>
-                  )}
-                  {couponError && (
-                    <p style={{ color: '#FF6B6B', fontSize: '12px', fontWeight: 'bold', marginTop: '8px' }}>
-                      ❌ {couponError}
-                    </p>
-                  )}
-                </div>
-              )}
+                )}
+                {couponError && (
+                  <p style={{ color: '#FF6B6B', fontSize: '12px', fontWeight: 'bold', marginTop: '8px' }}>
+                    ❌ {couponError}
+                  </p>
+                )}
+              </div>
 
               {/* SPAR COINS */}
               {user && (

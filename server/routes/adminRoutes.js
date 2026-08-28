@@ -12,6 +12,7 @@ const {
   deletePark,
   createCoupon,
   getCoupons,
+  toggleCouponStatus,
   deleteCoupon,
   getCouponUsage,
   updateVisitorCategories,
@@ -50,6 +51,7 @@ router.post('/platform-settings', protect, admin, updatePlatformSettings);
 // Coupons
 router.post('/coupons', protect, admin, createCoupon);
 router.get('/coupons/:parkId', protect, admin, getCoupons);
+router.put('/coupons/:id/toggle', protect, admin, toggleCouponStatus);
 router.delete('/coupons/:id', protect, admin, deleteCoupon);
 router.get('/coupons/:code/usage', protect, admin, getCouponUsage);
 

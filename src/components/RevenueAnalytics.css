@@ -706,12 +706,72 @@
   font-size: 13px;
 }
 
+/* ── Mobile Daily Cards ────────────────────────────────────────────────── */
+.mobile-only-card-list {
+  display: none;
+}
+
+.desktop-only-table {
+  display: block;
+}
+
+.ra-mobile-daily-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ra-mobile-daily-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ra-mobile-daily-date {
+  font-weight: 600;
+  font-size: 13px;
+  color: #F1F5F9;
+}
+
+.ra-mobile-daily-rev {
+  font-weight: 800;
+  font-size: 13px;
+  color: #C7FF00;
+}
+
+.ra-mobile-daily-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: #94A3B8;
+}
+
+.ra-mobile-daily-stats strong {
+  color: #FFFFFF;
+}
+
 /* ── Full Responsive Design ───────────────────────────────────────────── */
 
 /* Laptops & Small Desktops (1024px - 1439px) */
 @media (max-width: 1400px) {
   .ra-kpi-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-only-table {
+    display: none !important;
+  }
+  .mobile-only-card-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
   }
 }
 
@@ -775,5 +835,61 @@
   }
   .ra-chart-card {
     padding: 16px;
+    min-height: auto;
   }
 }
+
+/* Extra small screens (320px - 390px) */
+@media (max-width: 390px) {
+  .ra-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ra-kpi-value {
+    font-size: 22px;
+  }
+
+  .ra-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ra-timeframe-select {
+    width: 100%;
+  }
+
+  /* Revenue by Park - allow horizontal scroll on tiny screens */
+  .ra-park-card-inner {
+    overflow-x: auto;
+  }
+
+  .ra-hbc-header,
+  .ra-hbc-row {
+    min-width: 320px;
+    grid-template-columns: 100px minmax(60px, 1fr) 80px 40px;
+    gap: 0 4px;
+    font-size: 11px;
+  }
+
+  .ra-hbc-park-name {
+    font-size: 11px;
+  }
+
+  .ra-chart-card {
+    padding: 12px;
+  }
+
+  .ra-table-card {
+    padding: 12px;
+  }
+
+  .ra-filters-row {
+    gap: 10px;
+  }
+
+  .ra-header-left h1 {
+    font-size: 20px;
+  }
+}
+

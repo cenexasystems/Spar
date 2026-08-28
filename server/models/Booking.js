@@ -41,7 +41,9 @@ const bookingSchema = mongoose.Schema(
       enum: ['pending', 'verified', 'completed', 'cancelled', 'rejected', 'ticketsent'] 
     },
     transactionId: { type: String, default: '' },
-    paymentScreenshot: { type: String, default: '' },  // Path to uploaded screenshot
+    paymentScreenshot: { type: String, default: '' },      // URL or relative path
+    paymentScreenshotData: { type: String, default: '' },  // Permanent Base64 Data URI stored in MongoDB
+    paymentScreenshotMime: { type: String, default: 'image/jpeg' },
     adminNotes: { type: String, default: '' },
     verifiedAt: { type: Date },
     completedAt: { type: Date }

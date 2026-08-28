@@ -391,37 +391,400 @@
   .parks-list-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 900px) {
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ADMIN MOBILE HEADER & DRAWER STYLES (<1024px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.admin-mobile-topbar {
+  display: none; /* Hidden on desktop */
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: #0A0D16;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 999;
+  box-sizing: border-box;
+}
+
+.admin-mobile-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.admin-mobile-menu-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.admin-mobile-brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.mobile-brand-spark {
+  color: #C7FF00;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.mobile-brand-ops {
+  color: #94A3B8;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.admin-mobile-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-mobile-tab-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #00D1FF;
+  background: rgba(0, 209, 255, 0.1);
+  border: 1px solid rgba(0, 209, 255, 0.25);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.admin-mobile-pending-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #F59E0B;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-mobile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00D1FF 0%, #0077FF 100%);
+  color: #000;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Mobile Slide-out Drawer */
+.admin-mobile-drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.admin-mobile-drawer {
+  width: 280px;
+  max-width: 85vw;
+  height: 100%;
+  background: #0A0D16;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+  animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 20px 14px;
+  box-sizing: border-box;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.admin-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
+}
+
+.admin-drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.admin-drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #94A3B8;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+  min-height: 48px; /* Touch target minimum */
+}
+
+.admin-drawer-item.active {
+  background: rgba(0, 209, 255, 0.12);
+  border-color: rgba(0, 209, 255, 0.3);
+  color: #00D1FF;
+}
+
+.admin-drawer-footer {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-drawer-exit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MOBILE BOOKING & USER CARDS (<768px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.admin-mobile-booking-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.admin-mobile-booking-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(0, 209, 255, 0.25);
+}
+
+.mb-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mb-card-booking-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  color: #00D1FF;
+  letter-spacing: 0.5px;
+}
+
+.mb-card-copy-btn {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mb-copied-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: #22C55E;
+}
+
+.mb-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mb-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.mb-info-label {
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.mb-info-val {
+  color: #FFFFFF;
+  text-align: right;
+}
+
+.mb-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mb-card-actions .status-action-btn {
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile User Cards */
+.admin-mobile-user-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mu-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mu-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.mu-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #FFFFFF;
+}
+
+.mu-email {
+  font-size: 11px;
+  color: #94A3B8;
+}
+
+.mu-coins-badge {
+  background: rgba(199, 255, 0, 0.1);
+  border: 1px solid rgba(199, 255, 0, 0.3);
+  color: #C7FF00;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+.mu-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mu-info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.mu-info-row strong {
+  color: #FFFFFF;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE LAYOUT QUERIES (<1024px, <768px, <480px, <375px)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .admin-mobile-topbar {
+    display: flex;
+  }
+
+  .admin-saas-sidebar {
+    display: none; /* Hide sidebar, drawer takes over */
+  }
+
   .admin-saas-layout {
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: hidden;
   }
-  .admin-saas-sidebar {
-    width: 100%;
-    height: auto;
-    position: static;
-    padding: 16px;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .admin-sidebar-brand {
-    padding: 0 0 12px 0;
-    margin-bottom: 12px;
-  }
-  .admin-sidebar-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .admin-nav-item {
-    width: auto;
-    padding: 8px 12px;
-    font-size: 12px;
-  }
+
   .admin-saas-main {
-    padding: 20px 16px;
+    padding: 16px;
     max-height: none;
     overflow-y: visible;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 
@@ -433,3 +796,408 @@ input:checked + .slider { background-color: #C7FF00; }
 input:checked + .slider:before { transform: translateX(20px); background-color: #000; }
 .slider.round { border-radius: 24px; }
 .slider.round:before { border-radius: 50%; }
+
+/* ── Park Status Dropdown — High Contrast Fix ──────────────────────────── */
+.park-status-select {
+  width: 100%;
+  background: #0d1117 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: #ffffff !important;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+.park-status-select:focus {
+  border-color: #C7FF00;
+  box-shadow: 0 0 0 2px rgba(199, 255, 0, 0.15);
+}
+
+.park-status-select option {
+  background-color: #0d1117 !important;
+  color: #ffffff !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 2 !important;
+}
+
+.park-status-select option[value="active"] {
+  color: #4ADE80 !important;
+}
+
+.park-status-select option[value="inactive"] {
+  color: #FF6B6B !important;
+}
+
+/* General fix: All select options in the admin panel get dark backgrounds */
+.input-group select,
+.input-group select option,
+.filter-select option {
+  background-color: #0d1117 !important;
+  color: #ffffff !important;
+}
+
+/* ── Admin Content Wrapper — Prevent Overflow ──────────────────────────── */
+.admin-content {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* ── Responsive: Mobile First ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .desktop-only-table {
+    display: none !important;
+  }
+
+  .mobile-only-card-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-saas-main {
+    padding: 14px 10px;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .admin-title-wrap {
+    text-align: left !important;
+  }
+
+  .booking-filters {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  .action-btns-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .status-action-btn {
+    font-size: 11px !important;
+    padding: 6px 10px;
+  }
+
+  .parks-list-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .park-card-actions {
+    flex-direction: column;
+  }
+
+  .park-card-actions button {
+    width: 100%;
+  }
+
+  .admin-search-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .admin-search-bar input {
+    width: 100%;
+  }
+
+  .search-go-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .quick-actions-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .quick-actions-bar button {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   REDEMPTION HISTORY RESPONSIVE TABLE & CARDS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.redemption-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.redemption-history-table {
+  width: 100%;
+  min-width: 520px; /* Safe readable desktop/tablet baseline */
+  border-collapse: collapse;
+  table-layout: auto;
+  font-family: 'Outfit', sans-serif;
+}
+
+.redemption-history-table th {
+  text-align: left;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: #94A3B8 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.redemption-history-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px !important;
+  color: #E2E8F0 !important;
+  vertical-align: middle;
+}
+
+.redemption-history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.redemption-history-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.redemption-td-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #00D1FF !important;
+}
+
+.redemption-td-visitor {
+  max-width: 160px;
+}
+
+.visitor-name-truncate {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.redemption-td-date {
+  color: #94A3B8 !important;
+  font-size: 11px !important;
+  white-space: nowrap;
+}
+
+.redemption-discount-val {
+  color: #00E676;
+  font-weight: 800;
+  font-size: 13px;
+  background: rgba(0, 230, 118, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 230, 118, 0.2);
+  display: inline-block;
+}
+
+.redemption-paid-val {
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 13px;
+  display: inline-block;
+}
+
+/* Mobile Stacked Redemption Cards */
+.redemption-mobile-card-list {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.redemption-mobile-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.redemption-mobile-card:hover {
+  border-color: rgba(0, 209, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rm-card-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #00D1FF;
+  font-size: 13px;
+}
+
+.rm-card-date {
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.rm-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rm-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.rm-label {
+  color: #94A3B8;
+}
+
+.rm-val {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.rm-discount-tag {
+  color: #00E676;
+  font-weight: 800;
+  font-size: 12px;
+  background: rgba(0, 230, 118, 0.1);
+  border: 1px solid rgba(0, 230, 118, 0.25);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.rm-paid-tag {
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* Modal Responsive rules */
+.coupon-modal-card {
+  position: relative;
+  width: 95vw;
+  max-width: 760px;
+  height: 90vh;
+  max-height: 850px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 17, 26, 0.98);
+  border-radius: 24px;
+  border: 1px solid rgba(0, 209, 255, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.coupon-modal-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.coupon-badge-active {
+  background: rgba(0, 230, 118, 0.12);
+  color: #00E676;
+  border: 1px solid rgba(0, 230, 118, 0.35);
+}
+
+.coupon-badge-expired {
+  background: rgba(255, 145, 0, 0.15);
+  color: #FF9100;
+  border: 1px solid rgba(255, 145, 0, 0.4);
+}
+
+.coupon-badge-exhausted {
+  background: rgba(255, 77, 79, 0.15);
+  color: #FF4D4F;
+  border: 1px solid rgba(255, 77, 79, 0.4);
+}
+
+.coupon-badge-inactive {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9CA3AF;
+  border: 1px solid rgba(156, 163, 175, 0.35);
+}
+
+@media (max-width: 768px) {
+  .redemption-table-wrapper.desktop-only-table {
+    display: none !important;
+  }
+  .redemption-mobile-card-list.mobile-only-card-list {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .coupon-branch-grid,
+  .coupon-limit-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .redemption-summary-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .coupon-modal-card {
+    border-radius: 16px;
+    height: 95vh;
+  }
+
+  .coupon-modal-body {
+    padding: 14px 12px !important;
+  }
+}
+
+
+
+

@@ -24,6 +24,16 @@ const parkSchema = mongoose.Schema(
     operatingHours: { type: String, default: '' },
     status: { type: String, default: 'active' },
 
+    // Branches support for all amusement parks
+    branches: {
+      type: [{
+        id: { type: String, required: true },
+        name: { type: String, required: true },
+        location: { type: String, default: '' }
+      }],
+      default: []
+    },
+
     // Visitor categories (admin-configurable)
     visitorCategories: {
       type: [visitorCategorySchema],

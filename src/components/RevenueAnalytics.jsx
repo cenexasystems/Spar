@@ -77,6 +77,15 @@ const RevenueAnalytics = ({
   loading = false,
   onRefresh
 }) => {
+  // ── Mobile detection ──────────────────────────────────────────────────
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // ── Quick Filter State ──────────────────────────────────────────────────
   const [activeFilter, setActiveFilter] = useState('30days'); // 'today' | 'yesterday' | '7days' | '30days' | 'month' | 'custom'
   const [customFrom, setCustomFrom] = useState('');
@@ -528,7 +537,7 @@ const RevenueAnalytics = ({
       <div className="ra-header">
         <div className="ra-header-left">
           <div className="ra-admin-breadcrumb">
-            ADMIN PANEL / <span className="highlight-text-lime">OPERATIONS CENTER</span>
+            🎡 ADMIN PANEL / <span className="highlight-text-lime">OPERATIONS CENTER</span>
           </div>
           <h1>Revenue Analytics</h1>
           <p>Track your revenue performance and insights</p>
@@ -763,7 +772,7 @@ const RevenueAnalytics = ({
             </div>
 
             <div className="ra-chart-container">
-              <ResponsiveContainer width="100%" height={230}>
+              <ResponsiveContainer width="100%" height={isMobile ? 200 : 230}>
                 <ComposedChart data={chartDisplayData} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
                   <XAxis 
@@ -771,6 +780,7 @@ const RevenueAnalytics = ({
                     stroke="rgba(255,255,255,0.1)" 
                     tick={{ fill: '#64748B', fontSize: 10 }}
                     tickLine={false}
+                    interval={isMobile ? Math.max(1, Math.ceil(chartDisplayData.length / 5) - 1) : Math.max(0, Math.ceil(chartDisplayData.length / 10) - 1)}
                   />
                   <YAxis 
                     yAxisId="left" 
@@ -785,7 +795,7 @@ const RevenueAnalytics = ({
                     yAxisId="right" 
                     orientation="right" 
                     stroke="transparent" 
-                    tick={{ fill: '#64748B', fontSize: 10 }}
+                    tick={{ fill: '#64748B', fontSize: 10 }} 
                     allowDecimals={false}
                     domain={[0, bookingMax]}
                     ticks={bookingTicks}
@@ -885,7 +895,8 @@ const RevenueAnalytics = ({
           </div>
         </div>
 
-        <div className="ra-table-wrapper">
+        {/* Desktop Table View */}
+        <div className="ra-table-wrapper desktop-only-table">
           <table className="ra-table">
             <thead>
               <tr>
@@ -926,6 +937,27 @@ const RevenueAnalytics = ({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Stacked Daily Cards */}
+        <div className="mobile-only-card-list ra-mobile-daily-list">
+          {sortedDailyData.length === 0 ? (
+            <div className="ra-empty-state">No records found for the selected period.</div>
+          ) : (
+            sortedDailyData.map((d, i) => (
+              <div key={i} className="ra-mobile-daily-card">
+                <div className="ra-mobile-daily-top">
+                  <span className="ra-mobile-daily-date">{d.fullDate}</span>
+                  <span className="ra-mobile-daily-rev">{formatCurrency(d.revenue)}</span>
+                </div>
+                <div className="ra-mobile-daily-stats">
+                  <span>Bookings: <strong>{d.bookings}</strong></span>
+                  <span>Avg: <strong>{formatCurrency(d.avgBooking)}</strong></span>
+                  {d.discounts > 0 && <span style={{ color: '#F87171' }}>Disc: -{formatCurrency(d.discounts)}</span>}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

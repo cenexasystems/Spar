@@ -1,6 +1,7 @@
 const Booking = require('../models/Booking');
 const User = require('../models/User');
 const Coupon = require('../models/Coupon');
+const { getTodayDateString } = require('../utils/couponUtils');
 const multer = require('multer');
 const path = require('path');
 
@@ -171,6 +172,8 @@ const createOrder = async (req, res) => {
   }
 };
 
+const fs = require('fs');
+
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/payment/upload-screenshot
 // User uploads payment screenshot after paying via GPay
@@ -193,12 +196,27 @@ const uploadScreenshot = (req, res) => {
       const booking = await Booking.findById(mongoBookingId);
       if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-      booking.paymentScreenshot = `/uploads/${req.file.filename}`;
+      // Read uploaded file buffer and store Base64 Data URI for 100% cloud persistence (survives Render restarts)
+      let base64Data = '';
+      try {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          const fileBuffer = fs.readFileSync(req.file.path);
+          base64Data = `data:${req.file.mimetype || 'image/jpeg'};base64,${fileBuffer.toString('base64')}`;
+        }
+      } catch (readErr) {
+        console.warn('[uploadScreenshot] Base64 conversion notice:', readErr.message);
+      }
+
+      booking.paymentScreenshotData = base64Data;
+      booking.paymentScreenshotMime = req.file.mimetype || 'image/jpeg';
+      // Set the persistent streaming endpoint as the canonical screenshot path
+      booking.paymentScreenshot = `/api/payment/proof/${booking._id}`;
       await booking.save();
 
       return res.json({
         message: 'Screenshot uploaded successfully',
         screenshotPath: booking.paymentScreenshot,
+        screenshotData: base64Data,
         booking
       });
     } catch (error) {
@@ -206,6 +224,61 @@ const uploadScreenshot = (req, res) => {
       return res.status(500).json({ message: error.message });
     }
   });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/payment/proof/:bookingId
+// Serves image buffer directly with correct Content-Type (guaranteed persistence)
+// ─────────────────────────────────────────────────────────────────────────────
+const getPaymentProof = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).send('Booking not found');
+    }
+
+    // 1. If Base64 data URI exists in paymentScreenshotData
+    if (booking.paymentScreenshotData && booking.paymentScreenshotData.startsWith('data:')) {
+      const parts = booking.paymentScreenshotData.split(',');
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : (booking.paymentScreenshotMime || 'image/jpeg');
+      const imgBuffer = Buffer.from(parts[1], 'base64');
+      res.set('Content-Type', mime);
+      res.set('Cache-Control', 'public, max-age=86400');
+      return res.send(imgBuffer);
+    }
+
+    // 2. If paymentScreenshot is a base64 string
+    if (booking.paymentScreenshot && booking.paymentScreenshot.startsWith('data:')) {
+      const parts = booking.paymentScreenshot.split(',');
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : (booking.paymentScreenshotMime || 'image/jpeg');
+      const imgBuffer = Buffer.from(parts[1], 'base64');
+      res.set('Content-Type', mime);
+      res.set('Cache-Control', 'public, max-age=86400');
+      return res.send(imgBuffer);
+    }
+
+    // 3. If relative path to local disk exists
+    if (booking.paymentScreenshot && !booking.paymentScreenshot.startsWith('http')) {
+      const filename = path.basename(booking.paymentScreenshot);
+      const localFilePath = path.join(__dirname, '..', 'uploads', filename);
+      if (fs.existsSync(localFilePath)) {
+        return res.sendFile(localFilePath);
+      }
+    }
+
+    // 4. If full external URL, redirect
+    if (booking.paymentScreenshot && booking.paymentScreenshot.startsWith('http')) {
+      return res.redirect(booking.paymentScreenshot);
+    }
+
+    return res.status(404).send('Payment proof image not available');
+  } catch (error) {
+    console.error('[getPaymentProof]', error);
+    return res.status(500).send('Error retrieving payment proof');
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -233,10 +306,19 @@ const confirmBooking = async (req, res) => {
     if (booking.couponApplied && !booking.couponProcessed) {
       const coupon = await Coupon.findOne({ code: booking.couponApplied.toUpperCase() });
       if (coupon) {
-        coupon.usedCount += 1;
-        if (coupon.usedCount >= coupon.usageLimit) {
-          coupon.isActive = false;
+        // Increment total usage count
+        coupon.totalUsageCount = (coupon.totalUsageCount || coupon.usedCount || 0) + 1;
+        coupon.usedCount = coupon.totalUsageCount;
+
+        // Daily usage tracking with automatic date reset
+        const todayStr = getTodayDateString();
+        if (coupon.dailyUsageDate === todayStr) {
+          coupon.dailyUsageCount = (coupon.dailyUsageCount || 0) + 1;
+        } else {
+          coupon.dailyUsageDate = todayStr;
+          coupon.dailyUsageCount = 1;
         }
+
         await coupon.save();
       }
       booking.couponProcessed = true;
@@ -339,4 +421,4 @@ const webhookReceive = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, uploadScreenshot, confirmBooking, verifyPayment, webhookVerify, webhookReceive };
+module.exports = { createOrder, uploadScreenshot, getPaymentProof, confirmBooking, verifyPayment, webhookVerify, webhookReceive };

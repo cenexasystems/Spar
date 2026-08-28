@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createOrder,
   uploadScreenshot,
+  getPaymentProof,
   confirmBooking,
   verifyPayment,
   webhookVerify,
@@ -18,6 +19,9 @@ router.post('/upload-screenshot', protect, uploadScreenshot);
 
 // POST /api/payment/confirm-booking
 router.post('/confirm-booking', protect, confirmBooking);
+
+// GET /api/payment/proof/:bookingId (Persistent streaming endpoint)
+router.get('/proof/:bookingId', getPaymentProof);
 
 // POST /api/payment/verify (legacy)
 router.post('/verify', protect, verifyPayment);

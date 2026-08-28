@@ -4,6 +4,7 @@ const Park = require('../models/Park');
 const Revenue = require('../models/Revenue');
 const Coupon = require('../models/Coupon');
 const PlatformSettings = require('../models/PlatformSettings');
+const { parseEndOfDayExpiry, formatCouponDate, formatCouponDateNumeric, computeCouponStatus } = require('../utils/couponUtils');
 
 const getAdminStats = async (req, res) => {
   try {
@@ -118,8 +119,14 @@ const updateBookingStatus = async (req, res) => {
       if (booking.couponApplied && booking.couponProcessed) {
         const coupon = await Coupon.findOne({ code: booking.couponApplied.toUpperCase() });
         if (coupon) {
-          coupon.usedCount = Math.max(0, coupon.usedCount - 1);
-          if (coupon.usedCount < coupon.usageLimit) coupon.isActive = true;
+          // Decrement both the new and legacy usage counters
+          coupon.totalUsageCount = Math.max(0, (coupon.totalUsageCount || 0) - 1);
+          coupon.usedCount = coupon.totalUsageCount;
+          // Reactivate if it was exhausted and total limit allows it
+          const totalLimit = coupon.isUnlimitedTotal ? Infinity : (coupon.totalUsageLimit || Infinity);
+          if (coupon.totalUsageCount < totalLimit) {
+            coupon.isActive = true;
+          }
           await coupon.save();
         }
         booking.couponProcessed = false;
@@ -198,12 +205,27 @@ const createPark = async (req, res) => {
 
 const updatePark = async (req, res) => {
   try {
-    const park = await Park.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: false }
-    );
+    const park = await Park.findById(req.params.id);
     if (!park) return res.status(404).json({ message: 'Park not found' });
+
+    // Apply all fields from the request body
+    const { ticketPricing, wonderlaPricing, ...otherFields } = req.body;
+
+    // Assign scalar/array fields
+    Object.assign(park, otherFields);
+
+    // Handle Mixed-type fields explicitly — Mongoose requires markModified()
+    // for these types to detect changes and persist them.
+    if (ticketPricing !== undefined) {
+      park.ticketPricing = ticketPricing;
+      park.markModified('ticketPricing');
+    }
+    if (wonderlaPricing !== undefined) {
+      park.wonderlaPricing = wonderlaPricing;
+      park.markModified('wonderlaPricing');
+    }
+
+    await park.save();
     res.json(park);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -222,13 +244,123 @@ const deletePark = async (req, res) => {
 
 const createCoupon = async (req, res) => {
   try {
-    const { code } = req.body;
-    const existing = await Coupon.findOne({ code: code.toUpperCase() });
-    if (existing) return res.status(400).json({ message: "Coupon code already exists" });
+    const { 
+      code, 
+      discountType, 
+      discountValue, 
+      expiryDate, 
+      applicablePark, 
+      parkId, 
+      applicableBranches,
+      unlimitedTotal,
+      isUnlimitedTotal,
+      totalUsageLimitEnabled,
+      totalUsageLimit,
+      unlimitedDaily,
+      isUnlimitedDaily,
+      dailyUsageLimitEnabled,
+      dailyUsageLimit,
+      isActive 
+    } = req.body;
 
-    req.body.code = code.toUpperCase();
-    const coupon = await Coupon.create(req.body);
-    res.status(201).json(coupon);
+    if (!code || !code.trim()) return res.status(400).json({ message: 'Coupon code is required' });
+    if (!expiryDate) return res.status(400).json({ message: 'Expiry date is required' });
+
+    // Validate coupon value
+    const numericValue = Number(discountValue);
+    if (isNaN(numericValue) || numericValue <= 0) {
+      return res.status(400).json({ message: 'Discount value must be greater than 0' });
+    }
+    if (discountType === 'percentage' && (numericValue < 1 || numericValue > 100)) {
+      return res.status(400).json({ message: 'Discount percentage must be between 1% and 100%' });
+    }
+
+    // Validate total usage limit
+    const isUnlimTotal = unlimitedTotal === true || unlimitedTotal === 'true' || isUnlimitedTotal === true || isUnlimitedTotal === 'true' || totalUsageLimitEnabled === false || totalUsageLimitEnabled === 'false';
+    let validatedTotalLimit = null;
+    if (!isUnlimTotal) {
+      const parsedTotal = parseInt(totalUsageLimit, 10);
+      if (isNaN(parsedTotal) || parsedTotal <= 0) {
+        return res.status(400).json({ message: 'Total usage limit must be a positive integer greater than 0' });
+      }
+      validatedTotalLimit = parsedTotal;
+    }
+
+    // Validate daily usage limit
+    const isUnlimDaily = unlimitedDaily === true || unlimitedDaily === 'true' || isUnlimitedDaily === true || isUnlimitedDaily === 'true' || dailyUsageLimitEnabled === false || dailyUsageLimitEnabled === 'false' || (unlimitedDaily === undefined && isUnlimitedDaily === undefined && dailyUsageLimitEnabled === undefined);
+    let validatedDailyLimit = null;
+    if (!isUnlimDaily) {
+      const parsedDaily = parseInt(dailyUsageLimit, 10);
+      if (isNaN(parsedDaily) || parsedDaily <= 0) {
+        return res.status(400).json({ message: 'Daily usage limit must be a positive integer greater than 0' });
+      }
+      validatedDailyLimit = parsedDaily;
+    }
+
+    // Daily limit cannot exceed total limit when both are limited
+    if (!isUnlimTotal && !isUnlimDaily && validatedTotalLimit && validatedDailyLimit) {
+      if (validatedDailyLimit > validatedTotalLimit) {
+        return res.status(400).json({ message: 'Daily usage limit cannot exceed total usage limit' });
+      }
+    }
+
+    const existing = await Coupon.findOne({ code: code.trim().toUpperCase() });
+    if (existing) return res.status(400).json({ message: 'Coupon code already exists' });
+
+    // Enforce park-level isolation:
+    const parkName = (applicablePark || parkId || '').trim();
+    if (!parkName || parkName.toLowerCase() === 'all') {
+      return res.status(400).json({ message: 'A specific park must be specified for this coupon. Global coupons are not supported.' });
+    }
+
+    // Standardize expiry date: convert YYYY-MM-DD to end-of-day UTC Date object
+    const normalizedExpiry = parseEndOfDayExpiry(expiryDate);
+    if (normalizedExpiry.getTime() <= Date.now()) {
+      return res.status(400).json({ message: 'Expiry date must be in the future' });
+    }
+
+    // Parse applicable branches
+    let branchList = ['all'];
+    if (Array.isArray(applicableBranches) && applicableBranches.length > 0) {
+      branchList = applicableBranches;
+    } else if (typeof applicableBranches === 'string' && applicableBranches.trim() && applicableBranches !== 'all') {
+      branchList = [applicableBranches.trim()];
+    }
+
+    const couponData = {
+      code: code.trim().toUpperCase(),
+      discountType: discountType || 'percentage',
+      discountValue: numericValue,
+      expiryDate: normalizedExpiry,
+      applicablePark: parkName,
+      parkId: parkName,
+      applicableBranches: branchList,
+      unlimitedTotal: isUnlimTotal,
+      isUnlimitedTotal: isUnlimTotal,
+      totalUsageLimitEnabled: !isUnlimTotal,
+      totalUsageLimit: validatedTotalLimit,
+      usageLimit: validatedTotalLimit,
+      unlimitedDaily: isUnlimDaily,
+      isUnlimitedDaily: isUnlimDaily,
+      dailyUsageLimitEnabled: !isUnlimDaily,
+      dailyUsageLimit: validatedDailyLimit,
+      totalUsageCount: 0,
+      usedCount: 0,
+      dailyUsageCount: 0,
+      dailyUsageDate: '',
+      isActive: isActive !== false
+    };
+
+    const coupon = await Coupon.create(couponData);
+    
+    // Return with formatted dates and computed status
+    const computed = computeCouponStatus(coupon);
+    res.status(201).json({
+      ...coupon.toObject(),
+      computedStatus: computed.status,
+      statusLabel: computed.label,
+      expiryDateFormatted: formatCouponDate(coupon.expiryDate)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -239,10 +371,47 @@ const getCoupons = async (req, res) => {
     const { parkId } = req.params;
     let query = {};
     if (parkId && parkId !== 'all') {
-      query.applicablePark = { $in: ['all', parkId] };
+      // Strict park isolation: only return coupons explicitly for this park.
+      query.$or = [
+        { parkId: new RegExp(`^${parkId.trim()}$`, 'i') },
+        { applicablePark: new RegExp(`^${parkId.trim()}$`, 'i') }
+      ];
     }
     const coupons = await Coupon.find(query).sort('-createdAt');
-    res.json(coupons);
+    
+    // Dynamically calculate status for each coupon so frontend and API always see real-time state
+    const enrichedCoupons = coupons.map(c => {
+      const computed = computeCouponStatus(c);
+      return {
+        ...c.toObject(),
+        computedStatus: computed.status,
+        statusLabel: computed.label,
+        expiryDateFormatted: formatCouponDate(c.expiryDate),
+        applicableBranches: (c.applicableBranches && c.applicableBranches.length > 0) ? c.applicableBranches : ['all']
+      };
+    });
+
+    res.json(enrichedCoupons);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const toggleCouponStatus = async (req, res) => {
+  try {
+    const coupon = await Coupon.findById(req.params.id);
+    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    
+    coupon.isActive = !coupon.isActive;
+    await coupon.save();
+    
+    const computed = computeCouponStatus(coupon);
+    res.json({
+      ...coupon.toObject(),
+      computedStatus: computed.status,
+      statusLabel: computed.label,
+      expiryDateFormatted: formatCouponDate(coupon.expiryDate)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -292,8 +461,29 @@ const updateTicketPricing = async (req, res) => {
     const { ticketPricing, wonderlaPricing } = req.body;
     const park = await Park.findById(req.params.id);
     if (!park) return res.status(404).json({ message: 'Park not found' });
-    if (ticketPricing !== undefined) park.ticketPricing = ticketPricing;
-    if (wonderlaPricing !== undefined) park.wonderlaPricing = wonderlaPricing;
+
+    if (ticketPricing !== undefined) {
+      park.ticketPricing = ticketPricing;
+      // IMPORTANT: Mongoose does not auto-detect mutations in Mixed type fields.
+      // markModified() is required to ensure the change is persisted to MongoDB.
+      park.markModified('ticketPricing');
+
+      // Also sync flat price fields from the normal tier so the booking system
+      // and park card UI always reflect current pricing without needing ticketPricing lookup.
+      const normal = ticketPricing?.normal || {};
+      if (normal.adult  !== undefined) park.price       = Number(normal.adult)  || park.price;
+      if (normal.adult  !== undefined) park.adultPrice  = Number(normal.adult)  || 0;
+      if (normal.child  !== undefined) park.childPrice  = Number(normal.child)  || 0;
+      if (normal.senior !== undefined) park.seniorPrice = Number(normal.senior) || 0;
+      if (normal.student !== undefined) park.studentPrice = Number(normal.student) || 0;
+    }
+
+    if (wonderlaPricing !== undefined) {
+      park.wonderlaPricing = wonderlaPricing;
+      // IMPORTANT: markModified() required for Mixed type
+      park.markModified('wonderlaPricing');
+    }
+
     await park.save();
     res.json({ message: 'Pricing updated', park });
   } catch (error) {
@@ -346,6 +536,7 @@ module.exports = {
   deletePark,
   createCoupon,
   getCoupons,
+  toggleCouponStatus,
   deleteCoupon,
   getCouponUsage,
   updateVisitorCategories,
