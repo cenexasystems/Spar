@@ -34,26 +34,34 @@ const couponSchema = mongoose.Schema({
 }, { timestamps: true });
 
 // Pre-save hook to keep data contract consistent and clean without fake numbers
-couponSchema.pre('save', function(next) {
+couponSchema.pre('save', function() {
   // 1. Total usage normalization
-  const isUnlimTotal = this.unlimitedTotal === true || this.isUnlimitedTotal === true || this.totalUsageLimitEnabled === false;
-  if (isUnlimTotal) {
+  const hasTotalLimitNumber = (this.totalUsageLimit !== null && this.totalUsageLimit !== undefined && Number(this.totalUsageLimit) > 0) ||
+                             (this.usageLimit !== null && this.usageLimit !== undefined && Number(this.usageLimit) > 0);
+  
+  const explicitlyLimitedTotal = this.unlimitedTotal === false || this.isUnlimitedTotal === false || this.totalUsageLimitEnabled === true;
+  const explicitlyUnlimitedTotal = this.unlimitedTotal === true || this.isUnlimitedTotal === true || this.totalUsageLimitEnabled === false;
+
+  if (explicitlyUnlimitedTotal && !explicitlyLimitedTotal) {
     this.unlimitedTotal = true;
     this.isUnlimitedTotal = true;
     this.totalUsageLimitEnabled = false;
     this.totalUsageLimit = null;
     this.usageLimit = null;
-  } else if (this.totalUsageLimit !== null && this.totalUsageLimit !== undefined) {
+  } else if ((explicitlyLimitedTotal || hasTotalLimitNumber) && !explicitlyUnlimitedTotal) {
+    const val = Number(this.totalUsageLimit ?? this.usageLimit);
     this.unlimitedTotal = false;
     this.isUnlimitedTotal = false;
     this.totalUsageLimitEnabled = true;
-    this.totalUsageLimit = Number(this.totalUsageLimit);
-    this.usageLimit = Number(this.totalUsageLimit);
-  } else if (this.usageLimit !== null && this.usageLimit !== undefined) {
+    this.totalUsageLimit = isNaN(val) ? null : val;
+    this.usageLimit = this.totalUsageLimit;
+  } else if (hasTotalLimitNumber && !this.unlimitedTotal && !this.isUnlimitedTotal) {
+    const val = Number(this.totalUsageLimit ?? this.usageLimit);
     this.unlimitedTotal = false;
     this.isUnlimitedTotal = false;
     this.totalUsageLimitEnabled = true;
-    this.totalUsageLimit = Number(this.usageLimit);
+    this.totalUsageLimit = isNaN(val) ? null : val;
+    this.usageLimit = this.totalUsageLimit;
   } else {
     this.unlimitedTotal = true;
     this.isUnlimitedTotal = true;
@@ -63,17 +71,27 @@ couponSchema.pre('save', function(next) {
   }
 
   // 2. Daily usage normalization
-  const isUnlimDaily = this.unlimitedDaily === true || this.isUnlimitedDaily === true || this.dailyUsageLimitEnabled === false;
-  if (isUnlimDaily) {
+  const hasDailyLimitNumber = this.dailyUsageLimit !== null && this.dailyUsageLimit !== undefined && Number(this.dailyUsageLimit) > 0;
+  const explicitlyLimitedDaily = this.unlimitedDaily === false || this.isUnlimitedDaily === false || this.dailyUsageLimitEnabled === true;
+  const explicitlyUnlimitedDaily = this.unlimitedDaily === true || this.isUnlimitedDaily === true || (this.dailyUsageLimitEnabled === false && this.unlimitedDaily === undefined && this.isUnlimitedDaily === undefined);
+
+  if (explicitlyLimitedDaily && (hasDailyLimitNumber || this.dailyUsageLimit !== undefined)) {
+    const val = Number(this.dailyUsageLimit);
+    this.unlimitedDaily = false;
+    this.isUnlimitedDaily = false;
+    this.dailyUsageLimitEnabled = true;
+    this.dailyUsageLimit = isNaN(val) ? null : val;
+  } else if (explicitlyUnlimitedDaily && !explicitlyLimitedDaily) {
     this.unlimitedDaily = true;
     this.isUnlimitedDaily = true;
     this.dailyUsageLimitEnabled = false;
     this.dailyUsageLimit = null;
-  } else if (this.dailyUsageLimit !== null && this.dailyUsageLimit !== undefined) {
+  } else if (hasDailyLimitNumber && this.unlimitedDaily !== true && this.isUnlimitedDaily !== true) {
+    const val = Number(this.dailyUsageLimit);
     this.unlimitedDaily = false;
     this.isUnlimitedDaily = false;
     this.dailyUsageLimitEnabled = true;
-    this.dailyUsageLimit = Number(this.dailyUsageLimit);
+    this.dailyUsageLimit = isNaN(val) ? null : val;
   } else {
     this.unlimitedDaily = true;
     this.isUnlimitedDaily = true;
@@ -87,8 +105,6 @@ couponSchema.pre('save', function(next) {
   } else if (this.usedCount !== undefined && this.usedCount !== null) {
     this.totalUsageCount = this.usedCount;
   }
-
-  next();
 });
 
 module.exports = mongoose.model('Coupon', couponSchema);
